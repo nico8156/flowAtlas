@@ -187,8 +187,9 @@ preserves multiple simple `createAction` declarations found in one source
 input. Detected Events now retain their source file and line. This capability
 is source-in/source-out and is not yet a project scanner or CLI command.
 
-It does not yet resolve imports, aliases, barrels or symbols across files, and
-it does not detect slices. Listener and dispatch detection currently require
+Named imports and renamed named imports are recognized syntactically. The
+scanner does not yet verify module targets, resolve `tsconfig` aliases or
+barrels, and it does not detect slices. Listener and dispatch detection require
 the relevant declarations and registrations to be statically identifiable in
 the same source input.
 

@@ -144,4 +144,33 @@ describe("TypeScript scanner", () => {
       kind: "LISTENS_TO",
     });
   });
+
+  it("preserves Event identity through a renamed import", () => {
+    const graph = scanTypeScriptProject({
+      files: [
+        {
+          file: "src/social/actions.ts",
+          source: `
+            export const uiLikeToggleRequested = createAction("UI/LIKE/TOGGLE_REQUESTED");
+          `,
+        },
+        {
+          file: "src/social/listener.ts",
+          source: `
+            import { uiLikeToggleRequested as toggleRequested } from "./actions";
+            const submitLikeListener = startListening({
+              actionCreator: toggleRequested,
+              effect: async () => {},
+            });
+          `,
+        },
+      ],
+    });
+
+    expect(graph.edges).toContainEqual({
+      source: "submitLikeListener",
+      target: "uiLikeToggleRequested",
+      kind: "LISTENS_TO",
+    });
+  });
 });

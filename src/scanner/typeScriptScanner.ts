@@ -15,6 +15,8 @@ type TypeScriptProject = {
   files: TypeScriptSource[];
 };
 
+type SymbolAliases = ReadonlyMap<string, string>;
+
 type VariableCall = {
   id: string;
   call: ts.CallExpression;
@@ -33,17 +35,36 @@ const getVariableCall = (node: ts.Node): VariableCall | undefined => {
   return { id: node.name.text, call: node.initializer };
 };
 
+const getImportAliases = (sourceFile: ts.SourceFile): Map<string, string> => {
+  const aliases = new Map<string, string>();
+
+  for (const statement of sourceFile.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !statement.importClause ||
+      !statement.importClause.namedBindings ||
+      !ts.isNamedImports(statement.importClause.namedBindings)
+    ) {
+      continue;
+    }
+
+    for (const element of statement.importClause.namedBindings.elements) {
+      aliases.set(element.name.text, element.propertyName?.text ?? element.name.text);
+    }
+  }
+
+  return aliases;
+};
+
+const createTypeScriptSourceFile = (fileName: string, source: string): ts.SourceFile =>
+  ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+
 const scanSourceIntoGraph = (
   { file, source }: TypeScriptSource,
   graph: ArchitectureGraph,
+  aliases: SymbolAliases = new Map(),
 ): void => {
-  const sourceFile = ts.createSourceFile(
-    "flowatlas-input.ts",
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS,
-  );
+  const sourceFile = createTypeScriptSourceFile("flowatlas-input.ts", source);
 
   const visit = (node: ts.Node): void => {
     const variableCall = getVariableCall(node);
@@ -79,7 +100,9 @@ const scanSourceIntoGraph = (
         if (actionCreatorProperty && ts.isIdentifier(actionCreatorProperty.initializer)) {
           graph.addEdge({
             source: handlerId,
-            target: actionCreatorProperty.initializer.text,
+            target:
+              aliases.get(actionCreatorProperty.initializer.text) ??
+              actionCreatorProperty.initializer.text,
             kind: "LISTENS_TO",
           });
         }
@@ -106,7 +129,9 @@ const scanSourceIntoGraph = (
               ) {
                 graph.addEdge({
                   source: handlerId,
-                  target: dispatchedAction.expression.text,
+                  target:
+                    aliases.get(dispatchedAction.expression.text) ??
+                    dispatchedAction.expression.text,
                   kind: "DISPATCHES",
                 });
               }
@@ -147,7 +172,7 @@ const scanSourceIntoGraph = (
               const handledEvent = reducerNode.arguments[0];
               if (handledEvent && ts.isIdentifier(handledEvent)) {
                 graph.addEdge({
-                  source: handledEvent.text,
+                  source: aliases.get(handledEvent.text) ?? handledEvent.text,
                   target: stateId,
                   kind: "UPDATES",
                 });
@@ -178,7 +203,9 @@ export const scanTypeScriptProject = ({ files }: TypeScriptProject): Architectur
   const graph = createArchitectureGraph();
 
   for (const file of files) {
-    scanSourceIntoGraph(file, graph);
+    const sourceFile = createTypeScriptSourceFile(file.file, file.source);
+
+    scanSourceIntoGraph(file, graph, getImportAliases(sourceFile));
   }
 
   return graph;
