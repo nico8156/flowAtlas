@@ -1,13 +1,25 @@
+export type RelationKind =
+  | "LISTENS_TO"
+  | "DISPATCHES"
+  | "UPDATES"
+  | "CALLS_EXTERNAL";
+
+export type ArchitectureEdge = {
+  source: string;
+  target: string;
+  kind: RelationKind;
+};
+
 export type ArchitectureGraph = {
   nodes: readonly unknown[];
-  edges: readonly { source: string; target: string }[];
+  edges: readonly ArchitectureEdge[];
   addNode(node: unknown): void;
-  addEdge(edge: { source: string; target: string }): void;
+  addEdge(edge: ArchitectureEdge): void;
 };
 
 export const createArchitectureGraph = (): ArchitectureGraph => {
   const nodes: unknown[] = [];
-  const edges: { source: string; target: string }[] = [];
+  const edges: ArchitectureEdge[] = [];
 
   return {
     nodes,

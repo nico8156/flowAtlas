@@ -38,15 +38,38 @@ describe("ArchitectureGraph", () => {
 
     graph.addNode(sourceNode);
     graph.addNode(targetNode);
-    graph.addEdge({ source: sourceNode.id, target: targetNode.id });
+    graph.addEdge({
+      source: sourceNode.id,
+      target: targetNode.id,
+      kind: "LISTENS_TO",
+    });
 
     expect(graph.edges).toContainEqual({
       source: sourceNode.id,
       target: targetNode.id,
+      kind: "LISTENS_TO",
     });
     expect(graph.edges).not.toContainEqual({
       source: targetNode.id,
       target: sourceNode.id,
+      kind: "LISTENS_TO",
     });
+  });
+
+  it("can identify the architectural kind of a relation", () => {
+    const graph = createArchitectureGraph();
+    const sourceNode = { id: "node-a" };
+    const targetNode = { id: "node-b" };
+    const edge = {
+      source: sourceNode.id,
+      target: targetNode.id,
+      kind: "LISTENS_TO" as const,
+    };
+
+    graph.addNode(sourceNode);
+    graph.addNode(targetNode);
+    graph.addEdge(edge);
+
+    expect(graph.edges).toContainEqual(edge);
   });
 });
