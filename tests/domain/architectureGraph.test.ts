@@ -12,7 +12,7 @@ describe("ArchitectureGraph", () => {
 
   it("can contain one architectural node", () => {
     const graph = createArchitectureGraph();
-    const node = { id: "node-1" };
+    const node = { id: "node-1", kind: "Event" as const };
 
     graph.addNode(node);
 
@@ -21,8 +21,8 @@ describe("ArchitectureGraph", () => {
 
   it("can contain multiple independent nodes", () => {
     const graph = createArchitectureGraph();
-    const firstNode = { id: "node-1" };
-    const secondNode = { id: "node-2" };
+    const firstNode = { id: "node-1", kind: "Event" as const };
+    const secondNode = { id: "node-2", kind: "Event" as const };
 
     graph.addNode(firstNode);
     graph.addNode(secondNode);
@@ -33,8 +33,8 @@ describe("ArchitectureGraph", () => {
 
   it("can contain a directed relation between two existing nodes", () => {
     const graph = createArchitectureGraph();
-    const sourceNode = { id: "node-a" };
-    const targetNode = { id: "node-b" };
+    const sourceNode = { id: "node-a", kind: "Event" as const };
+    const targetNode = { id: "node-b", kind: "Event" as const };
 
     graph.addNode(sourceNode);
     graph.addNode(targetNode);
@@ -58,8 +58,8 @@ describe("ArchitectureGraph", () => {
 
   it("can identify the architectural kind of a relation", () => {
     const graph = createArchitectureGraph();
-    const sourceNode = { id: "node-a" };
-    const targetNode = { id: "node-b" };
+    const sourceNode = { id: "node-a", kind: "Event" as const };
+    const targetNode = { id: "node-b", kind: "Event" as const };
     const edge = {
       source: sourceNode.id,
       target: targetNode.id,
@@ -71,5 +71,14 @@ describe("ArchitectureGraph", () => {
     graph.addEdge(edge);
 
     expect(graph.edges).toContainEqual(edge);
+  });
+
+  it("can identify an architectural node as an Event", () => {
+    const graph = createArchitectureGraph();
+    const eventNode = { id: "event-1", kind: "Event" as const };
+
+    graph.addNode(eventNode);
+
+    expect(graph.nodes).toContainEqual(eventNode);
   });
 });

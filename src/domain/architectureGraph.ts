@@ -4,6 +4,13 @@ export type RelationKind =
   | "UPDATES"
   | "CALLS_EXTERNAL";
 
+export type NodeKind = "Event" | "Handler" | "State" | "External";
+
+export type ArchitectureNode = {
+  id: string;
+  kind: NodeKind;
+};
+
 export type ArchitectureEdge = {
   source: string;
   target: string;
@@ -11,14 +18,14 @@ export type ArchitectureEdge = {
 };
 
 export type ArchitectureGraph = {
-  nodes: readonly unknown[];
+  nodes: readonly ArchitectureNode[];
   edges: readonly ArchitectureEdge[];
-  addNode(node: unknown): void;
+  addNode(node: ArchitectureNode): void;
   addEdge(edge: ArchitectureEdge): void;
 };
 
 export const createArchitectureGraph = (): ArchitectureGraph => {
-  const nodes: unknown[] = [];
+  const nodes: ArchitectureNode[] = [];
   const edges: ArchitectureEdge[] = [];
 
   return {
