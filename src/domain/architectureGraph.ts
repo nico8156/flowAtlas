@@ -28,6 +28,34 @@ export type ArchitectureGraph = {
   edges: readonly ArchitectureEdge[];
   addNode(node: ArchitectureNode): void;
   addEdge(edge: ArchitectureEdge): void;
+  downstream(nodeId: string): readonly ArchitectureNode[];
+};
+
+const relationNodeKinds: Record<RelationKind, {
+  source: NodeKind;
+  target: NodeKind;
+  description: string;
+}> = {
+  LISTENS_TO: {
+    source: "Handler",
+    target: "Event",
+    description: "a Handler source and Event target",
+  },
+  DISPATCHES: {
+    source: "Handler",
+    target: "Event",
+    description: "a Handler source and Event target",
+  },
+  UPDATES: {
+    source: "Event",
+    target: "State",
+    description: "an Event source and State target",
+  },
+  CALLS_EXTERNAL: {
+    source: "Handler",
+    target: "External",
+    description: "a Handler source and External target",
+  },
 };
 
 export const createArchitectureGraph = (): ArchitectureGraph => {
@@ -45,42 +73,31 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
       nodes.push(node);
     },
     addEdge(edge) {
-      if (
-        edge.kind === "LISTENS_TO" ||
-        edge.kind === "DISPATCHES" ||
-        edge.kind === "UPDATES" ||
-        edge.kind === "CALLS_EXTERNAL"
-      ) {
-        const sourceNode = nodes.find((node) => node.id === edge.source);
-        const targetNode = nodes.find((node) => node.id === edge.target);
+      const expected = relationNodeKinds[edge.kind];
+      const sourceNode = nodes.find((node) => node.id === edge.source);
+      const targetNode = nodes.find((node) => node.id === edge.target);
 
-        const validNodeKinds = (() => {
-          switch (edge.kind) {
-            case "UPDATES":
-              return sourceNode?.kind === "Event" && targetNode?.kind === "State";
-            case "CALLS_EXTERNAL":
-              return sourceNode?.kind === "Handler" && targetNode?.kind === "External";
-            default:
-              return sourceNode?.kind === "Handler" && targetNode?.kind === "Event";
-          }
-        })();
-
-        if (!validNodeKinds) {
-          const expected = (() => {
-            switch (edge.kind) {
-              case "UPDATES":
-                return "Event source and State target";
-              case "CALLS_EXTERNAL":
-                return "Handler source and External target";
-              default:
-                return "Handler source and Event target";
-            }
-          })();
-          throw new Error(`${edge.kind} requires an ${expected}`);
-        }
+      if (sourceNode?.kind !== expected.source || targetNode?.kind !== expected.target) {
+        throw new Error(`${edge.kind} requires ${expected.description}`);
       }
 
       edges.push(edge);
+    },
+    downstream(nodeId) {
+      const downstreamNodes: ArchitectureNode[] = [];
+
+      for (const edge of edges) {
+        if (edge.source !== nodeId) {
+          continue;
+        }
+
+        const targetNode = nodes.find((node) => node.id === edge.target);
+        if (targetNode) {
+          downstreamNodes.push(targetNode);
+        }
+      }
+
+      return downstreamNodes;
     },
   };
 };
