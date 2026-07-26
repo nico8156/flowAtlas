@@ -132,4 +132,21 @@ describe("ArchitectureGraph", () => {
       }),
     ).toThrow();
   });
+
+  it("rejects CALLS_EXTERNAL when the source is not a Handler", () => {
+    const graph = createArchitectureGraph();
+    const eventNode = { id: "event-1", kind: "Event" as const };
+    const externalNode = { id: "external-1", kind: "External" as const };
+
+    graph.addNode(eventNode);
+    graph.addNode(externalNode);
+
+    expect(() =>
+      graph.addEdge({
+        source: eventNode.id,
+        target: externalNode.id,
+        kind: "CALLS_EXTERNAL",
+      }),
+    ).toThrow();
+  });
 });

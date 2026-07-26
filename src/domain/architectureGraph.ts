@@ -38,19 +38,34 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
       if (
         edge.kind === "LISTENS_TO" ||
         edge.kind === "DISPATCHES" ||
-        edge.kind === "UPDATES"
+        edge.kind === "UPDATES" ||
+        edge.kind === "CALLS_EXTERNAL"
       ) {
         const sourceNode = nodes.find((node) => node.id === edge.source);
         const targetNode = nodes.find((node) => node.id === edge.target);
 
-        const validNodeKinds =
-          edge.kind === "UPDATES"
-            ? sourceNode?.kind === "Event" && targetNode?.kind === "State"
-            : sourceNode?.kind === "Handler" && targetNode?.kind === "Event";
+        const validNodeKinds = (() => {
+          switch (edge.kind) {
+            case "UPDATES":
+              return sourceNode?.kind === "Event" && targetNode?.kind === "State";
+            case "CALLS_EXTERNAL":
+              return sourceNode?.kind === "Handler" && targetNode?.kind === "External";
+            default:
+              return sourceNode?.kind === "Handler" && targetNode?.kind === "Event";
+          }
+        })();
 
         if (!validNodeKinds) {
-          const expected =
-            edge.kind === "UPDATES" ? "Event source and State target" : "Handler source and Event target";
+          const expected = (() => {
+            switch (edge.kind) {
+              case "UPDATES":
+                return "Event source and State target";
+              case "CALLS_EXTERNAL":
+                return "Handler source and External target";
+              default:
+                return "Handler source and Event target";
+            }
+          })();
           throw new Error(`${edge.kind} requires an ${expected}`);
         }
       }
