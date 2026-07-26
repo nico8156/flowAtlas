@@ -35,12 +35,23 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
       nodes.push(node);
     },
     addEdge(edge) {
-      if (edge.kind === "LISTENS_TO" || edge.kind === "DISPATCHES") {
+      if (
+        edge.kind === "LISTENS_TO" ||
+        edge.kind === "DISPATCHES" ||
+        edge.kind === "UPDATES"
+      ) {
         const sourceNode = nodes.find((node) => node.id === edge.source);
         const targetNode = nodes.find((node) => node.id === edge.target);
 
-        if (sourceNode?.kind !== "Handler" || targetNode?.kind !== "Event") {
-          throw new Error(`${edge.kind} requires a Handler source and Event target`);
+        const validNodeKinds =
+          edge.kind === "UPDATES"
+            ? sourceNode?.kind === "Event" && targetNode?.kind === "State"
+            : sourceNode?.kind === "Handler" && targetNode?.kind === "Event";
+
+        if (!validNodeKinds) {
+          const expected =
+            edge.kind === "UPDATES" ? "Event source and State target" : "Handler source and Event target";
+          throw new Error(`${edge.kind} requires an ${expected}`);
         }
       }
 

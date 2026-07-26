@@ -115,4 +115,21 @@ describe("ArchitectureGraph", () => {
       }),
     ).toThrow();
   });
+
+  it("rejects UPDATES when the source is not an Event", () => {
+    const graph = createArchitectureGraph();
+    const handlerNode = { id: "handler-1", kind: "Handler" as const };
+    const stateNode = { id: "state-1", kind: "State" as const };
+
+    graph.addNode(handlerNode);
+    graph.addNode(stateNode);
+
+    expect(() =>
+      graph.addEdge({
+        source: handlerNode.id,
+        target: stateNode.id,
+        kind: "UPDATES",
+      }),
+    ).toThrow();
+  });
 });
