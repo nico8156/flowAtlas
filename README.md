@@ -188,9 +188,9 @@ input. This capability is source-in/source-out and is not yet a project
 scanner or CLI command.
 
 It does not yet resolve imports, aliases, barrels or symbols across files, and
-it does not detect slices or dispatches. Listener detection currently requires
-the event declaration and listener registration to be statically identifiable
-in the same source input.
+it does not detect slices. Listener and dispatch detection currently require
+the relevant declarations and registrations to be statically identifiable in
+the same source input.
 
 The next vertical detector capabilities are planned in this order:
 

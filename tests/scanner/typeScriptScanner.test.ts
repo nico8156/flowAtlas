@@ -37,4 +37,26 @@ describe("TypeScript scanner", () => {
       kind: "LISTENS_TO",
     });
   });
+
+  it("detects an Event dispatched by a Handler", () => {
+    const file = "tests/fixtures/dispatch.ts";
+    const source = `
+      const uiLikeToggleRequested = createAction("UI/LIKE/TOGGLE_REQUESTED");
+      const likeAccepted = createAction("LIKE/ACCEPTED");
+      const submitLikeListener = startListening({
+        actionCreator: uiLikeToggleRequested,
+        effect: async (_, api) => {
+          api.dispatch(likeAccepted());
+        },
+      });
+    `;
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "submitLikeListener",
+      target: "likeAccepted",
+      kind: "DISPATCHES",
+    });
+  });
 });

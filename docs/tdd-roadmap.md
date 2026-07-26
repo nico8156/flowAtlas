@@ -26,6 +26,7 @@ and developed according to `AGENTS.md`.
 - [x] RED 16 - Support `upstream`
 - [x] RED 17 - Detect one `createAction` Event from a TypeScript fixture
 - [x] RED 19 - Detect `startListening({ actionCreator })`
+- [x] RED 20 - Detect `dispatch(actionCreator())` from a Handler
 
 ## Near-Term Candidate Behaviours
 
@@ -59,12 +60,13 @@ validated against the real Fragments codebase.
 
 ## Current State
 
-The last completed cycle is RED/GREEN #19. The graph now has the minimal V1
+The last completed cycle is RED/GREEN #20. The graph now has the minimal V1
 vocabulary, validates the four relation direction/kind combinations, rejects
 edges whose referenced nodes are absent, preserves unique node identities, can
 retain a file/line source location on an edge, and supports direct upstream and
 downstream neighbor queries. The source scanner detects simple `createAction`
-Events and `startListening({ actionCreator })` Handler/listener relationships.
+Events, `startListening({ actionCreator })` Handler/listener relationships, and
+simple `api.dispatch(actionCreator())` dispatch relationships.
 RED #11 and RED #12 required regression tests only because the existing
 relation validation already rejected missing nodes as a consequence.
 

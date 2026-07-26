@@ -37,7 +37,8 @@ export const scanTypeScriptSource = ({ source }: TypeScriptSource): Architecture
       ts.isIdentifier(node.initializer.expression) &&
       node.initializer.expression.text === "startListening"
     ) {
-      graph.addNode({ id: node.name.text, kind: "Handler" });
+      const handlerId = node.name.text;
+      graph.addNode({ id: handlerId, kind: "Handler" });
 
       const configuration = node.initializer.arguments[0];
       if (configuration && ts.isObjectLiteralExpression(configuration)) {
@@ -50,10 +51,44 @@ export const scanTypeScriptSource = ({ source }: TypeScriptSource): Architecture
 
         if (actionCreatorProperty && ts.isIdentifier(actionCreatorProperty.initializer)) {
           graph.addEdge({
-            source: node.name.text,
+            source: handlerId,
             target: actionCreatorProperty.initializer.text,
             kind: "LISTENS_TO",
           });
+        }
+
+        const effectProperty = configuration.properties.find(
+          (property): property is ts.PropertyAssignment =>
+            ts.isPropertyAssignment(property) &&
+            ts.isIdentifier(property.name) &&
+            property.name.text === "effect",
+        );
+
+        if (effectProperty) {
+          const visitEffect = (effectNode: ts.Node): void => {
+            if (
+              ts.isCallExpression(effectNode) &&
+              ts.isPropertyAccessExpression(effectNode.expression) &&
+              effectNode.expression.name.text === "dispatch"
+            ) {
+              const dispatchedAction = effectNode.arguments[0];
+              if (
+                dispatchedAction &&
+                ts.isCallExpression(dispatchedAction) &&
+                ts.isIdentifier(dispatchedAction.expression)
+              ) {
+                graph.addEdge({
+                  source: handlerId,
+                  target: dispatchedAction.expression.text,
+                  kind: "DISPATCHES",
+                });
+              }
+            }
+
+            ts.forEachChild(effectNode, visitEffect);
+          };
+
+          visitEffect(effectProperty.initializer);
         }
       }
     }
