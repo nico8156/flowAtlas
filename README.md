@@ -19,21 +19,21 @@ runtime instrumentation or application code changes.
 
 FlowAtlas is currently at the repository bootstrap stage.
 
-| Area                            | Status      |
-| ------------------------------- | ----------- |
-| TypeScript / Node.js foundation | Available   |
-| Strict type checking            | Available   |
-| Test runner and build pipeline  | Available   |
-| Architecture graph model        | Not started |
-| TypeScript analysis             | Not started |
-| Redux Toolkit detectors         | Not started |
-| CLI                             | Not started |
-| Interactive visualizer          | Not started |
-| Fragments acceptance fixture    | Not started |
+| Area                            | Status                    |
+| ------------------------------- | ------------------------- |
+| TypeScript / Node.js foundation | Available                 |
+| Strict type checking            | Available                 |
+| Test runner and build pipeline  | Available                 |
+| Architecture graph model        | Minimal V1 core available |
+| TypeScript analysis             | Not started               |
+| Redux Toolkit detectors         | Not started               |
+| CLI                             | Not started               |
+| Interactive visualizer          | Not started               |
+| Fragments acceptance fixture    | Not started               |
 
-The first domain capability will be developed through the TDD workflow
-described below. The current repository intentionally contains no scanner,
-detector, visualizer or business model.
+The domain graph is emerging through the TDD workflow described below. The
+current repository intentionally contains no scanner, detector, CLI,
+visualizer or Fragments acceptance fixture.
 
 ## Product direction
 

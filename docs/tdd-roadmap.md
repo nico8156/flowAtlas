@@ -14,27 +14,27 @@ and developed according to `AGENTS.md`.
 - [x] RED 4 - Add a directed edge between existing nodes
 - [x] RED 5 - Give an edge an architectural relation kind
 - [x] RED 6 - Give a node an architectural node kind
+- [x] RED 7 - Validate `LISTENS_TO` from `Handler` to `Event`
+- [x] RED 8 - Validate `DISPATCHES` from `Handler` to `Event`
+- [x] RED 9 - Validate `UPDATES` from `Event` to `State`
+- [x] RED 10 - Validate `CALLS_EXTERNAL` from `Handler` to `External`
+- [x] RED 11 - Reject an edge whose source is not in the graph
+- [x] RED 12 - Reject an edge whose target is not in the graph
 
 ## Near-Term Candidate Behaviours
 
 Only the next explicitly selected RED is actionable. These candidates are not
 scheduled work:
 
-- [ ] RED 7 - Validate `LISTENS_TO` from `Handler` to `Event`
-- [ ] RED 8 - Validate `DISPATCHES` from `Handler` to `Event`
-- [ ] RED 9 - Validate `UPDATES` from `Event` to `State`
-- [ ] RED 10 - Validate `CALLS_EXTERNAL` from `Handler` to `External`
+- [ ] RED 13 - Define the behavior for duplicate node identities
+- [ ] RED 14 - Preserve source location on a relation
+- [ ] RED 15 - Support `downstream`
 
 ## Later Direction
 
 These items preserve the intended direction without freezing the design or
 authorizing implementation:
 
-- RED 11 - Reject an edge whose source is not in the graph
-- RED 12 - Reject an edge whose target is not in the graph
-- RED 13 - Define the behavior for duplicate node identities
-- RED 14 - Preserve source location on a relation
-- RED 15 - Support `downstream`
 - RED 16 - Support `upstream`
 - RED 17 - Detect one `createAction` Event from a TypeScript fixture
 
@@ -44,8 +44,10 @@ remains the later acceptance target.
 
 ## Current State
 
-The last completed cycle is RED/GREEN #6. Its accepted behaviour is that an
-architectural node carries one of the canonical FlowAtlas node kinds, while
-node-kind semantics remain independent from relation-kind semantics.
+The last completed cycle is RED/GREEN #12. The graph now has the minimal V1
+vocabulary, validates the four relation direction/kind combinations, and
+rejects edges whose referenced nodes are absent. RED #11 and RED #12 required
+regression tests only because the existing relation validation already rejected
+missing nodes as a consequence.
 
 The repository is idle until the next RED is explicitly chosen.
