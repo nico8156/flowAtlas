@@ -165,4 +165,20 @@ describe("ArchitectureGraph", () => {
       }),
     ).toThrow();
   });
+
+  it("rejects an edge whose target is not in the graph", () => {
+    const graph = createArchitectureGraph();
+    const handlerNode = { id: "handler-1", kind: "Handler" as const };
+    const missingTargetId = "missing-event";
+
+    graph.addNode(handlerNode);
+
+    expect(() =>
+      graph.addEdge({
+        source: handlerNode.id,
+        target: missingTargetId,
+        kind: "LISTENS_TO",
+      }),
+    ).toThrow();
+  });
 });
