@@ -1,9 +1,17 @@
 export type ArchitectureGraph = {
-  nodes: unknown[];
-  edges: unknown[];
+  nodes: readonly unknown[];
+  edges: readonly unknown[];
+  addNode(node: unknown): void;
 };
 
-export const createArchitectureGraph = (): ArchitectureGraph => ({
-  nodes: [],
-  edges: [],
-});
+export const createArchitectureGraph = (): ArchitectureGraph => {
+  const nodes: unknown[] = [];
+
+  return {
+    nodes,
+    edges: [],
+    addNode(node) {
+      nodes.push(node);
+    },
+  };
+};
