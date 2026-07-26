@@ -17,23 +17,24 @@ runtime instrumentation or application code changes.
 
 ## Project status
 
-FlowAtlas is currently at the repository bootstrap stage.
+FlowAtlas is currently at the first TypeScript analysis stage.
 
-| Area                            | Status                    |
-| ------------------------------- | ------------------------- |
-| TypeScript / Node.js foundation | Available                 |
-| Strict type checking            | Available                 |
-| Test runner and build pipeline  | Available                 |
-| Architecture graph model        | Minimal V1 core available |
-| TypeScript analysis             | Not started               |
-| Redux Toolkit detectors         | Not started               |
-| CLI                             | Not started               |
-| Interactive visualizer          | Not started               |
-| Fragments acceptance fixture    | Not started               |
+| Area                            | Status                          |
+| ------------------------------- | ------------------------------- |
+| TypeScript / Node.js foundation | Available                       |
+| Strict type checking            | Available                       |
+| Test runner and build pipeline  | Available                       |
+| Architecture graph model        | Minimal V1 core available       |
+| TypeScript analysis             | Minimal `createAction` detector |
+| Redux Toolkit detectors         | Not started                     |
+| CLI                             | Not started                     |
+| Interactive visualizer          | Not started                     |
+| Fragments acceptance fixture    | Not started                     |
 
-The domain graph is emerging through the TDD workflow described below. The
-current repository intentionally contains no scanner, detector, CLI,
-visualizer or Fragments acceptance fixture.
+The domain graph and analysis capabilities are emerging through the TDD
+workflow described below. The current repository contains only a minimal
+TypeScript source scanner; it intentionally contains no CLI, visualizer or
+Fragments acceptance fixture yet.
 
 ## Product direction
 
@@ -171,6 +172,20 @@ intentionally absent relationships from that codebase. It must not invent a
 causal link between the optimistic/outbox branch and the projection branch.
 
 ## Scope of the first adapter
+
+The first scanner capability is deliberately small. Given TypeScript source
+containing a simple declaration such as:
+
+```ts
+const uiLikeToggleRequested = createAction("UI/LIKE/TOGGLE_REQUESTED");
+```
+
+`scanTypeScriptSource` can produce an `Event` node whose id is derived from the
+declared symbol. This capability is source-in/source-out and is not yet a
+project scanner or CLI command.
+
+It does not yet resolve imports, aliases, barrels or symbols across files, and
+it does not detect slices, listeners or dispatches.
 
 Redux Toolkit is the first analysis target because its conventions provide
 useful static signals. It is an adapter, not the FlowAtlas domain model.

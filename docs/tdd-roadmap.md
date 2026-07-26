@@ -24,6 +24,7 @@ and developed according to `AGENTS.md`.
 - [x] RED 14 - Preserve source location on a relation
 - [x] RED 15 - Support `downstream`
 - [x] RED 16 - Support `upstream`
+- [x] RED 17 - Detect one `createAction` Event from a TypeScript fixture
 
 ## Near-Term Candidate Behaviours
 
@@ -32,18 +33,12 @@ scheduled work:
 
 ## Later Direction
 
-These items preserve the intended direction without freezing the design or
-authorizing implementation:
-
-- RED 17 - Detect one `createAction` Event from a TypeScript fixture
-
-The scanner acceptance track begins only after the graph invariants and
-navigation behavior have emerged from tests. The Fragments Like golden graph
-remains the later acceptance target.
+The scanner acceptance track has now started with a source-in/source-out
+detector. The Fragments Like golden graph remains the later acceptance target.
 
 ## Current State
 
-The last completed cycle is RED/GREEN #16. The graph now has the minimal V1
+The last completed cycle is RED/GREEN #17. The graph now has the minimal V1
 vocabulary, validates the four relation direction/kind combinations, rejects
 edges whose referenced nodes are absent, preserves unique node identities, can
 retain a file/line source location on an edge, and supports direct upstream and
