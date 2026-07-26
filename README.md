@@ -181,12 +181,16 @@ const uiLikeToggleRequested = createAction("UI/LIKE/TOGGLE_REQUESTED");
 ```
 
 `scanTypeScriptSource` can produce an `Event` node whose id is derived from the
-declared symbol. The current AST traversal also preserves multiple simple
-`createAction` declarations found in one source input. This capability is
-source-in/source-out and is not yet a project scanner or CLI command.
+declared symbol. It can also detect a simple `startListening` declaration and
+produce its `Handler` plus `LISTENS_TO` edge. The current AST traversal also
+preserves multiple simple `createAction` declarations found in one source
+input. This capability is source-in/source-out and is not yet a project
+scanner or CLI command.
 
 It does not yet resolve imports, aliases, barrels or symbols across files, and
-it does not detect slices, listeners or dispatches.
+it does not detect slices or dispatches. Listener detection currently requires
+the event declaration and listener registration to be statically identifiable
+in the same source input.
 
 The next vertical detector capabilities are planned in this order:
 
