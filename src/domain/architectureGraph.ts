@@ -35,12 +35,12 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
       nodes.push(node);
     },
     addEdge(edge) {
-      if (edge.kind === "LISTENS_TO") {
+      if (edge.kind === "LISTENS_TO" || edge.kind === "DISPATCHES") {
         const sourceNode = nodes.find((node) => node.id === edge.source);
         const targetNode = nodes.find((node) => node.id === edge.target);
 
         if (sourceNode?.kind !== "Handler" || targetNode?.kind !== "Event") {
-          throw new Error("LISTENS_TO requires a Handler source and Event target");
+          throw new Error(`${edge.kind} requires a Handler source and Event target`);
         }
       }
 

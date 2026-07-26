@@ -98,4 +98,21 @@ describe("ArchitectureGraph", () => {
       }),
     ).toThrow();
   });
+
+  it("rejects DISPATCHES when the source is not a Handler", () => {
+    const graph = createArchitectureGraph();
+    const eventNode = { id: "event-1", kind: "Event" as const };
+    const handlerNode = { id: "handler-1", kind: "Handler" as const };
+
+    graph.addNode(eventNode);
+    graph.addNode(handlerNode);
+
+    expect(() =>
+      graph.addEdge({
+        source: eventNode.id,
+        target: handlerNode.id,
+        kind: "DISPATCHES",
+      }),
+    ).toThrow();
+  });
 });
