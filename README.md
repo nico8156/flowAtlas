@@ -174,18 +174,29 @@ causal link between the optimistic/outbox branch and the projection branch.
 ## Scope of the first adapter
 
 The first scanner capability is deliberately small. Given TypeScript source
-containing a simple declaration such as:
+containing declarations such as:
 
 ```ts
 const uiLikeToggleRequested = createAction("UI/LIKE/TOGGLE_REQUESTED");
 ```
 
 `scanTypeScriptSource` can produce an `Event` node whose id is derived from the
-declared symbol. This capability is source-in/source-out and is not yet a
-project scanner or CLI command.
+declared symbol. The current AST traversal also preserves multiple simple
+`createAction` declarations found in one source input. This capability is
+source-in/source-out and is not yet a project scanner or CLI command.
 
 It does not yet resolve imports, aliases, barrels or symbols across files, and
 it does not detect slices, listeners or dispatches.
+
+The next vertical detector capabilities are planned in this order:
+
+1. `startListening({ actionCreator })` to connect a `Handler` to an `Event`;
+2. `dispatch(actionCreator())` to produce a `DISPATCHES` edge;
+3. `builder.addCase` to produce an `Event` to `State` update;
+4. source locations and then multi-file symbol resolution.
+
+Each step is developed through one RED/GREEN/REFACTOR cycle and validated with
+a focused fixture before being applied to the Fragments acceptance scenario.
 
 Redux Toolkit is the first analysis target because its conventions provide
 useful static signals. It is an adapter, not the FlowAtlas domain model.

@@ -835,3 +835,124 @@ The full protocol does not need to be repeated in each prompt.
 Maintain `docs/tdd-roadmap.md` as a record of completed work and possible next
 behaviours. The roadmap is informational. It is not permission to implement
 future items, and it never replaces explicit human selection of the next RED.
+
+## TDD Cycle Completion
+
+A TDD cycle is not complete when the test becomes GREEN.
+
+The complete cycle is:
+
+```text
+RED
+↓
+RED_REVIEW
+↓
+GREEN
+↓
+GREEN_REVIEW
+↓
+REFACTOR_REVIEW
+↓
+REFACTOR_EXECUTION, if approved
+↓
+FINAL_VERIFICATION
+↓
+COMMIT
+↓
+PUSH
+↓
+IDLE
+```
+
+The refactoring decision is part of the current TDD cycle. A new RED must
+never begin before the previous cycle has been fully completed and pushed.
+
+### REFACTOR_REVIEW
+
+After every accepted GREEN, perform the refactoring review defined in this
+document.
+
+If no meaningful refactoring is justified, explicitly recommend no
+refactoring, perform final verification, and commit and push the completed
+cycle.
+
+If meaningful refactoring is justified, explain the design pressure, propose
+the smallest useful change, and wait for human approval. After approval,
+execute only that refactoring, verify that behaviour remains unchanged and
+tests remain GREEN, then commit and push the complete cycle.
+
+Refactoring is not a separate feature or TDD cycle. The RED, GREEN
+implementation and approved refactoring form one development unit.
+
+### FINAL_VERIFICATION
+
+Before committing a completed cycle:
+
+1. Run the full relevant test suite.
+2. Run TypeScript type checking.
+3. Run configured lint and format checks when applicable.
+4. Verify that no unrelated files or behaviours changed.
+5. Inspect the Git diff.
+6. Confirm that the diff represents only the current cycle.
+
+If verification fails, do not commit or push. Fix only issues belonging to the
+current cycle. Report pre-existing or unrelated failures instead of modifying
+unrelated code.
+
+### COMMIT AND PUSH
+
+Every completed TDD cycle ends with one Git commit and a push. After final
+verification:
+
+1. Inspect `git status` and the final diff.
+2. Create one concise Conventional Commit for the completed behaviour.
+3. Push the current branch to its configured remote.
+4. Verify that the push succeeded.
+5. Report the commit hash and message.
+6. Confirm that the working tree is clean.
+
+Do not include unrelated changes, force-push, rewrite history or amend a
+previous commit unless explicitly requested.
+
+### Cycle Atomicity
+
+One TDD cycle normally produces one commit:
+
+```text
+RED test
++
+minimum GREEN implementation
++
+approved refactoring
+=
+one completed behaviour
+=
+one commit
+```
+
+Do not commit RED separately from GREEN or approved refactoring.
+
+### Human Checkpoints vs Git Completion
+
+Human approval remains mandatory for:
+
+```text
+RED → GREEN
+GREEN → REFACTOR decision
+proposed significant REFACTOR → execution
+```
+
+Human approval is not required for final verification, commit and push once
+the behaviour and refactoring decision have been accepted. After a successful
+push, return control to the human before starting the next RED.
+
+### Updated Short Command Semantics
+
+- `red N`: start only the RED phase of cycle N;
+- `green`: implement the accepted RED and stop for GREEN review;
+- `refactor?`: perform the refactoring review;
+- explicit refactoring approval: execute it, verify, commit, push, then stop;
+- no refactoring recommended: verify, commit, push, then stop.
+
+The human should not need to request `commit` or `push` for a normal completed
+TDD cycle. Never automatically begin the next cycle.

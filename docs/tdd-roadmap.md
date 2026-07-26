@@ -31,10 +31,30 @@ and developed according to `AGENTS.md`.
 Only the next explicitly selected RED is actionable. These candidates are not
 scheduled work:
 
+- RED 18 - Preserve multiple `createAction` Events in one TypeScript source
+- RED 19 - Detect `startListening({ actionCreator })`
+- RED 20 - Detect `dispatch(actionCreator())` from a Handler
+- RED 21 - Detect `builder.addCase` as an Event-to-State update
+
 ## Later Direction
 
 The scanner acceptance track has now started with a source-in/source-out
 detector. The Fragments Like golden graph remains the later acceptance target.
+
+The intended vertical detection path is:
+
+```text
+createAction
+-> startListening
+-> dispatch
+-> builder.addCase
+-> source locations
+-> imports and symbol resolution
+-> Fragments acceptance slices
+```
+
+Each capability must be validated with a minimal fixture before it is
+validated against the real Fragments codebase.
 
 ## Current State
 
@@ -46,4 +66,6 @@ downstream neighbor queries. RED #11 and RED #12 required regression tests only
 because the existing relation validation already rejected missing nodes as a
 consequence.
 
-The repository is idle until the next RED is explicitly chosen.
+The repository is idle after RED/GREEN #17. RED #18 is the next proposed
+behaviour, but it must still produce a genuine failing test before production
+code is changed.
