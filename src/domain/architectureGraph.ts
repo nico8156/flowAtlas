@@ -32,6 +32,10 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
     nodes,
     edges,
     addNode(node) {
+      if (nodes.some((existingNode) => existingNode.id === node.id)) {
+        return;
+      }
+
       nodes.push(node);
     },
     addEdge(edge) {

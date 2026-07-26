@@ -181,4 +181,15 @@ describe("ArchitectureGraph", () => {
       }),
     ).toThrow();
   });
+
+  it("keeps one node for a given identity", () => {
+    const graph = createArchitectureGraph();
+    const firstNode = { id: "event-1", kind: "Event" as const };
+    const duplicateNode = { id: "event-1", kind: "Event" as const };
+
+    graph.addNode(firstNode);
+    graph.addNode(duplicateNode);
+
+    expect(graph.nodes.filter((node) => node.id === "event-1")).toHaveLength(1);
+  });
 });
