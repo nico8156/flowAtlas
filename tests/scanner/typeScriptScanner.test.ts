@@ -173,4 +173,66 @@ describe("TypeScript scanner", () => {
       kind: "LISTENS_TO",
     });
   });
+
+  it("resolves an aliased import to the correct homonymous module symbol", () => {
+    const graph = scanTypeScriptProject({
+      tsconfig: {
+        compilerOptions: {
+          baseUrl: ".",
+          paths: {
+            "@/*": ["src/*"],
+          },
+        },
+      },
+      files: [
+        {
+          file: "src/tickets/actions.ts",
+          source: `
+            export const refreshed = createAction("TICKETS/REFRESHED");
+          `,
+        },
+        {
+          file: "src/social/actions.ts",
+          source: `
+            export const refreshed = createAction("SOCIAL/REFRESHED");
+          `,
+        },
+        {
+          file: "src/listener.ts",
+          source: `
+            import { refreshed } from "@/social/actions";
+            const refreshListener = startListening({
+              actionCreator: refreshed,
+              effect: async () => {},
+            });
+          `,
+        },
+      ],
+    });
+
+    const socialEvent = graph.nodes.find(
+      (node) => node.kind === "Event" && node.sourceLocation?.file === "src/social/actions.ts",
+    );
+    const ticketsEvent = graph.nodes.find(
+      (node) => node.kind === "Event" && node.sourceLocation?.file === "src/tickets/actions.ts",
+    );
+
+    expect(socialEvent).toBeDefined();
+    expect(ticketsEvent).toBeDefined();
+
+    if (!socialEvent || !ticketsEvent) {
+      return;
+    }
+
+    expect(graph.edges).toContainEqual({
+      source: "refreshListener",
+      target: socialEvent.id,
+      kind: "LISTENS_TO",
+    });
+    expect(graph.edges).not.toContainEqual({
+      source: "refreshListener",
+      target: ticketsEvent.id,
+      kind: "LISTENS_TO",
+    });
+  });
 });

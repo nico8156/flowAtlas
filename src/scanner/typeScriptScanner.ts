@@ -5,17 +5,13 @@ import {
   type ArchitectureGraph,
   type SourceLocation,
 } from "../domain/architectureGraph.js";
-
-type TypeScriptSource = {
-  file: string;
-  source: string;
-};
-
-type TypeScriptProject = {
-  files: TypeScriptSource[];
-};
-
-type SymbolAliases = ReadonlyMap<string, string>;
+import {
+  resolveProjectSymbols,
+  type EventIds,
+  type SymbolBindings,
+  type TypeScriptProject,
+  type TypeScriptSource,
+} from "./projectSymbolResolver.js";
 
 type VariableCall = {
   id: string;
@@ -35,34 +31,14 @@ const getVariableCall = (node: ts.Node): VariableCall | undefined => {
   return { id: node.name.text, call: node.initializer };
 };
 
-const getImportAliases = (sourceFile: ts.SourceFile): Map<string, string> => {
-  const aliases = new Map<string, string>();
-
-  for (const statement of sourceFile.statements) {
-    if (
-      !ts.isImportDeclaration(statement) ||
-      !statement.importClause ||
-      !statement.importClause.namedBindings ||
-      !ts.isNamedImports(statement.importClause.namedBindings)
-    ) {
-      continue;
-    }
-
-    for (const element of statement.importClause.namedBindings.elements) {
-      aliases.set(element.name.text, element.propertyName?.text ?? element.name.text);
-    }
-  }
-
-  return aliases;
-};
-
 const createTypeScriptSourceFile = (fileName: string, source: string): ts.SourceFile =>
   ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 
 const scanSourceIntoGraph = (
   { file, source }: TypeScriptSource,
   graph: ArchitectureGraph,
-  aliases: SymbolAliases = new Map(),
+  bindings: SymbolBindings = new Map(),
+  eventIds: EventIds = new Map(),
 ): void => {
   const sourceFile = createTypeScriptSourceFile("flowatlas-input.ts", source);
 
@@ -77,7 +53,11 @@ const scanSourceIntoGraph = (
       const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
       const sourceLocation: SourceLocation = { file, line };
 
-      graph.addNode({ id: variableCall.id, kind: "Event", sourceLocation });
+      graph.addNode({
+        id: eventIds.get(`${file.replaceAll("\\", "/")}#${variableCall.id}`) ?? variableCall.id,
+        kind: "Event",
+        sourceLocation,
+      });
     }
 
     if (
@@ -101,7 +81,7 @@ const scanSourceIntoGraph = (
           graph.addEdge({
             source: handlerId,
             target:
-              aliases.get(actionCreatorProperty.initializer.text) ??
+              bindings.get(actionCreatorProperty.initializer.text) ??
               actionCreatorProperty.initializer.text,
             kind: "LISTENS_TO",
           });
@@ -130,7 +110,7 @@ const scanSourceIntoGraph = (
                 graph.addEdge({
                   source: handlerId,
                   target:
-                    aliases.get(dispatchedAction.expression.text) ??
+                    bindings.get(dispatchedAction.expression.text) ??
                     dispatchedAction.expression.text,
                   kind: "DISPATCHES",
                 });
@@ -172,7 +152,7 @@ const scanSourceIntoGraph = (
               const handledEvent = reducerNode.arguments[0];
               if (handledEvent && ts.isIdentifier(handledEvent)) {
                 graph.addEdge({
-                  source: aliases.get(handledEvent.text) ?? handledEvent.text,
+                  source: bindings.get(handledEvent.text) ?? handledEvent.text,
                   target: stateId,
                   kind: "UPDATES",
                 });
@@ -199,13 +179,17 @@ export const scanTypeScriptSource = (input: TypeScriptSource): ArchitectureGraph
   return graph;
 };
 
-export const scanTypeScriptProject = ({ files }: TypeScriptProject): ArchitectureGraph => {
+export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureGraph => {
   const graph = createArchitectureGraph();
+  const resolution = resolveProjectSymbols(project);
 
-  for (const file of files) {
-    const sourceFile = createTypeScriptSourceFile(file.file, file.source);
-
-    scanSourceIntoGraph(file, graph, getImportAliases(sourceFile));
+  for (const file of project.files) {
+    scanSourceIntoGraph(
+      file,
+      graph,
+      resolution.bindingsByFile.get(file.file) ?? new Map(),
+      resolution.eventIds,
+    );
   }
 
   return graph;
