@@ -693,3 +693,145 @@ A TDD iteration is complete only when:
 - no unrelated behaviour was added.
 
 Then, and only then, begin the next RED.
+
+---
+
+# 25. TDD Interaction Protocol
+
+All development work follows this state machine:
+
+```text
+IDLE
+  ↓
+RED_REQUESTED
+  ↓
+RED_REVIEW
+  ↓
+GREEN_REQUESTED
+  ↓
+GREEN_REVIEW
+  ↓
+REFACTOR_REVIEW
+  ↓
+IDLE
+```
+
+## RED_REQUESTED
+
+When the human asks for a new RED:
+
+1. Inspect the current code and tests.
+2. Identify the smallest requested behaviour.
+3. Write exactly one focused failing test.
+4. Run the smallest relevant test scope.
+5. Confirm that the failure is caused by the missing behaviour.
+
+Then stop.
+
+Report only:
+
+- the test added;
+- the behaviour it specifies;
+- the failing result;
+- why the failure is correct;
+- the smallest design pressure revealed.
+
+Do not write production code, refactor, or create the next test.
+
+If the requested behaviour is already satisfied, report that fact honestly.
+Do not manufacture a RED by weakening the test or inventing an unrelated API.
+
+## GREEN_REQUESTED
+
+When the human validates a RED and asks for GREEN:
+
+1. Re-read the accepted test.
+2. Implement the minimum production code required to satisfy it.
+3. Run the focused test.
+4. Run the relevant existing suite.
+5. Confirm GREEN.
+
+Then stop.
+
+Report:
+
+- production code added or changed;
+- test results;
+- why the implementation is minimal;
+- architectural pressure or smell revealed.
+
+Do not begin the next RED or apply significant refactoring automatically.
+
+## REFACTOR_REVIEW
+
+After GREEN, evaluate whether refactoring is justified:
+
+- Is there real duplication?
+- Is responsibility misplaced?
+- Is framework terminology leaking inward?
+- Is an abstraction now justified by evidence?
+- Is the code harder to understand than the behaviour requires?
+
+If no meaningful refactoring is justified, recommend no refactoring.
+
+If a meaningful refactoring exists:
+
+- describe the smell;
+- propose the smallest refactoring;
+- explain the benefit;
+- explain the risk.
+
+Do not apply significant refactoring without human approval.
+
+## REFACTOR_EXECUTION
+
+Only after explicit human approval:
+
+1. Apply the agreed refactoring.
+2. Change no behaviour.
+3. Run the relevant suite.
+4. Confirm that all tests remain GREEN.
+
+Then stop.
+
+## Human Control
+
+The human collaborator owns transitions between TDD states.
+
+The agent must never autonomously perform:
+
+```text
+RED → GREEN
+GREEN → next RED
+REFACTOR proposal → execution
+```
+
+without explicit approval.
+
+One TDD state transition equals one interaction checkpoint.
+
+## Behaviour Scope
+
+Each RED describes one meaningful behaviour only. If a request contains
+several rules, split them into separate future REDs unless the human explicitly
+chooses otherwise.
+
+Do not anticipate documented roadmap concepts. The current accepted test is
+the design constraint.
+
+## Default Short Commands
+
+Interpret these short commands as follows:
+
+- `red N`: start the next agreed TDD behaviour in RED mode;
+- `green`: implement the minimum code required by the accepted RED;
+- `refactor?`: perform `REFACTOR_REVIEW` only;
+- an explicit refactoring approval: execute only that refactoring and verify GREEN.
+
+The full protocol does not need to be repeated in each prompt.
+
+## Living TDD Roadmap
+
+Maintain `docs/tdd-roadmap.md` as a record of completed work and possible next
+behaviours. The roadmap is informational. It is not permission to implement
+future items, and it never replaces explicit human selection of the next RED.
