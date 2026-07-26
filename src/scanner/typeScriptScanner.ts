@@ -11,6 +11,10 @@ type TypeScriptSource = {
   source: string;
 };
 
+type TypeScriptProject = {
+  files: TypeScriptSource[];
+};
+
 type VariableCall = {
   id: string;
   call: ts.CallExpression;
@@ -29,8 +33,10 @@ const getVariableCall = (node: ts.Node): VariableCall | undefined => {
   return { id: node.name.text, call: node.initializer };
 };
 
-export const scanTypeScriptSource = ({ file, source }: TypeScriptSource): ArchitectureGraph => {
-  const graph = createArchitectureGraph();
+const scanSourceIntoGraph = (
+  { file, source }: TypeScriptSource,
+  graph: ArchitectureGraph,
+): void => {
   const sourceFile = ts.createSourceFile(
     "flowatlas-input.ts",
     source,
@@ -160,5 +166,20 @@ export const scanTypeScriptSource = ({ file, source }: TypeScriptSource): Archit
   };
 
   visit(sourceFile);
+};
+
+export const scanTypeScriptSource = (input: TypeScriptSource): ArchitectureGraph => {
+  const graph = createArchitectureGraph();
+  scanSourceIntoGraph(input, graph);
+  return graph;
+};
+
+export const scanTypeScriptProject = ({ files }: TypeScriptProject): ArchitectureGraph => {
+  const graph = createArchitectureGraph();
+
+  for (const file of files) {
+    scanSourceIntoGraph(file, graph);
+  }
+
   return graph;
 };

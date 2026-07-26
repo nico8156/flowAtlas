@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { scanTypeScriptSource } from "../../src/scanner/typeScriptScanner.js";
+import {
+  scanTypeScriptProject,
+  scanTypeScriptSource,
+} from "../../src/scanner/typeScriptScanner.js";
 
 describe("TypeScript scanner", () => {
   it("detects an Event declared with createAction", async () => {
@@ -104,6 +107,41 @@ describe("TypeScript scanner", () => {
         file,
         line: 2,
       },
+    });
+  });
+
+  it("aggregates a simple cross-file topology", () => {
+    const graph = scanTypeScriptProject({
+      files: [
+        {
+          file: "src/social/actions.ts",
+          source: `
+            export const uiLikeToggleRequested = createAction("UI/LIKE/TOGGLE_REQUESTED");
+          `,
+        },
+        {
+          file: "src/social/listener.ts",
+          source: `
+            import { uiLikeToggleRequested } from "./actions";
+            const submitLikeListener = startListening({
+              actionCreator: uiLikeToggleRequested,
+              effect: async () => {},
+            });
+          `,
+        },
+      ],
+    });
+
+    expect(graph.nodes).toContainEqual(
+      expect.objectContaining({
+        id: "uiLikeToggleRequested",
+        kind: "Event",
+      }),
+    );
+    expect(graph.edges).toContainEqual({
+      source: "submitLikeListener",
+      target: "uiLikeToggleRequested",
+      kind: "LISTENS_TO",
     });
   });
 });

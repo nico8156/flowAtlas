@@ -28,6 +28,7 @@ and developed according to `AGENTS.md`.
 - [x] RED 19 - Detect `startListening({ actionCreator })`
 - [x] RED 20 - Detect `dispatch(actionCreator())` from a Handler
 - [x] RED 22 - Preserve source location on a detected Event
+- [x] RED 23 - Aggregate a simple cross-file topology
 
 ## Near-Term Candidate Behaviours
 
@@ -68,7 +69,8 @@ retain a file/line source location on an edge, and supports direct upstream and
 downstream neighbor queries. The source scanner detects simple `createAction`
 Events with source locations, `startListening({ actionCreator })`
 Handler/listener relationships, and simple `api.dispatch(actionCreator())`
-dispatch relationships.
+dispatch relationships. The scanner can aggregate multiple source inputs, but
+it does not yet verify import targets through symbol resolution.
 RED #11 and RED #12 required regression tests only because the existing
 relation validation already rejected missing nodes as a consequence.
 
