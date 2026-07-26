@@ -29,6 +29,7 @@ export type ArchitectureGraph = {
   addNode(node: ArchitectureNode): void;
   addEdge(edge: ArchitectureEdge): void;
   downstream(nodeId: string): readonly ArchitectureNode[];
+  upstream(nodeId: string): readonly ArchitectureNode[];
 };
 
 const relationNodeKinds: Record<RelationKind, {
@@ -98,6 +99,22 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
       }
 
       return downstreamNodes;
+    },
+    upstream(nodeId) {
+      const upstreamNodes: ArchitectureNode[] = [];
+
+      for (const edge of edges) {
+        if (edge.target !== nodeId) {
+          continue;
+        }
+
+        const sourceNode = nodes.find((node) => node.id === edge.source);
+        if (sourceNode) {
+          upstreamNodes.push(sourceNode);
+        }
+      }
+
+      return upstreamNodes;
     },
   };
 };

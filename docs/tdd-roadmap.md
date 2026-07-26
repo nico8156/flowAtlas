@@ -22,20 +22,19 @@ and developed according to `AGENTS.md`.
 - [x] RED 12 - Reject an edge whose target is not in the graph
 - [x] RED 13 - Define the behavior for duplicate node identities
 - [x] RED 14 - Preserve source location on a relation
+- [x] RED 15 - Support `downstream`
+- [x] RED 16 - Support `upstream`
 
 ## Near-Term Candidate Behaviours
 
 Only the next explicitly selected RED is actionable. These candidates are not
 scheduled work:
 
-- [ ] RED 15 - Support `downstream`
-
 ## Later Direction
 
 These items preserve the intended direction without freezing the design or
 authorizing implementation:
 
-- RED 16 - Support `upstream`
 - RED 17 - Detect one `createAction` Event from a TypeScript fixture
 
 The scanner acceptance track begins only after the graph invariants and
@@ -44,11 +43,12 @@ remains the later acceptance target.
 
 ## Current State
 
-The last completed cycle is RED/GREEN #14. The graph now has the minimal V1
+The last completed cycle is RED/GREEN #16. The graph now has the minimal V1
 vocabulary, validates the four relation direction/kind combinations, rejects
-edges whose referenced nodes are absent, preserves unique node identities, and
-can retain a file/line source location on an edge. RED #11 and RED #12 required
-regression tests only because the existing relation validation already rejected
-missing nodes as a consequence.
+edges whose referenced nodes are absent, preserves unique node identities, can
+retain a file/line source location on an edge, and supports direct upstream and
+downstream neighbor queries. RED #11 and RED #12 required regression tests only
+because the existing relation validation already rejected missing nodes as a
+consequence.
 
 The repository is idle until the next RED is explicitly chosen.

@@ -229,4 +229,20 @@ describe("ArchitectureGraph", () => {
 
     expect(graph.downstream(handlerNode.id)).toEqual([eventNode]);
   });
+
+  it("returns the known upstream nodes", () => {
+    const graph = createArchitectureGraph();
+    const handlerNode = { id: "handler-1", kind: "Handler" as const };
+    const eventNode = { id: "event-1", kind: "Event" as const };
+
+    graph.addNode(handlerNode);
+    graph.addNode(eventNode);
+    graph.addEdge({
+      source: handlerNode.id,
+      target: eventNode.id,
+      kind: "LISTENS_TO",
+    });
+
+    expect(graph.upstream(eventNode.id)).toEqual([handlerNode]);
+  });
 });
