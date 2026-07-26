@@ -20,14 +20,14 @@ and developed according to `AGENTS.md`.
 - [x] RED 10 - Validate `CALLS_EXTERNAL` from `Handler` to `External`
 - [x] RED 11 - Reject an edge whose source is not in the graph
 - [x] RED 12 - Reject an edge whose target is not in the graph
+- [x] RED 13 - Define the behavior for duplicate node identities
+- [x] RED 14 - Preserve source location on a relation
 
 ## Near-Term Candidate Behaviours
 
 Only the next explicitly selected RED is actionable. These candidates are not
 scheduled work:
 
-- [ ] RED 13 - Define the behavior for duplicate node identities
-- [ ] RED 14 - Preserve source location on a relation
 - [ ] RED 15 - Support `downstream`
 
 ## Later Direction
@@ -44,9 +44,10 @@ remains the later acceptance target.
 
 ## Current State
 
-The last completed cycle is RED/GREEN #12. The graph now has the minimal V1
-vocabulary, validates the four relation direction/kind combinations, and
-rejects edges whose referenced nodes are absent. RED #11 and RED #12 required
+The last completed cycle is RED/GREEN #14. The graph now has the minimal V1
+vocabulary, validates the four relation direction/kind combinations, rejects
+edges whose referenced nodes are absent, preserves unique node identities, and
+can retain a file/line source location on an edge. RED #11 and RED #12 required
 regression tests only because the existing relation validation already rejected
 missing nodes as a consequence.
 

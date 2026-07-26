@@ -192,4 +192,25 @@ describe("ArchitectureGraph", () => {
 
     expect(graph.nodes.filter((node) => node.id === "event-1")).toHaveLength(1);
   });
+
+  it("can preserve a source location on a relation", () => {
+    const graph = createArchitectureGraph();
+    const handlerNode = { id: "handler-1", kind: "Handler" as const };
+    const eventNode = { id: "event-1", kind: "Event" as const };
+    const edge = {
+      source: handlerNode.id,
+      target: eventNode.id,
+      kind: "LISTENS_TO" as const,
+      sourceLocation: {
+        file: "src/processOutbox.ts",
+        line: 67,
+      },
+    };
+
+    graph.addNode(handlerNode);
+    graph.addNode(eventNode);
+    graph.addEdge(edge);
+
+    expect(graph.edges).toContainEqual(edge);
+  });
 });

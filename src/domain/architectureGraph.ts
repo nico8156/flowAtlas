@@ -11,10 +11,16 @@ export type ArchitectureNode = {
   kind: NodeKind;
 };
 
+export type SourceLocation = {
+  file: string;
+  line: number;
+};
+
 export type ArchitectureEdge = {
   source: string;
   target: string;
   kind: RelationKind;
+  sourceLocation?: SourceLocation;
 };
 
 export type ArchitectureGraph = {
