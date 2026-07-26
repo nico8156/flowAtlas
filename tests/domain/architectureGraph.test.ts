@@ -30,4 +30,23 @@ describe("ArchitectureGraph", () => {
     expect(graph.nodes).toContain(firstNode);
     expect(graph.nodes).toContain(secondNode);
   });
+
+  it("can contain a directed relation between two existing nodes", () => {
+    const graph = createArchitectureGraph();
+    const sourceNode = { id: "node-a" };
+    const targetNode = { id: "node-b" };
+
+    graph.addNode(sourceNode);
+    graph.addNode(targetNode);
+    graph.addEdge({ source: sourceNode.id, target: targetNode.id });
+
+    expect(graph.edges).toContainEqual({
+      source: sourceNode.id,
+      target: targetNode.id,
+    });
+    expect(graph.edges).not.toContainEqual({
+      source: targetNode.id,
+      target: sourceNode.id,
+    });
+  });
 });
