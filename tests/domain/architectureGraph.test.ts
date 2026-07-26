@@ -18,4 +18,16 @@ describe("ArchitectureGraph", () => {
 
     expect(graph.nodes).toContain(node);
   });
+
+  it("can contain multiple independent nodes", () => {
+    const graph = createArchitectureGraph();
+    const firstNode = { id: "node-1" };
+    const secondNode = { id: "node-2" };
+
+    graph.addNode(firstNode);
+    graph.addNode(secondNode);
+
+    expect(graph.nodes).toContain(firstNode);
+    expect(graph.nodes).toContain(secondNode);
+  });
 });
