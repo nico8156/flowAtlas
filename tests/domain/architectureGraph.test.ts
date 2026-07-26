@@ -33,7 +33,7 @@ describe("ArchitectureGraph", () => {
 
   it("can contain a directed relation between two existing nodes", () => {
     const graph = createArchitectureGraph();
-    const sourceNode = { id: "node-a", kind: "Event" as const };
+    const sourceNode = { id: "node-a", kind: "Handler" as const };
     const targetNode = { id: "node-b", kind: "Event" as const };
 
     graph.addNode(sourceNode);
@@ -58,7 +58,7 @@ describe("ArchitectureGraph", () => {
 
   it("can identify the architectural kind of a relation", () => {
     const graph = createArchitectureGraph();
-    const sourceNode = { id: "node-a", kind: "Event" as const };
+    const sourceNode = { id: "node-a", kind: "Handler" as const };
     const targetNode = { id: "node-b", kind: "Event" as const };
     const edge = {
       source: sourceNode.id,
@@ -80,5 +80,22 @@ describe("ArchitectureGraph", () => {
     graph.addNode(eventNode);
 
     expect(graph.nodes).toContainEqual(eventNode);
+  });
+
+  it("rejects LISTENS_TO when the source is not a Handler", () => {
+    const graph = createArchitectureGraph();
+    const eventNode = { id: "event-1", kind: "Event" as const };
+    const handlerNode = { id: "handler-1", kind: "Handler" as const };
+
+    graph.addNode(eventNode);
+    graph.addNode(handlerNode);
+
+    expect(() =>
+      graph.addEdge({
+        source: eventNode.id,
+        target: handlerNode.id,
+        kind: "LISTENS_TO",
+      }),
+    ).toThrow();
   });
 });
