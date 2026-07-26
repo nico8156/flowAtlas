@@ -59,4 +59,31 @@ describe("TypeScript scanner", () => {
       kind: "DISPATCHES",
     });
   });
+
+  it("detects a State updated by an Event", () => {
+    const file = "tests/fixtures/slice.ts";
+    const source = `
+      const likeAccepted = createAction("LIKE/ACCEPTED");
+      const socialSlice = createSlice({
+        name: "social",
+        initialState: {},
+        reducers: {},
+        extraReducers: (builder) => {
+          builder.addCase(likeAccepted, (state) => state);
+        },
+      });
+    `;
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.nodes).toContainEqual({
+      id: "socialSlice",
+      kind: "State",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "likeAccepted",
+      target: "socialSlice",
+      kind: "UPDATES",
+    });
+  });
 });
