@@ -149,4 +149,20 @@ describe("ArchitectureGraph", () => {
       }),
     ).toThrow();
   });
+
+  it("rejects an edge whose source is not in the graph", () => {
+    const graph = createArchitectureGraph();
+    const missingSourceId = "missing-handler";
+    const eventNode = { id: "event-1", kind: "Event" as const };
+
+    graph.addNode(eventNode);
+
+    expect(() =>
+      graph.addEdge({
+        source: missingSourceId,
+        target: eventNode.id,
+        kind: "LISTENS_TO",
+      }),
+    ).toThrow();
+  });
 });
