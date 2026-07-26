@@ -9,6 +9,7 @@ export type NodeKind = "Event" | "Handler" | "State" | "External";
 export type ArchitectureNode = {
   id: string;
   kind: NodeKind;
+  sourceLocation?: SourceLocation;
 };
 
 export type SourceLocation = {

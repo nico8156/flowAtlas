@@ -1,6 +1,10 @@
 import * as ts from "typescript";
 
-import { createArchitectureGraph, type ArchitectureGraph } from "../domain/architectureGraph.js";
+import {
+  createArchitectureGraph,
+  type ArchitectureGraph,
+  type SourceLocation,
+} from "../domain/architectureGraph.js";
 
 type TypeScriptSource = {
   file: string;
@@ -25,7 +29,7 @@ const getVariableCall = (node: ts.Node): VariableCall | undefined => {
   return { id: node.name.text, call: node.initializer };
 };
 
-export const scanTypeScriptSource = ({ source }: TypeScriptSource): ArchitectureGraph => {
+export const scanTypeScriptSource = ({ file, source }: TypeScriptSource): ArchitectureGraph => {
   const graph = createArchitectureGraph();
   const sourceFile = ts.createSourceFile(
     "flowatlas-input.ts",
@@ -43,7 +47,10 @@ export const scanTypeScriptSource = ({ source }: TypeScriptSource): Architecture
       ts.isIdentifier(variableCall.call.expression) &&
       variableCall.call.expression.text === "createAction"
     ) {
-      graph.addNode({ id: variableCall.id, kind: "Event" });
+      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+      const sourceLocation: SourceLocation = { file, line };
+
+      graph.addNode({ id: variableCall.id, kind: "Event", sourceLocation });
     }
 
     if (

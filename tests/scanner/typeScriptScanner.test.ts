@@ -9,10 +9,12 @@ describe("TypeScript scanner", () => {
 
     const graph = scanTypeScriptSource({ file, source });
 
-    expect(graph.nodes).toContainEqual({
-      id: "uiLikeToggleRequested",
-      kind: "Event",
-    });
+    expect(graph.nodes).toContainEqual(
+      expect.objectContaining({
+        id: "uiLikeToggleRequested",
+        kind: "Event",
+      }),
+    );
   });
 
   it("detects a Handler listening to an Event", () => {
@@ -84,6 +86,24 @@ describe("TypeScript scanner", () => {
       source: "likeAccepted",
       target: "socialSlice",
       kind: "UPDATES",
+    });
+  });
+
+  it("preserves the source location of a detected Event", () => {
+    const file = "src/social/actions.ts";
+    const source = `
+      const likeAccepted = createAction("LIKE/ACCEPTED");
+    `;
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.nodes).toContainEqual({
+      id: "likeAccepted",
+      kind: "Event",
+      sourceLocation: {
+        file,
+        line: 2,
+      },
     });
   });
 });

@@ -27,6 +27,7 @@ and developed according to `AGENTS.md`.
 - [x] RED 17 - Detect one `createAction` Event from a TypeScript fixture
 - [x] RED 19 - Detect `startListening({ actionCreator })`
 - [x] RED 20 - Detect `dispatch(actionCreator())` from a Handler
+- [x] RED 22 - Preserve source location on a detected Event
 
 ## Near-Term Candidate Behaviours
 
@@ -65,8 +66,9 @@ vocabulary, validates the four relation direction/kind combinations, rejects
 edges whose referenced nodes are absent, preserves unique node identities, can
 retain a file/line source location on an edge, and supports direct upstream and
 downstream neighbor queries. The source scanner detects simple `createAction`
-Events, `startListening({ actionCreator })` Handler/listener relationships, and
-simple `api.dispatch(actionCreator())` dispatch relationships.
+Events with source locations, `startListening({ actionCreator })`
+Handler/listener relationships, and simple `api.dispatch(actionCreator())`
+dispatch relationships.
 RED #11 and RED #12 required regression tests only because the existing
 relation validation already rejected missing nodes as a consequence.
 

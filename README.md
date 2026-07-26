@@ -184,8 +184,8 @@ const uiLikeToggleRequested = createAction("UI/LIKE/TOGGLE_REQUESTED");
 declared symbol. It can also detect a simple `startListening` declaration and
 produce its `Handler` plus `LISTENS_TO` edge. The current AST traversal also
 preserves multiple simple `createAction` declarations found in one source
-input. This capability is source-in/source-out and is not yet a project
-scanner or CLI command.
+input. Detected Events now retain their source file and line. This capability
+is source-in/source-out and is not yet a project scanner or CLI command.
 
 It does not yet resolve imports, aliases, barrels or symbols across files, and
 it does not detect slices. Listener and dispatch detection currently require
