@@ -86,4 +86,41 @@ describe("Graph projection", () => {
     expect(graph.nodes).toHaveLength(4);
     expect(graph.edges).toEqual(edges);
   });
+
+  it("limits a downstream projection by depth", () => {
+    const graph = createArchitectureGraph();
+    const nodes = [
+      { id: "uiTicketSubmitRequested", kind: "Event" as const },
+      { id: "ticketSubmitUseCaseFactory", kind: "Handler" as const },
+      { id: "ticketOptimisticCreated", kind: "Event" as const },
+      { id: "tState", kind: "State" as const },
+    ];
+    const edges = [
+      {
+        source: "ticketSubmitUseCaseFactory",
+        target: "uiTicketSubmitRequested",
+        kind: "LISTENS_TO" as const,
+      },
+      {
+        source: "ticketSubmitUseCaseFactory",
+        target: "ticketOptimisticCreated",
+        kind: "DISPATCHES" as const,
+      },
+      {
+        source: "ticketOptimisticCreated",
+        target: "tState",
+        kind: "UPDATES" as const,
+      },
+    ];
+    nodes.forEach((node) => graph.addNode(node));
+    edges.forEach((edge) => graph.addEdge(edge));
+
+    const projection = projectDownstream(graph, "uiTicketSubmitRequested", { maxDepth: 1 });
+
+    expect(projection.nodes.map((node) => node.id)).toEqual([
+      "uiTicketSubmitRequested",
+      "ticketSubmitUseCaseFactory",
+    ]);
+    expect(projection.edges).toEqual([edges[0]]);
+  });
 });
