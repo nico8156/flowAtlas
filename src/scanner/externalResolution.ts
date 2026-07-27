@@ -190,6 +190,47 @@ const externalSupportsMethod = (
   return supportsMethod;
 };
 
+const getExternalProperties = (
+  typeNode: ts.TypeNode | undefined,
+  graph: ArchitectureGraph,
+  sourceFile: ts.SourceFile,
+  sourceFiles: readonly ts.SourceFile[],
+): Array<[string, string[]]> => {
+  const typeLiteral = typeNode && ts.isTypeLiteralNode(typeNode) ? typeNode : undefined;
+  const typeReferenceName =
+    typeNode && ts.isTypeReferenceNode(typeNode) && ts.isIdentifier(typeNode.typeName)
+      ? typeNode.typeName.text
+      : undefined;
+  const typeAlias = typeReferenceName
+    ? sourceFiles
+        .flatMap((candidate) => [...candidate.statements])
+        .find(
+          (statement): statement is ts.TypeAliasDeclaration =>
+            ts.isTypeAliasDeclaration(statement) && statement.name.text === typeReferenceName,
+        )
+    : undefined;
+  const members =
+    typeLiteral?.members ??
+    (typeAlias && ts.isTypeLiteralNode(typeAlias.type) ? typeAlias.type.members : undefined);
+
+  if (!members) return [];
+
+  return members.flatMap((member): Array<[string, string[]]> => {
+    if (!ts.isPropertySignature(member) || !member.name || !ts.isIdentifier(member.name)) {
+      return [];
+    }
+
+    const externalIds = getExternalTypeNames(
+      member.type,
+      graph,
+      sourceFile,
+      new Set(),
+      sourceFiles,
+    );
+    return externalIds.length > 0 ? [[member.name.text, externalIds]] : [];
+  });
+};
+
 export const getExternalParametersPassedToFunction = (
   call: ts.CallExpression,
   sourceFile: ts.SourceFile,
@@ -254,18 +295,17 @@ export const getExternalParametersPassedToFunction = (
   return passedExternalParameters;
 };
 
-export const getExternalIdsCalledByFunction = (
+const getExternalIdsCalledByResolvedFunction = (
   sourceFile: ts.SourceFile,
   graph: ArchitectureGraph,
   functionName: string,
+  functionLike: FunctionLike,
   visitedFunctions = new Set<string>(),
   inheritedExternalParameters = new Map<string, string[]>(),
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
 ): string[] => {
   if (visitedFunctions.has(functionName)) return [];
   visitedFunctions.add(functionName);
-  const functionLike = findFunctionLike(sourceFile, functionName, sourceFiles);
-  if (!functionLike) return [];
   const { parameters, body } = functionLike;
   const externalParameters = new Map<string, string[]>();
   for (const [parameterKey, externalIds] of inheritedExternalParameters) {
@@ -283,24 +323,14 @@ export const getExternalIdsCalledByFunction = (
     if (ts.isIdentifier(parameter.name) && externalTypeNames.length > 0) {
       externalParameters.set(parameter.name.text, externalTypeNames);
     }
-    if (ts.isIdentifier(parameter.name) && parameter.type && ts.isTypeLiteralNode(parameter.type)) {
-      for (const member of parameter.type.members) {
-        if (!ts.isPropertySignature(member) || !member.name || !ts.isIdentifier(member.name)) {
-          continue;
-        }
-        const memberExternalTypeNames = getExternalTypeNames(
-          member.type,
-          graph,
-          sourceFile,
-          new Set(),
-          sourceFiles,
-        );
-        if (memberExternalTypeNames.length > 0) {
-          externalParameters.set(
-            `${parameter.name.text}.${member.name.text}`,
-            memberExternalTypeNames,
-          );
-        }
+    if (ts.isIdentifier(parameter.name) && parameter.type) {
+      for (const [propertyName, externalIds] of getExternalProperties(
+        parameter.type,
+        graph,
+        sourceFile,
+        sourceFiles,
+      )) {
+        externalParameters.set(`${parameter.name.text}.${propertyName}`, externalIds);
       }
     }
   }
@@ -368,3 +398,44 @@ export const getExternalIdsCalledByFunction = (
   visitBody(body);
   return [...externalIds];
 };
+
+export const getExternalIdsCalledByFunction = (
+  sourceFile: ts.SourceFile,
+  graph: ArchitectureGraph,
+  functionName: string,
+  visitedFunctions = new Set<string>(),
+  inheritedExternalParameters = new Map<string, string[]>(),
+  sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+): string[] => {
+  const functionLike = findFunctionLike(sourceFile, functionName, sourceFiles);
+  if (!functionLike) return [];
+
+  return getExternalIdsCalledByResolvedFunction(
+    sourceFile,
+    graph,
+    functionName,
+    functionLike,
+    visitedFunctions,
+    inheritedExternalParameters,
+    sourceFiles,
+  );
+};
+
+export const getExternalIdsCalledByFunctionLike = (
+  sourceFile: ts.SourceFile,
+  graph: ArchitectureGraph,
+  functionName: string,
+  functionLike: FunctionLike,
+  visitedFunctions = new Set<string>(),
+  inheritedExternalParameters = new Map<string, string[]>(),
+  sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+): string[] =>
+  getExternalIdsCalledByResolvedFunction(
+    sourceFile,
+    graph,
+    functionName,
+    functionLike,
+    visitedFunctions,
+    inheritedExternalParameters,
+    sourceFiles,
+  );

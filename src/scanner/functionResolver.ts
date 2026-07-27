@@ -52,3 +52,23 @@ export const findFunctionLike = (
   }
   return declaration;
 };
+
+export const findReturnedFunctionLike = (
+  sourceFile: ts.SourceFile,
+  functionName: string,
+  sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+): FunctionLike | undefined => {
+  const declaration = findFunctionLike(sourceFile, functionName, sourceFiles);
+  if (!declaration) return undefined;
+
+  if (!ts.isArrowFunction(declaration.body) && !ts.isFunctionExpression(declaration.body)) {
+    return undefined;
+  }
+
+  return {
+    parameters: declaration.body.parameters,
+    body: declaration.body.body,
+    returnType: declaration.returnType,
+    sourceFile: declaration.sourceFile,
+  };
+};

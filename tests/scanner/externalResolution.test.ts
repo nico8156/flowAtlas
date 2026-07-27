@@ -7,6 +7,19 @@ import {
   scanTypeScriptSource,
 } from "../../src/scanner/typeScriptScanner.js";
 describe("External resolution", () => {
+  it("detects a thunk Handler calling an External gateway", async () => {
+    const file = "tests/fixtures/thunkExternalGateway.ts";
+    const source = await readFixture("thunkExternalGateway.ts");
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "likesRetrieval",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+  });
+
   it("detects a gateway interface as an External node", async () => {
     const file = "tests/fixtures/externalGateway.ts";
     const source = await readFixture("externalGateway.ts");

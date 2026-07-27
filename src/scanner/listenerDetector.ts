@@ -3,11 +3,12 @@ import * as ts from "typescript";
 import { type ArchitectureGraph } from "../domain/architectureGraph.js";
 import {
   getExternalIdsCalledByFunction,
+  getExternalIdsCalledByFunctionLike,
   getExternalIdsReturnedByFunction,
   getExternalParametersPassedToFunction,
   getExternalReference,
 } from "./externalResolution.js";
-import { findFunctionLike } from "./functionResolver.js";
+import { findFunctionLike, findReturnedFunctionLike } from "./functionResolver.js";
 import { getResolvedEventId } from "./eventDetector.js";
 import { getExternalProtocolEventId } from "./externalProtocolEvent.js";
 
@@ -341,6 +342,22 @@ export const detectListeners = ({
       (ts.isArrowFunction(node.initializer.body) || ts.isFunctionExpression(node.initializer.body))
     ) {
       graph.addNode({ id: node.name.text, kind: "Handler" });
+      if (collectRelationships) {
+        const returnedFunction = findReturnedFunctionLike(sourceFile, node.name.text, sourceFiles);
+        if (returnedFunction) {
+          for (const externalId of getExternalIdsCalledByFunctionLike(
+            sourceFile,
+            graph,
+            node.name.text,
+            returnedFunction,
+            new Set(),
+            new Map(),
+            sourceFiles,
+          )) {
+            graph.addEdge({ source: node.name.text, target: externalId, kind: "CALLS_EXTERNAL" });
+          }
+        }
+      }
     }
 
     ts.forEachChild(node, visit);
