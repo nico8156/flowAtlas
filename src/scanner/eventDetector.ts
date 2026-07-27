@@ -27,6 +27,24 @@ export const detectEvents = (
       });
     }
 
+    if (
+      ts.isBinaryExpression(node) &&
+      (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ||
+        node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken) &&
+      ts.isPropertyAccessExpression(node.left) &&
+      node.left.name.text === "eventName" &&
+      ts.isStringLiteral(node.right) &&
+      node.right.text === "projection.updated"
+    ) {
+      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+      graph.addNode({
+        id: node.right.text,
+        kind: "Event",
+        source: "external-protocol",
+        sourceLocation: { file, line },
+      });
+    }
+
     ts.forEachChild(node, visit);
   };
 

@@ -2,9 +2,12 @@ export type RelationKind = "LISTENS_TO" | "DISPATCHES" | "UPDATES" | "CALLS_EXTE
 
 export type NodeKind = "Event" | "Handler" | "State" | "External";
 
+export type NodeSource = "redux" | "external-protocol" | "internal";
+
 export type ArchitectureNode = {
   id: string;
   kind: NodeKind;
+  source?: NodeSource;
   sourceLocation?: SourceLocation;
 };
 
