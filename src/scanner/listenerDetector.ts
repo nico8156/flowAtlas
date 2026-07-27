@@ -55,30 +55,23 @@ const addListeningRelationship = (
   });
 };
 
-const addDispatchRelationships = (
+const addDispatchRelationshipsFromBody = (
   graph: ArchitectureGraph,
   handlerId: string,
-  configuration: ts.ObjectLiteralExpression,
+  body: ts.Node,
   bindings: ReadonlyMap<string, string>,
   collectRelationships: boolean,
 ): void => {
   if (!collectRelationships) return;
 
-  const effectProperty = configuration.properties.find(
-    (property): property is ts.PropertyAssignment =>
-      ts.isPropertyAssignment(property) &&
-      ts.isIdentifier(property.name) &&
-      property.name.text === "effect",
-  );
-  if (!effectProperty) return;
-
-  const visitEffect = (effectNode: ts.Node): void => {
+  const visitBody = (bodyNode: ts.Node): void => {
     if (
-      ts.isCallExpression(effectNode) &&
-      ts.isPropertyAccessExpression(effectNode.expression) &&
-      effectNode.expression.name.text === "dispatch"
+      ts.isCallExpression(bodyNode) &&
+      ((ts.isPropertyAccessExpression(bodyNode.expression) &&
+        bodyNode.expression.name.text === "dispatch") ||
+        (ts.isIdentifier(bodyNode.expression) && bodyNode.expression.text === "dispatch"))
     ) {
-      const dispatchedAction = effectNode.arguments[0];
+      const dispatchedAction = bodyNode.arguments[0];
       if (
         dispatchedAction &&
         ts.isCallExpression(dispatchedAction) &&
@@ -91,10 +84,34 @@ const addDispatchRelationships = (
       }
     }
 
-    ts.forEachChild(effectNode, visitEffect);
+    ts.forEachChild(bodyNode, visitBody);
   };
 
-  visitEffect(effectProperty.initializer);
+  visitBody(body);
+};
+
+const addDispatchRelationships = (
+  graph: ArchitectureGraph,
+  handlerId: string,
+  configuration: ts.ObjectLiteralExpression,
+  bindings: ReadonlyMap<string, string>,
+  collectRelationships: boolean,
+): void => {
+  const effectProperty = configuration.properties.find(
+    (property): property is ts.PropertyAssignment =>
+      ts.isPropertyAssignment(property) &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === "effect",
+  );
+  if (!effectProperty) return;
+
+  addDispatchRelationshipsFromBody(
+    graph,
+    handlerId,
+    effectProperty.initializer,
+    bindings,
+    collectRelationships,
+  );
 };
 
 const addInfrastructureListeningRelationship = (
@@ -345,6 +362,13 @@ export const detectListeners = ({
       if (collectRelationships) {
         const returnedFunction = findReturnedFunctionLike(sourceFile, node.name.text, sourceFiles);
         if (returnedFunction) {
+          addDispatchRelationshipsFromBody(
+            graph,
+            node.name.text,
+            returnedFunction.body,
+            bindings,
+            collectRelationships,
+          );
           for (const externalId of getExternalIdsCalledByFunctionLike(
             sourceFile,
             graph,

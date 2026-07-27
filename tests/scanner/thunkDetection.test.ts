@@ -20,4 +20,19 @@ describe("Thunk Handler detection", () => {
       }),
     );
   });
+
+  it("detects an Event dispatched by a thunk Handler", async () => {
+    const source = await readFixture("thunkDispatch.ts");
+
+    const graph = scanTypeScriptSource({
+      file: "tests/fixtures/thunkDispatch.ts",
+      source,
+    });
+
+    expect(graph.edges).toContainEqual({
+      source: "likesRetrieval",
+      target: "likesRetrievalPending",
+      kind: "DISPATCHES",
+    });
+  });
 });
