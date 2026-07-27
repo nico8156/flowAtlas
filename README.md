@@ -18,8 +18,8 @@ runtime instrumentation or application code changes.
 ## Project status
 
 FlowAtlas is currently at the first static TypeScript analysis stage. The
-scanner can already reconstruct the first Like and outbox slices of the real
-Fragments application.
+scanner can already reconstruct the Like, outbox and projection slices of the
+real Fragments application.
 
 | Area                            | Status                               |
 | ------------------------------- | ------------------------------------ |
@@ -33,9 +33,9 @@ Fragments application.
 | Interactive visualizer          | Not started                          |
 | Fragments acceptance tests      | Available when the corpus is present |
 
-The domain graph and analysis capabilities emerge through the TDD workflow
-described below. The repository includes acceptance tests for the Fragments
-Like and outbox slices. The Fragments application itself remains an external
+The domain graph and analysis capabilities emerge through acceptance-driven
+TDD. The repository includes acceptance tests for the Fragments Like, outbox
+and projection slices. The Fragments application itself remains an external
 corpus and is not copied into this repository.
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
@@ -47,6 +47,32 @@ FLOWATLAS_FRAGMENTS_ROOT=../fragmentsCleanFront npm test
 
 When the corpus is unavailable, the acceptance suites are reported as skipped;
 the focused scanner and domain suites remain runnable from a clean checkout.
+
+## Development workflow
+
+A real acceptance test drives a milestone. Its observed gaps produce the
+smallest useful micro-cycles:
+
+```text
+acceptance RED
+    -> Gap Inspector
+    -> micro RED / RED Inspector
+    -> GREEN
+    -> Refactor Inspector
+    -> verification
+    -> commit / push
+    -> replay acceptance
+```
+
+Human review is reserved for product and architecture decisions. Local
+mechanical cycles can proceed automatically when the existing model and
+invariants are sufficient. Detailed workflows live in:
+
+- `.codex/skills/tdd-cycle/SKILL.md`
+- `.codex/skills/acceptance-slice/SKILL.md`
+- `.codex/skills/scanner-development/SKILL.md`
+- `.codex/skills/architecture-review/SKILL.md`
+- `.codex/skills/documentation-roadmap/SKILL.md`
 
 ## Product direction
 

@@ -1,124 +1,138 @@
 # FlowAtlas Roadmap
 
-This document separates delivered work from exploration and long-term
-direction. It is a roadmap, not an implementation checklist or authorization
-to start future work.
+The roadmap defines the destination. The acceptance defines the path. Micro
+REDs build the path.
 
-FlowAtlas remains driven by real code, focused fixtures and one TDD checkpoint
-at a time. A future item becomes actionable only when the human collaborator
-selects its RED.
+Future items are proposals, not implementation permission. Work remains
+acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 
 ## Status At A Glance
 
-| Area                                                  | Status                         |
-| ----------------------------------------------------- | ------------------------------ |
-| Milestone 1 - Core graph                              | Delivered                      |
-| Milestone 2 - Static TypeScript / Redux understanding | Advanced, still being extended |
-| Milestone 3 - Complete Fragments Like architecture    | Next priority                  |
-| Milestones 4-10                                       | Directional roadmap            |
-
-The current repository contains a framework-independent `ArchitectureGraph`, a
-focused TypeScript/Redux Toolkit scanner, 49 automated tests and two Fragments
-acceptance projections. The visualizer and CLI do not exist yet.
+| Milestone                                  | Status                                    |
+| ------------------------------------------ | ----------------------------------------- |
+| 1. Core graph                              | DELIVERED                                 |
+| 2. Static TypeScript / Redux understanding | DELIVERED for the current Fragments scope |
+| 3. Complete Fragments Like architecture    | PROPOSED                                  |
+| 4. Evidence and trust                      | PROPOSED                                  |
+| 5. Graph projections                       | PROPOSED                                  |
+| 6. CLI productization                      | PROPOSED                                  |
+| 7. Visualizer MVP                          | PROPOSED                                  |
+| 8. Broader validation                      | PROPOSED                                  |
+| 9. Diagnostics                             | LONG TERM                                 |
+| 10. Runtime overlay                        | LONG TERM                                 |
 
 ## Delivered History
 
-### Core Graph TDD
+### Milestone 1: Core graph
 
-- [x] RED 1-6 - Empty graph, identifiable nodes, independent nodes, directed
-      edges, `RelationKind` and `NodeKind`
-- [x] RED 7-10 - Validate the four canonical relation directions
-- [x] RED 11-13 - Reject missing endpoints and preserve node identity
-- [x] RED 14 - Preserve source location on a relation
-- [x] RED 15-16 - Support downstream and upstream navigation
+- RED 1-6: empty graph, identifiable nodes, independent nodes, directed edges,
+  `RelationKind` and `NodeKind`.
+- RED 7-10: canonical relation direction invariants.
+- RED 11-13: endpoint validation and node identity.
+- RED 14: source location evidence.
+- RED 15-16: downstream and upstream navigation.
 
-### Static Scanner TDD
+### Milestone 2: Static TypeScript / Redux understanding
 
-- [x] RED 17-18 - Detect one or multiple `createAction` Events
-- [x] RED 19-20 - Detect listeners and statically identifiable dispatches
-- [x] RED 21-22 - Detect reducer/state relationships and Event source locations
-- [x] RED 23-25 - Resolve cross-file, renamed and aliased symbols
-- [x] RED 27-31 - Resolve aliased listeners, dispatches, `createReducer`, store
-      State identity and `addCase` updates
-- [x] RED 32-35 - Ignore unresolved references, remove file-order dependence and
-      preserve visible store State identity
-- [x] RED 37-45 - Detect and resolve External abstractions, bounded internal
-      orchestration, routed gateway possibilities and function-like declarations
+- RED 17-18: one and multiple `createAction` Events.
+- RED 19-20: listeners and statically identifiable dispatches.
+- RED 21-22: reducer/state relationships and source locations.
+- RED 23-25: cross-file, renamed and `tsconfig` alias resolution.
+- RED 27-31: aliased listeners, dispatches, `createReducer`, store State
+  identity and `addCase` updates.
+- RED 32-35: unresolved references, file-order independence and visible store
+  State identity.
+- RED 37-45: External discovery, bounded orchestration, routed gateway
+  possibilities and uniform function-like resolution.
+- RED 50-55: infrastructure callbacks, thunk gateway propagation, project
+  context versus scan scope and shared resolution indexing.
+- RED 56: semantic declaration index built once per scan and function-like
+  resolver migration.
+- Final Fragments projection fix: `AppThunkWl -> ThunkAction -> ExtraArgWl ->
+DependenciesWl -> Partial<GatewaysWl> -> LikeWlGateway`.
 
-The numbering intentionally preserves the historical gaps. The commit history
-contains the detailed sequence of micro-cycles.
+### Acceptance drivers delivered
 
-### Acceptance And Structural Work
+- RED 26: Fragments Like optimistic slice.
+- RED 36: Fragments Like outbox/worker/External slice.
+- RED 49: Fragments projection refresh slice, including
+  `likesRetrieval --CALLS_EXTERNAL--> LikeWlGateway`.
 
-- [x] RED 26 - Fragments Like optimistic slice
-- [x] RED 36 - Fragments Like outbox/worker/External slice
-- [x] Structural refactor - split scanner orchestration, detectors, resolvers
-      and scanner test suites
-- [x] Acceptance integration - version the Fragments projections with a
-      configurable `FLOWATLAS_FRAGMENTS_ROOT`
-- [x] Documentation pass - align doctrine, README and this roadmap with the
-      delivered system
-
-Acceptance tests are projections of the full graph. They assert relevant nodes,
-edges and important absent edges; they do not reject additional topology that
-is statically justified elsewhere in the corpus.
+The acceptance tests are projections of the complete graph. They assert
+relevant nodes, edges and important absent edges, not exhaustive graph
+equality.
 
 ## Milestone 1 - Core Graph
 
-**Status: delivered.**
+**Status: DELIVERED**
 
-Delivered capabilities include:
+### Goal
 
-- `ArchitectureGraph` as the canonical model;
-- identifiable nodes and unique node identity;
-- `Event`, `Handler`, `State` and `External` node kinds;
-- `LISTENS_TO`, `DISPATCHES`, `UPDATES` and `CALLS_EXTERNAL` relation kinds;
-- source/target kind and endpoint invariants;
-- upstream/downstream neighbor traversal;
-- source locations on graph elements;
-- asynchronous gaps represented as valid graph disconnections.
+Provide a framework-independent `ArchitectureGraph` with trustworthy nodes,
+edges and bidirectional navigation.
 
-The graph is not a stored linear Flow structure. A flow remains a traversal or
-projection of the graph.
+### Acceptance driver
+
+Domain behavioural tests for graph construction, invariants and navigation.
+
+### Completion criteria
+
+`ArchitectureGraph` is independent of TypeScript, Redux, filesystem, CLI and
+UI; canonical V1 kinds and relations are explicit; invalid endpoints are
+rejected; upstream/downstream traversal works.
 
 ## Milestone 2 - Static TypeScript / Redux Understanding
 
-**Status: advanced, still being extended.**
+**Status: DELIVERED for the current Fragments scope**
 
-The current adapter supports a deliberately constrained subset:
+### Goal
 
-- `createAction` Events;
-- direct and locally aliased listeners;
-- `DISPATCHES` from statically identifiable action creators;
-- `createSlice`, `createReducer` and `builder.addCase` State updates;
-- relative imports, renamed imports and configured `tsconfig` aliases;
-- multi-file scanning independent of input file order;
-- function-like resolution for declarations, arrows and function expressions;
-- External gateway discovery and bounded propagation through helpers;
-- safe omission of unresolved dispatch and reducer relations.
+Translate a deliberately limited TypeScript/Redux Toolkit vocabulary into the
+canonical graph without turning the scanner into a call graph.
 
-The scanner structure is now explicit: source/project orchestration, separate
-detectors, function resolution, External resolution and project symbol
-resolution. No intermediate fact model or generic call graph has been added.
+### Acceptance driver
 
-Acceptance coverage currently includes:
+Fragments Like optimistic, outbox and projection slices: RED 26, RED 36 and
+RED 49.
 
-1. UI intent -> optimistic update -> Like State;
-2. optimistic command -> outbox -> worker -> `LikeWlGateway`.
+### Delivered capabilities
+
+- `createAction`, listeners, dispatches and reducer/state updates;
+- relative imports, renamed imports and configured aliases;
+- order-independent multi-file analysis;
+- function-like resolution and shared semantic indexing;
+- External discovery and bounded propagation through internal helpers;
+- tolerant omission of unresolved relations;
+- distinction between project TypeScript context and architectural scan scope.
+
+### Decisions
+
+- `ArchitectureGraph` remains the only public architectural model;
+- acceptance scenarios are projections, not complete graph equality;
+- helpers remain metadata/analysis details;
+- no intermediate facts model or generic call graph was introduced.
+
+### Completion criteria
+
+The three Fragments acceptance drivers pass, relevant unit/scanner suites are
+green, and the static graph remains trustworthy under the current V1 scope.
 
 ## Milestone 3 - Complete Fragments Like Architecture
 
-**Status: next priority.**
+**Status: PROPOSED**
 
-The objective is to reconstruct the principal statically observable branches of
-the real Like use case without inventing distributed causality.
+### Goal
 
-Already covered:
+Cover the principal statically observable branches of the real Like use case.
 
-1. UI / optimistic update;
-2. outbox / worker / External boundary.
+### Acceptance driver
 
-Next branch to study:
+Extend the existing Fragments Like acceptance only after inspecting the real
+projection/SSE and retrieval code.
+
+### Known gaps and open design question
+
+The real code contains:
 
 ```text
 projection.updated
@@ -129,164 +143,177 @@ projection.updated
     -> lState
 ```
 
-### Open Design Issue: thunk dispatch
+The thunk `likesRetrieval` behaves architecturally like a Handler but is
+dispatched by another Handler. Do not invent `Handler -> Handler`, misuse
+`DISPATCHES` with a Handler target, or turn every thunk into an Event.
 
-The real code dispatches the thunk `likesRetrieval` from the projection sync
-Handler. The thunk is architecturally close to a Handler, not an Event.
+Possible models to investigate, without adopting one yet:
 
-We must not automatically:
+- a dedicated relation for Handler-to-Handler invocation;
+- orchestration detail retained in evidence while consequences remain visible;
+- a Command/Intent concept if repeated real cases justify it;
+- a simplified projection with the transition omitted from the primary graph.
 
-- create a `Handler -> Handler` edge;
-- misuse `DISPATCHES` with a Handler target;
-- turn every thunk into an Event;
-- infer a causal link merely because the names or files are related.
+### Discovered micro-cycles
 
-Options to study, without adopting one yet:
+None scheduled. The next RED must be derived from the real code after the
+design question is inspected.
 
-- represent the thunk as a Handler and introduce a dedicated relation;
-- treat the thunk dispatch as orchestration detail and attach its observable
-  consequences to the architectural trigger;
-- introduce a Command/Intent concept only if it appears in multiple real cases;
-- retain the transition in evidence and expose a simplified projection.
+### Completion criteria
 
-The next RED must be derived from the real source after this question is
-resolved. It is not yet a fixed sequence of implementation tasks.
-
-### Candidate REDs
-
-These are the next probable behaviours, not scheduled work:
-
-1. Detect `projection.updated` as an `Event` with `external-protocol` provenance.
-2. Recognize the infrastructure callback or projection listener as a Handler.
-3. Define the smallest truthful representation of the `likesRetrieval` trigger.
-4. Detect `LikeWlGateway.get` as a `CALLS_EXTERNAL` consequence.
-5. Produce `likesRetrieved --UPDATES--> lState`.
-
-The candidate list must be revisited after each real-code investigation.
+The principal statically observable Like branches are covered without invented
+causality, and the thunk transition has an explicit, reviewed representation.
 
 ## Milestone 4 - Evidence And Trust
 
-**Status: future direction.**
+**Status: PROPOSED**
 
-Once the Like branches are sufficiently covered, strengthen explanations for
-why the graph contains a relationship:
+### Goal
 
-- structured edge provenance;
-- direct versus routed/transitive evidence;
-- source symbol and source location;
-- unresolved references as non-blocking diagnostics;
-- an explanation of “why is this edge here?”.
+Make every important graph relationship explainable without expanding the
+primary graph vocabulary.
 
-Analysis complexity may live in evidence while the primary map remains small.
+### Candidate acceptance driver
+
+A real graph relationship can expose source file, line, symbol, construct and
+detection path.
+
+### Candidate work
+
+Structured provenance, direct versus routed evidence, unresolved diagnostics
+and a "why is this edge here?" explanation.
+
+### Completion criteria
+
+Evidence is useful to developers and remains separate from primary graph
+semantics.
 
 ## Milestone 5 - Graph Projections
 
-**Status: future direction.**
+**Status: PROPOSED**
 
-Formalize the projections already used by acceptance tests:
+### Goal
 
-- downstream and upstream projections;
-- depth limits;
-- node-kind and region filters;
-- scenario/subgraph projections;
-- explicitly forbidden or speculative edges.
+Formalize graph views already used by acceptance tests.
 
-Do not introduce a linear `Flow` structure. `ArchitectureGraph` remains the
-canonical model.
+### Candidate acceptance driver
+
+Real-node exploration from the Fragments graph in upstream and downstream
+directions.
+
+### Candidate work
+
+Depth limits, node-kind/region filters, scenario projections and explicit
+forbidden/speculative edges. Do not add a stored linear `Flow` model.
+
+### Completion criteria
+
+Views remain projections over `ArchitectureGraph` and preserve bidirectional
+exploration.
 
 ## Milestone 6 - CLI Productization
 
-**Status: future direction.**
+**Status: PROPOSED**
 
-When the scanner is credible on real codebases, build the product entry point:
+### Goal
+
+Provide the product entry point:
 
 ```text
 npx flowatlas .
 ```
 
-Possible follow-up commands include `scan`, `inspect`, `downstream`,
-`upstream`, JSON export and Mermaid export. The CLI must consume application
-capabilities and never contain analysis logic.
+### Acceptance driver
+
+A real project can be scanned and its graph exported without CLI-specific
+analysis logic.
+
+### Candidate work
+
+`scan`, `inspect`, `downstream`, `upstream`, JSON export and possibly Mermaid
+export. The CLI consumes application capabilities.
+
+### Completion criteria
+
+The CLI is useful without a visualizer and keeps scanner logic out of the
+adapter boundary.
 
 ## Milestone 7 - Visualizer MVP
 
-**Status: future direction.**
+**Status: PROPOSED**
 
-The first visualizer should consume `ArchitectureGraph` and support search,
-focus, upstream/downstream exploration, zoom, filters, an inspector, source
-locations and evidence. It must not define or mutate the domain model.
+### Goal
 
-The success criterion is understanding a real architectural slice faster than
-manual source navigation.
+Make the map the primary product experience.
+
+### Acceptance driver
+
+A developer understands a real architectural slice faster than by navigating
+the source manually.
+
+### Candidate work
+
+Search, focus, upstream/downstream exploration, zoom, filters, inspector,
+source locations and evidence.
+
+### Completion criteria
+
+The visualizer consumes `ArchitectureGraph` and never defines its model.
 
 ## Milestone 8 - Broader Validation
 
-**Status: future direction.**
+**Status: PROPOSED**
 
-After Fragments Like, validate the scanner on another real Fragments flow and a
-second Redux Toolkit application. This should reveal which assumptions are
-generic and which are specific to Fragments. Do not expand to Zustand or XState
-before this validation.
+### Goal
+
+Separate generic FlowAtlas capabilities from Fragments-specific conventions.
+
+### Acceptance driver
+
+Another real Fragments flow, followed by a second Redux Toolkit application.
+
+### Completion criteria
+
+The scanner's reusable assumptions are documented before considering other
+framework adapters.
 
 ## Milestone 9 - Diagnostics
 
-**Status: future direction.**
+**Status: LONG TERM**
 
-With several real codebases mapped, investigate orphan Events, Handlers without
-observable consequences, cycles, highly connected States, unresolved
-architectural relations and hotspots. Do not invent metrics before real cases
-justify them.
+Potential areas include orphan Events, Handlers without observable outcomes,
+cycles, highly connected States, unresolved architectural relations and
+hotspots. Do not invent metrics before real cases justify them.
 
 ## Milestone 10 - Runtime Overlay
 
-**Status: long term.**
+**Status: LONG TERM**
 
-The static graph answers:
-
-> What can happen?
-
-An optional runtime layer may answer:
-
-> What actually happened?
-
-Potential signals include `correlationId`, `causationId`, `commandId`,
-`traceId`, executed edges and branches not taken. Runtime and static evidence
-must remain visually and conceptually distinct; runtime must never hide static
-limitations.
+The static graph answers "What can happen?". A separate runtime layer may
+answer "What actually happened?" through correlation IDs, executed edges and
+branches not taken. Runtime evidence must never hide static limitations.
 
 ## Escalation Rules
 
-### Intermediate Facts Or Representation
+### Intermediate facts
 
-Do not introduce an intermediate fact model while the current resolvers and
-detectors compose correctly.
+Do not introduce an IR/facts model while resolvers and detectors compose. Re-
+evaluate only if several detectors reconstruct the same temporary information,
+propagation is materially duplicated, evidence needs discarded facts, or real
+acceptance gaps repeatedly show the same information loss.
 
-Re-evaluate only if one or more of these signals appears:
+### New graph vocabulary
 
-- several detectors reconstruct the same temporary information;
-- propagation logic becomes materially duplicated;
-- evidence or diagnostics must retain facts currently discarded;
-- real acceptance gaps repeatedly show the same information loss between
-  analysis steps.
-
-If introduced, the model must remain an internal analysis detail and must not
-become a second public graph model without a separate product reason.
-
-### New Graph Vocabulary
-
-Do not add a `NodeKind` or `RelationKind` to solve one syntax pattern or one
-fixture. A new concept must:
-
-- appear in multiple real architectural cases;
-- explain useful architecture rather than implementation syntax;
-- preserve the small, trustworthy V1 graph language;
-- be introduced through an explicit RED and reviewed product vocabulary.
+A new NodeKind or RelationKind must appear in multiple real cases, explain
+architecture rather than syntax, preserve the small V1 language and be
+introduced through an explicit reviewed RED.
 
 ## Working Rules
 
-- Future items are proposals, never implicit implementation permission.
-- Every new scanner capability needs a minimal fixture and real-code validation.
-- Acceptance projections must remain non-exhaustive views of the graph.
+- Every scanner capability needs a minimal fixture and real-code validation
+  when possible.
+- Acceptance projections are non-exhaustive views of the graph.
 - Asynchronous gaps and unresolved relationships are valid results.
-- Each TDD cycle follows RED, GREEN, refactor review, final verification,
-  commit and push according to `AGENTS.md`.
+- Micro-cycles are discovered from acceptance gaps, not pre-authorized by a
+  long list of future REDs.
+- A completed cycle is verified, committed and pushed before the next cycle.
