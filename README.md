@@ -199,6 +199,11 @@ project loading remain out of scope. Slice detection is available, while
 listener and dispatch detection require the relevant declarations and
 registrations to be statically identifiable in the provided sources.
 
+Both `createSlice` and `createReducer` can currently produce a provisional
+`State` node identified by their declared symbol. Store registration identity
+and reducer-to-state `addCase` relationships are handled by later scanner
+capabilities.
+
 The next vertical detector capabilities are planned in this order:
 
 1. `startListening({ actionCreator })` to connect a `Handler` to an `Event`;

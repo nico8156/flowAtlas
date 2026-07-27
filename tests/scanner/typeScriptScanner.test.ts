@@ -275,4 +275,19 @@ describe("TypeScript scanner", () => {
       kind: "DISPATCHES",
     });
   });
+
+  it("detects a State declared with createReducer", async () => {
+    const file = "tests/fixtures/createReducerState.ts";
+    const source = await readFile(
+      new URL("../fixtures/createReducerState.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.nodes).toContainEqual({
+      id: "likeWlReducer",
+      kind: "State",
+    });
+  });
 });

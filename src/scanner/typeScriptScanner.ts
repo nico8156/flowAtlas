@@ -209,7 +209,8 @@ const scanSourceIntoGraph = (
     if (
       variableCall &&
       ts.isIdentifier(variableCall.call.expression) &&
-      variableCall.call.expression.text === "createSlice"
+      (variableCall.call.expression.text === "createSlice" ||
+        variableCall.call.expression.text === "createReducer")
     ) {
       const stateId = variableCall.id;
       graph.addNode({ id: stateId, kind: "State" });

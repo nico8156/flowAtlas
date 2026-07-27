@@ -33,14 +33,13 @@ and developed according to `AGENTS.md`.
 - [x] RED 25 - Resolve aliased imports against homonymous module symbols
 - [x] RED 27 - Detect a Handler registered through a local listener alias
 - [x] RED 28 - Detect dispatches inside an aliased listener effect
+- [x] RED 29 - Detect `createReducer` as a State construction
 
 ## Near-Term Candidate Behaviours
 
 Only the next explicitly selected RED is actionable. These candidates are not
 scheduled work:
 
-- RED 28 - Detect dispatches inside an aliased listener effect
-- RED 29 - Detect `createReducer` as a State construction
 - RED 30 - Resolve the visible State identity from store registration
 - RED 31 - Detect `addCase` as an Event-to-State update
 
@@ -68,7 +67,7 @@ while smaller capability cycles reduce them.
 
 ## Current State
 
-The last completed cycle is RED/GREEN #27. The graph now has the minimal V1
+The last completed cycle is RED/GREEN #29. The graph now has the minimal V1
 vocabulary, validates the four relation direction/kind combinations, rejects
 edges whose referenced nodes are absent, preserves unique node identities, can
 retain a file/line source location on an edge, and supports direct upstream and
@@ -82,6 +81,6 @@ remain out of scope.
 RED #11 and RED #12 required regression tests only because the existing
 relation validation already rejected missing nodes as a consequence.
 
-The repository is idle after RED/GREEN #27. The Fragments acceptance test
-remains intentionally RED. The next selected micro-cycle is #28; acceptance
+The repository is idle after RED/GREEN #29. The Fragments acceptance test
+remains intentionally RED. The next selected micro-cycle is #30; acceptance
 must be replayed after each completed capability cycle.
