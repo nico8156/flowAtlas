@@ -56,11 +56,14 @@ const addListeningRelationship = (
   handlerId: string,
   configuration: ts.ObjectLiteralExpression,
   bindings: SymbolBindings,
+  collectRelationships: boolean,
 ): void => {
+  graph.addNode({ id: handlerId, kind: "Handler" });
+  if (!collectRelationships) return;
+
   const actionCreator = getActionCreatorReference(configuration);
   if (!actionCreator) return;
 
-  graph.addNode({ id: handlerId, kind: "Handler" });
   graph.addEdge({
     source: handlerId,
     target: bindings.get(actionCreator) ?? actionCreator,
@@ -84,7 +87,10 @@ const addDispatchRelationships = (
   handlerId: string,
   configuration: ts.ObjectLiteralExpression,
   bindings: SymbolBindings,
+  collectRelationships: boolean,
 ): void => {
+  if (!collectRelationships) return;
+
   const effectProperty = configuration.properties.find(
     (property): property is ts.PropertyAssignment =>
       ts.isPropertyAssignment(property) &&
@@ -173,6 +179,7 @@ const scanSourceIntoGraph = (
   bindings: SymbolBindings = new Map(),
   eventIds: EventIds = new Map(),
   stateIds: StateIds = new Map(),
+  collectRelationships = true,
 ): void => {
   const sourceFile = createTypeScriptSourceFile("flowatlas-input.ts", source);
 
@@ -231,8 +238,20 @@ const scanSourceIntoGraph = (
         const configuration = registration.arguments[0];
         if (!configuration || !ts.isObjectLiteralExpression(configuration)) continue;
 
-        addListeningRelationship(graph, architecturalFunctionId, configuration, bindings);
-        addDispatchRelationships(graph, architecturalFunctionId, configuration, bindings);
+        addListeningRelationship(
+          graph,
+          architecturalFunctionId,
+          configuration,
+          bindings,
+          collectRelationships,
+        );
+        addDispatchRelationships(
+          graph,
+          architecturalFunctionId,
+          configuration,
+          bindings,
+          collectRelationships,
+        );
       }
     }
 
@@ -261,8 +280,8 @@ const scanSourceIntoGraph = (
 
       const configuration = variableCall.call.arguments[0];
       if (configuration && ts.isObjectLiteralExpression(configuration)) {
-        addListeningRelationship(graph, handlerId, configuration, bindings);
-        addDispatchRelationships(graph, handlerId, configuration, bindings);
+        addListeningRelationship(graph, handlerId, configuration, bindings, collectRelationships);
+        addDispatchRelationships(graph, handlerId, configuration, bindings, collectRelationships);
       }
     }
 
@@ -293,7 +312,7 @@ const scanSourceIntoGraph = (
         reducerBuilder = extraReducersProperty?.initializer;
       }
 
-      if (reducerBuilder) {
+      if (reducerBuilder && collectRelationships) {
         const visitReducerBuilder = (reducerNode: ts.Node): void => {
           if (
             ts.isCallExpression(reducerNode) &&
@@ -339,14 +358,17 @@ export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureG
   const resolution = resolveProjectSymbols(project);
   const stateIds = getStoreStateIds(project);
 
-  for (const file of project.files) {
-    scanSourceIntoGraph(
-      file,
-      graph,
-      resolution.bindingsByFile.get(file.file) ?? new Map(),
-      resolution.eventIds,
-      stateIds,
-    );
+  for (const collectRelationships of [false, true]) {
+    for (const file of project.files) {
+      scanSourceIntoGraph(
+        file,
+        graph,
+        resolution.bindingsByFile.get(file.file) ?? new Map(),
+        resolution.eventIds,
+        stateIds,
+        collectRelationships,
+      );
+    }
   }
 
   return graph;

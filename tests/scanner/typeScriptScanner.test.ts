@@ -355,6 +355,63 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("produces the same graph regardless of project file order", async () => {
+    const eventFile = "tests/fixtures/orderIndependentEvent.ts";
+    const handlerFile = "tests/fixtures/orderIndependentHandler.ts";
+    const sources = new Map(
+      await Promise.all(
+        [eventFile, handlerFile].map(
+          async (file) =>
+            [
+              file,
+              await readFile(
+                new URL(`../fixtures/${file.split("/").pop()}`, import.meta.url),
+                "utf8",
+              ),
+            ] as const,
+        ),
+      ),
+    );
+    const scan = (files: string[]) =>
+      scanTypeScriptProject({
+        files: files.map((file) => ({ file, source: sources.get(file) ?? "" })),
+      });
+    const shape = (graph: ReturnType<typeof scanTypeScriptProject>) => ({
+      nodes: graph.nodes
+        .map(({ id, kind }) => ({ id, kind }))
+        .sort((left, right) => left.id.localeCompare(right.id)),
+      edges: graph.edges
+        .map(({ source, target, kind }) => ({ source, target, kind }))
+        .sort((left, right) =>
+          `${left.source}:${left.kind}:${left.target}`.localeCompare(
+            `${right.source}:${right.kind}:${right.target}`,
+          ),
+        ),
+    });
+
+    const handlerFirst = scan([handlerFile, eventFile]);
+    const eventFirst = scan([eventFile, handlerFile]);
+
+    expect(shape(handlerFirst)).toEqual(shape(eventFirst));
+    expect(handlerFirst.nodes).toContainEqual(
+      expect.objectContaining({
+        id: "dispatchedEvent",
+        kind: "Event",
+      }),
+    );
+    expect(handlerFirst.nodes).toContainEqual(
+      expect.objectContaining({
+        id: "submitListener",
+        kind: "Handler",
+      }),
+    );
+    expect(handlerFirst.edges).toContainEqual({
+      source: "submitListener",
+      target: "dispatchedEvent",
+      kind: "DISPATCHES",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
