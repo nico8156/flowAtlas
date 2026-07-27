@@ -1,8 +1,4 @@
-export type RelationKind =
-  | "LISTENS_TO"
-  | "DISPATCHES"
-  | "UPDATES"
-  | "CALLS_EXTERNAL";
+export type RelationKind = "LISTENS_TO" | "DISPATCHES" | "UPDATES" | "CALLS_EXTERNAL";
 
 export type NodeKind = "Event" | "Handler" | "State" | "External";
 
@@ -33,11 +29,14 @@ export type ArchitectureGraph = {
   upstream(nodeId: string): readonly ArchitectureNode[];
 };
 
-const relationNodeKinds: Record<RelationKind, {
-  source: NodeKind;
-  target: NodeKind;
-  description: string;
-}> = {
+const relationNodeKinds: Record<
+  RelationKind,
+  {
+    source: NodeKind;
+    target: NodeKind;
+    description: string;
+  }
+> = {
   LISTENS_TO: {
     source: "Handler",
     target: "Event",
