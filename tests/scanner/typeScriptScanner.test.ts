@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -232,6 +234,28 @@ describe("TypeScript scanner", () => {
     expect(graph.edges).not.toContainEqual({
       source: "refreshListener",
       target: ticketsEvent.id,
+      kind: "LISTENS_TO",
+    });
+  });
+
+  it("detects a Handler registered through a local listener alias", async () => {
+    const file = "tests/fixtures/localListenerAlias.ts";
+    const source = await readFile(
+      new URL("../fixtures/localListenerAlias.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.nodes).toContainEqual(
+      expect.objectContaining({
+        id: "likeToggleUseCaseFactory",
+        kind: "Handler",
+      }),
+    );
+    expect(graph.edges).toContainEqual({
+      source: "likeToggleUseCaseFactory",
+      target: "uiLikeToggleRequested",
       kind: "LISTENS_TO",
     });
   });

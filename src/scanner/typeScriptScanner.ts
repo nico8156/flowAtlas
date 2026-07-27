@@ -34,6 +34,38 @@ const getVariableCall = (node: ts.Node): VariableCall | undefined => {
 const createTypeScriptSourceFile = (fileName: string, source: string): ts.SourceFile =>
   ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 
+const getActionCreatorReference = (
+  configuration: ts.ObjectLiteralExpression,
+): string | undefined => {
+  const actionCreatorProperty = configuration.properties.find(
+    (property): property is ts.PropertyAssignment =>
+      ts.isPropertyAssignment(property) &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === "actionCreator",
+  );
+
+  return actionCreatorProperty && ts.isIdentifier(actionCreatorProperty.initializer)
+    ? actionCreatorProperty.initializer.text
+    : undefined;
+};
+
+const addListeningRelationship = (
+  graph: ArchitectureGraph,
+  handlerId: string,
+  configuration: ts.ObjectLiteralExpression,
+  bindings: SymbolBindings,
+): void => {
+  const actionCreator = getActionCreatorReference(configuration);
+  if (!actionCreator) return;
+
+  graph.addNode({ id: handlerId, kind: "Handler" });
+  graph.addEdge({
+    source: handlerId,
+    target: bindings.get(actionCreator) ?? actionCreator,
+    kind: "LISTENS_TO",
+  });
+};
+
 const scanSourceIntoGraph = (
   { file, source }: TypeScriptSource,
   graph: ArchitectureGraph,
@@ -44,6 +76,62 @@ const scanSourceIntoGraph = (
 
   const visit = (node: ts.Node): void => {
     const variableCall = getVariableCall(node);
+
+    let architecturalFunctionId: string | undefined;
+    let architecturalFunctionBody: ts.Block | undefined;
+
+    if (ts.isFunctionDeclaration(node) && node.name && node.body) {
+      architecturalFunctionId = node.name.text;
+      architecturalFunctionBody = node.body;
+    } else if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isArrowFunction(node.initializer) &&
+      ts.isBlock(node.initializer.body)
+    ) {
+      architecturalFunctionId = node.name.text;
+      architecturalFunctionBody = node.initializer.body;
+    }
+
+    if (architecturalFunctionId && architecturalFunctionBody) {
+      const listenerAliases = new Set<string>();
+      const registrations: ts.CallExpression[] = [];
+
+      const inspectFunction = (functionNode: ts.Node): void => {
+        if (
+          ts.isVariableDeclaration(functionNode) &&
+          ts.isIdentifier(functionNode.name) &&
+          functionNode.initializer &&
+          ts.isAsExpression(functionNode.initializer) &&
+          ts.isPropertyAccessExpression(functionNode.initializer.expression) &&
+          functionNode.initializer.expression.name.text === "startListening"
+        ) {
+          listenerAliases.add(functionNode.name.text);
+        }
+
+        if (
+          ts.isCallExpression(functionNode) &&
+          ts.isIdentifier(functionNode.expression) &&
+          listenerAliases.has(functionNode.expression.text) &&
+          functionNode.arguments[0] &&
+          ts.isObjectLiteralExpression(functionNode.arguments[0])
+        ) {
+          registrations.push(functionNode);
+        }
+
+        ts.forEachChild(functionNode, inspectFunction);
+      };
+
+      inspectFunction(architecturalFunctionBody);
+
+      for (const registration of registrations) {
+        const configuration = registration.arguments[0];
+        if (!configuration || !ts.isObjectLiteralExpression(configuration)) continue;
+
+        addListeningRelationship(graph, architecturalFunctionId, configuration, bindings);
+      }
+    }
 
     if (
       variableCall &&
@@ -70,22 +158,7 @@ const scanSourceIntoGraph = (
 
       const configuration = variableCall.call.arguments[0];
       if (configuration && ts.isObjectLiteralExpression(configuration)) {
-        const actionCreatorProperty = configuration.properties.find(
-          (property): property is ts.PropertyAssignment =>
-            ts.isPropertyAssignment(property) &&
-            ts.isIdentifier(property.name) &&
-            property.name.text === "actionCreator",
-        );
-
-        if (actionCreatorProperty && ts.isIdentifier(actionCreatorProperty.initializer)) {
-          graph.addEdge({
-            source: handlerId,
-            target:
-              bindings.get(actionCreatorProperty.initializer.text) ??
-              actionCreatorProperty.initializer.text,
-            kind: "LISTENS_TO",
-          });
-        }
+        addListeningRelationship(graph, handlerId, configuration, bindings);
 
         const effectProperty = configuration.properties.find(
           (property): property is ts.PropertyAssignment =>

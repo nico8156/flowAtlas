@@ -188,7 +188,10 @@ input. Detected Events now retain their source file and line. This capability
 is source-in/source-out and is not yet a project scanner or CLI command.
 
 Named imports and renamed named imports are resolved for relative paths and
-configured `tsconfig` paths among the provided project files. This is not yet
+configured `tsconfig` paths among the provided project files. Direct
+`startListening` registrations and local aliases such as `listen =
+mw.startListening as TypedStartListening<...>` are recognized as Handlers.
+This is not yet
 full TypeScript program resolution: barrels, package boundaries and filesystem
 project loading remain out of scope. Slice detection is available, while
 listener and dispatch detection require the relevant declarations and

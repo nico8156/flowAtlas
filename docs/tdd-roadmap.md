@@ -31,21 +31,23 @@ and developed according to `AGENTS.md`.
 - [x] RED 23 - Aggregate a simple cross-file topology
 - [x] RED 24 - Preserve Event identity through a renamed import
 - [x] RED 25 - Resolve aliased imports against homonymous module symbols
+- [x] RED 27 - Detect a Handler registered through a local listener alias
 
 ## Near-Term Candidate Behaviours
 
 Only the next explicitly selected RED is actionable. These candidates are not
 scheduled work:
 
-- RED 18 - Preserve multiple `createAction` Events in one TypeScript source
-- RED 19 - Detect `startListening({ actionCreator })`
-- RED 20 - Detect `dispatch(actionCreator())` from a Handler
-- RED 21 - Detect `builder.addCase` as an Event-to-State update
+- RED 28 - Detect dispatches inside an aliased listener effect
+- RED 29 - Detect `createReducer` as a State construction
+- RED 30 - Resolve the visible State identity from store registration
+- RED 31 - Detect `addCase` as an Event-to-State update
 
 ## Later Direction
 
 The scanner acceptance track has now started with a source-in/source-out
-detector. The Fragments Like golden graph remains the later acceptance target.
+detector. The Fragments Like graph is now the director acceptance test. It
+remains RED while micro-cycles #28 through #31 add the missing capabilities.
 
 The intended vertical detection path is:
 
@@ -60,24 +62,25 @@ createAction
 ```
 
 Each capability must be validated with a minimal fixture before it is
-validated against the real Fragments codebase.
+validated against the real Fragments codebase. Acceptance gaps may remain RED
+while smaller capability cycles reduce them.
 
 ## Current State
 
-The last completed cycle is RED/GREEN #20. The graph now has the minimal V1
+The last completed cycle is RED/GREEN #27. The graph now has the minimal V1
 vocabulary, validates the four relation direction/kind combinations, rejects
 edges whose referenced nodes are absent, preserves unique node identities, can
 retain a file/line source location on an edge, and supports direct upstream and
 downstream neighbor queries. The source scanner detects simple `createAction`
-Events with source locations, `startListening({ actionCreator })`
-Handler/listener relationships, and simple `api.dispatch(actionCreator())`
-dispatch relationships. The scanner can resolve relative imports and
+Events with source locations, direct and locally aliased listener registrations,
+and simple `api.dispatch(actionCreator())` dispatch relationships. The scanner
+can resolve relative imports and
 configured `tsconfig` paths among provided source inputs, including homonymous
 symbols. Full TypeScript program resolution, barrels and workspace boundaries
 remain out of scope.
 RED #11 and RED #12 required regression tests only because the existing
 relation validation already rejected missing nodes as a consequence.
 
-The repository is idle after RED/GREEN #17. RED #18 is the next proposed
-behaviour, but it must still produce a genuine failing test before production
-code is changed.
+The repository is idle after RED/GREEN #27. The Fragments acceptance test
+remains intentionally RED. The next selected micro-cycle is #28; acceptance
+must be replayed after each completed capability cycle.
