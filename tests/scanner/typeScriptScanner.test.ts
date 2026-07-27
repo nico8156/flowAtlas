@@ -759,6 +759,35 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("resolves External returns from an optionally available gateway dependency", async () => {
+    const file = "tests/fixtures/optionalExternalGatewayDependency.ts";
+    const source = await readFile(
+      new URL("../fixtures/optionalExternalGatewayDependency.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "CommentsGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendCommand",
+      kind: "Handler",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({

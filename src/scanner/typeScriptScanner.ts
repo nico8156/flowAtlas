@@ -178,12 +178,18 @@ const getExternalIdsReturnedByFunction = (
         );
 
         const parameterType = parameter?.type;
-        if (
-          parameterType &&
-          ts.isTypeReferenceNode(parameterType) &&
-          ts.isIdentifier(parameterType.typeName)
-        ) {
-          const parameterTypeName = parameterType.typeName.text;
+        const parameterTypeMembers =
+          parameterType && ts.isUnionTypeNode(parameterType)
+            ? parameterType.types
+            : parameterType
+              ? [parameterType]
+              : [];
+        const parameterTypeReference = parameterTypeMembers.find(
+          (member): member is ts.TypeReferenceNode =>
+            ts.isTypeReferenceNode(member) && ts.isIdentifier(member.typeName),
+        );
+        if (parameterTypeReference) {
+          const parameterTypeName = parameterTypeReference.getText();
           const typeAlias = sourceFiles
             .flatMap((candidate) => [...candidate.statements])
             .find(
