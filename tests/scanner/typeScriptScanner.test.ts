@@ -59,7 +59,6 @@ describe("TypeScript scanner", () => {
     `;
 
     const graph = scanTypeScriptSource({ file, source });
-
     expect(graph.edges).toContainEqual({
       source: "submitLikeListener",
       target: "likeAccepted",
@@ -535,6 +534,30 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("resolves an External propagated through a function return type", async () => {
+    const file = "tests/fixtures/externalReturnTypePropagation.ts";
+    const source = await readFile(
+      new URL("../fixtures/externalReturnTypePropagation.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendCommand",
+      kind: "Handler",
+    });
+  });
+
   it("keeps all statically possible External gateways", async () => {
     const file = "tests/fixtures/multipleExternalGateways.ts";
     const source = await readFile(
@@ -552,6 +575,35 @@ describe("TypeScript scanner", () => {
     expect(graph.edges).toContainEqual({
       source: "handlerFactory",
       target: "CommentGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendCommand",
+      kind: "Handler",
+    });
+  });
+
+  it("keeps all External gateways returned by a discriminated switch", async () => {
+    const file = "tests/fixtures/switchSelectedExternal.ts";
+    const source = await readFile(
+      new URL("../fixtures/switchSelectedExternal.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "CommentsGateway",
       kind: "CALLS_EXTERNAL",
     });
     expect(graph.nodes).not.toContainEqual({
@@ -582,6 +634,128 @@ describe("TypeScript scanner", () => {
       source: "processOutboxFactory",
       target: "CommentGateway",
       kind: "CALLS_EXTERNAL",
+    });
+  });
+
+  it("traverses the real outbox gateway selection chain", async () => {
+    const file = "tests/fixtures/transitiveOutboxSelection.ts";
+    const source = await readFile(
+      new URL("../fixtures/transitiveOutboxSelection.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "processOutboxFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "processOutbox",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getOutboxCommandGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendOutboxCommand",
+      kind: "Handler",
+    });
+  });
+
+  it("preserves External possibilities through an untyped routed command helper", async () => {
+    const file = "tests/fixtures/fragmentsOutboxRouting.ts";
+    const source = await readFile(
+      new URL("../fixtures/fragmentsOutboxRouting.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+    expect(graph.edges).toContainEqual({
+      source: "processOutboxFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "processOutboxFactory",
+      target: "CommentsGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendCommand",
+      kind: "Handler",
+    });
+  });
+
+  it("resolves External orchestration functions across files", async () => {
+    const files = [
+      "tests/fixtures/crossFileOutboxRouting.ts",
+      "tests/fixtures/crossFileOutboxHandler.ts",
+    ];
+    const graph = scanTypeScriptProject({
+      files: await Promise.all(
+        files.map(async (file) => ({
+          file,
+          source: await readFile(
+            new URL(`../fixtures/${file.split("/").pop()}`, import.meta.url),
+            "utf8",
+          ),
+        })),
+      ),
+    });
+
+    expect(graph.edges).toContainEqual({
+      source: "processOutboxFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "processOutboxFactory",
+      target: "CommentsGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendCommand",
+      kind: "Handler",
+    });
+  });
+
+  it("propagates External bindings into destructured helper parameters", async () => {
+    const file = "tests/fixtures/destructuredExternalGateway.ts";
+    const source = await readFile(
+      new URL("../fixtures/destructuredExternalGateway.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "CommentsGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendCommand",
+      kind: "Handler",
     });
   });
 
