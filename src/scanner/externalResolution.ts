@@ -337,23 +337,36 @@ const getExternalIdsCalledByResolvedFunction = (
 
   const externalIds = new Set<string>();
   const visitBody = (node: ts.Node): void => {
-    if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.initializer &&
-      ts.isCallExpression(node.initializer) &&
-      ts.isIdentifier(node.initializer.expression)
-    ) {
-      const declaration = findFunctionLike(
-        sourceFile,
-        node.initializer.expression.text,
-        sourceFiles,
-      );
-      if (declaration) {
-        localExternalIds.set(
-          node.name.text,
-          getExternalIdsReturnedByFunction(declaration, graph, sourceFile, new Set(), sourceFiles),
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+      if (ts.isCallExpression(node.initializer) && ts.isIdentifier(node.initializer.expression)) {
+        const declaration = findFunctionLike(
+          sourceFile,
+          node.initializer.expression.text,
+          sourceFiles,
         );
+        if (declaration) {
+          localExternalIds.set(
+            node.name.text,
+            getExternalIdsReturnedByFunction(
+              declaration,
+              graph,
+              sourceFile,
+              new Set(),
+              sourceFiles,
+            ),
+          );
+        }
+      } else if (ts.isPropertyAccessExpression(node.initializer)) {
+        const object = node.initializer.expression;
+        const parameterKey = ts.isIdentifier(object)
+          ? `${object.text}.${node.initializer.name.text}`
+          : undefined;
+        if (parameterKey) {
+          const resolvedExternalIds = externalParameters.get(parameterKey) ?? [];
+          if (resolvedExternalIds.length > 0) {
+            localExternalIds.set(node.name.text, resolvedExternalIds);
+          }
+        }
       }
     }
     if (ts.isPropertyAccessExpression(node) && ts.isCallExpression(node.parent)) {
@@ -367,7 +380,8 @@ const getExternalIdsCalledByResolvedFunction = (
         parameterKey = `${node.expression.expression.text}.${node.expression.name.text}`;
       }
       if (parameterKey) {
-        const resolvedExternalIds = externalParameters.get(parameterKey) ?? [];
+        const resolvedExternalIds =
+          externalParameters.get(parameterKey) ?? localExternalIds.get(parameterKey) ?? [];
         for (const externalId of resolvedExternalIds) {
           if (externalSupportsMethod(sourceFile, externalId, node.name.text, sourceFiles)) {
             externalIds.add(externalId);
