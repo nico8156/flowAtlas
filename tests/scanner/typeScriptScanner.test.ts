@@ -459,6 +459,22 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("detects a Handler calling an External gateway", async () => {
+    const file = "tests/fixtures/callsExternalGateway.ts";
+    const source = await readFile(
+      new URL("../fixtures/callsExternalGateway.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "submitListener",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({

@@ -131,6 +131,78 @@ const addDispatchRelationships = (
   visitEffect(effectProperty.initializer);
 };
 
+const getExternalReference = (
+  sourceFile: ts.SourceFile,
+  graph: ArchitectureGraph,
+  expression: ts.Expression,
+): string | undefined => {
+  if (!ts.isIdentifier(expression)) return undefined;
+
+  let externalId: string | undefined;
+  const visit = (node: ts.Node): void => {
+    const externalTypeName =
+      ts.isVariableDeclaration(node) &&
+      node.type &&
+      ts.isTypeReferenceNode(node.type) &&
+      ts.isIdentifier(node.type.typeName)
+        ? node.type.typeName.text
+        : undefined;
+
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === expression.text &&
+      externalTypeName &&
+      graph.nodes.some(
+        (candidate) => candidate.id === externalTypeName && candidate.kind === "External",
+      )
+    ) {
+      externalId = externalTypeName;
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  return externalId;
+};
+
+const addExternalRelationships = (
+  sourceFile: ts.SourceFile,
+  graph: ArchitectureGraph,
+  handlerId: string,
+  configuration: ts.ObjectLiteralExpression,
+  collectRelationships: boolean,
+): void => {
+  if (!collectRelationships) return;
+
+  const effectProperty = configuration.properties.find(
+    (property): property is ts.PropertyAssignment =>
+      ts.isPropertyAssignment(property) &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === "effect",
+  );
+
+  if (!effectProperty) return;
+
+  const visitEffect = (effectNode: ts.Node): void => {
+    if (ts.isCallExpression(effectNode) && ts.isPropertyAccessExpression(effectNode.expression)) {
+      const externalId = getExternalReference(sourceFile, graph, effectNode.expression.expression);
+      if (externalId) {
+        graph.addEdge({
+          source: handlerId,
+          target: externalId,
+          kind: "CALLS_EXTERNAL",
+        });
+      }
+    }
+
+    ts.forEachChild(effectNode, visitEffect);
+  };
+
+  visitEffect(effectProperty.initializer);
+};
+
 const getStoreStateIds = (
   project: TypeScriptProject,
   bindingsByFile: ReadonlyMap<string, SymbolBindings>,
@@ -271,6 +343,13 @@ const scanSourceIntoGraph = (
           bindings,
           collectRelationships,
         );
+        addExternalRelationships(
+          sourceFile,
+          graph,
+          architecturalFunctionId,
+          configuration,
+          collectRelationships,
+        );
       }
     }
 
@@ -301,6 +380,7 @@ const scanSourceIntoGraph = (
       if (configuration && ts.isObjectLiteralExpression(configuration)) {
         addListeningRelationship(graph, handlerId, configuration, bindings, collectRelationships);
         addDispatchRelationships(graph, handlerId, configuration, bindings, collectRelationships);
+        addExternalRelationships(sourceFile, graph, handlerId, configuration, collectRelationships);
       }
     }
 
