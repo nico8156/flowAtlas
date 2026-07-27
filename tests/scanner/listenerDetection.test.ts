@@ -1,6 +1,6 @@
-import { readFile } from "node:fs/promises";
-
 import { describe, expect, it } from "vitest";
+
+import { readFixture } from "./fixtureSource.js";
 
 import { scanTypeScriptSource } from "../../src/scanner/typeScriptScanner.js";
 describe("Handler and listener detection", () => {
@@ -50,10 +50,7 @@ describe("Handler and listener detection", () => {
 
   it("detects a Handler registered through a local listener alias", async () => {
     const file = "tests/fixtures/localListenerAlias.ts";
-    const source = await readFile(
-      new URL("../fixtures/localListenerAlias.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("localListenerAlias.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -72,10 +69,7 @@ describe("Handler and listener detection", () => {
 
   it("detects an Event dispatched by a locally aliased listener", async () => {
     const file = "tests/fixtures/localListenerAliasDispatch.ts";
-    const source = await readFile(
-      new URL("../fixtures/localListenerAliasDispatch.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("localListenerAliasDispatch.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -88,10 +82,7 @@ describe("Handler and listener detection", () => {
 
   it("ignores an unresolved dispatched Event without failing the scan", async () => {
     const file = "tests/fixtures/unresolvedDispatch.ts";
-    const source = await readFile(
-      new URL("../fixtures/unresolvedDispatch.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("unresolvedDispatch.ts");
     let graph: ReturnType<typeof scanTypeScriptSource> | undefined;
 
     expect(() => {

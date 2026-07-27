@@ -1,6 +1,6 @@
-import { readFile } from "node:fs/promises";
-
 import { describe, expect, it } from "vitest";
+
+import { readFixture } from "./fixtureSource.js";
 
 import { scanTypeScriptProject } from "../../src/scanner/typeScriptScanner.js";
 describe("Project scanning", () => {
@@ -136,14 +136,7 @@ describe("Project scanning", () => {
     const sources = new Map(
       await Promise.all(
         [eventFile, handlerFile].map(
-          async (file) =>
-            [
-              file,
-              await readFile(
-                new URL(`../fixtures/${file.split("/").pop()}`, import.meta.url),
-                "utf8",
-              ),
-            ] as const,
+          async (file) => [file, await readFixture(file.split("/").pop() ?? "")] as const,
         ),
       ),
     );

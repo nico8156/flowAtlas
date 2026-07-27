@@ -1,6 +1,6 @@
-import { readFile } from "node:fs/promises";
-
 import { describe, expect, it } from "vitest";
+
+import { readFixture } from "./fixtureSource.js";
 
 import {
   scanTypeScriptProject,
@@ -36,10 +36,7 @@ describe("State detection", () => {
 
   it("detects a State declared with createReducer", async () => {
     const file = "tests/fixtures/createReducerState.ts";
-    const source = await readFile(
-      new URL("../fixtures/createReducerState.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("createReducerState.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -51,10 +48,7 @@ describe("State detection", () => {
 
   it("detects an Event updating a State through createReducer addCase", async () => {
     const file = "tests/fixtures/createReducerUpdates.ts";
-    const source = await readFile(
-      new URL("../fixtures/createReducerUpdates.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("createReducerUpdates.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -67,10 +61,7 @@ describe("State detection", () => {
 
   it("ignores an unresolved reducer Event without failing the scan", async () => {
     const file = "tests/fixtures/unresolvedReducerCase.ts";
-    const source = await readFile(
-      new URL("../fixtures/unresolvedReducerCase.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("unresolvedReducerCase.ts");
     let graph: ReturnType<typeof scanTypeScriptSource> | undefined;
 
     expect(() => {
@@ -98,10 +89,7 @@ describe("State detection", () => {
       files: await Promise.all(
         files.map(async (file) => ({
           file,
-          source: await readFile(
-            new URL(`../fixtures/${file.split("/").pop()}`, import.meta.url),
-            "utf8",
-          ),
+          source: await readFixture(file.split("/").pop() ?? ""),
         })),
       ),
     });
@@ -127,10 +115,7 @@ describe("State detection", () => {
       files: await Promise.all(
         files.map(async (file) => ({
           file,
-          source: await readFile(
-            new URL(`../fixtures/${file.split("/").pop()}`, import.meta.url),
-            "utf8",
-          ),
+          source: await readFixture(file.split("/").pop() ?? ""),
         })),
       ),
     });

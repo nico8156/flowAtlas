@@ -1,6 +1,6 @@
-import { readFile } from "node:fs/promises";
-
 import { describe, expect, it } from "vitest";
+
+import { readFixture } from "./fixtureSource.js";
 
 import {
   scanTypeScriptProject,
@@ -9,10 +9,7 @@ import {
 describe("External resolution", () => {
   it("detects a gateway interface as an External node", async () => {
     const file = "tests/fixtures/externalGateway.ts";
-    const source = await readFile(
-      new URL("../fixtures/externalGateway.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("externalGateway.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -24,10 +21,7 @@ describe("External resolution", () => {
 
   it("detects a Handler calling an External gateway", async () => {
     const file = "tests/fixtures/callsExternalGateway.ts";
-    const source = await readFile(
-      new URL("../fixtures/callsExternalGateway.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("callsExternalGateway.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -40,10 +34,7 @@ describe("External resolution", () => {
 
   it("traverses internal orchestration to the External gateway", async () => {
     const file = "tests/fixtures/transitiveExternalCall.ts";
-    const source = await readFile(
-      new URL("../fixtures/transitiveExternalCall.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("transitiveExternalCall.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -68,10 +59,7 @@ describe("External resolution", () => {
 
   it("traverses an External gateway passed through an internal object argument", async () => {
     const file = "tests/fixtures/transitiveExternalObjectArgument.ts";
-    const source = await readFile(
-      new URL("../fixtures/transitiveExternalObjectArgument.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("transitiveExternalObjectArgument.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -100,10 +88,7 @@ describe("External resolution", () => {
 
   it("resolves an External propagated through a function return type", async () => {
     const file = "tests/fixtures/externalReturnTypePropagation.ts";
-    const source = await readFile(
-      new URL("../fixtures/externalReturnTypePropagation.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("externalReturnTypePropagation.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -124,10 +109,7 @@ describe("External resolution", () => {
 
   it("keeps all statically possible External gateways", async () => {
     const file = "tests/fixtures/multipleExternalGateways.ts";
-    const source = await readFile(
-      new URL("../fixtures/multipleExternalGateways.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("multipleExternalGateways.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -153,10 +135,7 @@ describe("External resolution", () => {
 
   it("keeps all External gateways returned by a discriminated switch", async () => {
     const file = "tests/fixtures/switchSelectedExternal.ts";
-    const source = await readFile(
-      new URL("../fixtures/switchSelectedExternal.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("switchSelectedExternal.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -182,10 +161,7 @@ describe("External resolution", () => {
 
   it("selects the External gateway from a known command kind", async () => {
     const file = "tests/fixtures/commandSelectedExternal.ts";
-    const source = await readFile(
-      new URL("../fixtures/commandSelectedExternal.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("commandSelectedExternal.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -203,10 +179,7 @@ describe("External resolution", () => {
 
   it("traverses the real outbox gateway selection chain", async () => {
     const file = "tests/fixtures/transitiveOutboxSelection.ts";
-    const source = await readFile(
-      new URL("../fixtures/transitiveOutboxSelection.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("transitiveOutboxSelection.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -231,10 +204,7 @@ describe("External resolution", () => {
 
   it("preserves External possibilities through an untyped routed command helper", async () => {
     const file = "tests/fixtures/fragmentsOutboxRouting.ts";
-    const source = await readFile(
-      new URL("../fixtures/fragmentsOutboxRouting.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("fragmentsOutboxRouting.ts");
 
     const graph = scanTypeScriptSource({ file, source });
     expect(graph.edges).toContainEqual({
@@ -266,10 +236,7 @@ describe("External resolution", () => {
       files: await Promise.all(
         files.map(async (file) => ({
           file,
-          source: await readFile(
-            new URL(`../fixtures/${file.split("/").pop()}`, import.meta.url),
-            "utf8",
-          ),
+          source: await readFixture(file.split("/").pop() ?? ""),
         })),
       ),
     });
@@ -296,10 +263,7 @@ describe("External resolution", () => {
 
   it("propagates External bindings into destructured helper parameters", async () => {
     const file = "tests/fixtures/destructuredExternalGateway.ts";
-    const source = await readFile(
-      new URL("../fixtures/destructuredExternalGateway.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("destructuredExternalGateway.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -325,10 +289,7 @@ describe("External resolution", () => {
 
   it("resolves External returns from an optionally available gateway dependency", async () => {
     const file = "tests/fixtures/optionalExternalGatewayDependency.ts";
-    const source = await readFile(
-      new URL("../fixtures/optionalExternalGatewayDependency.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("optionalExternalGatewayDependency.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
@@ -354,10 +315,7 @@ describe("External resolution", () => {
 
   it("resolves equivalent function and arrow function forms uniformly", async () => {
     const file = "tests/fixtures/functionLikeForms.ts";
-    const source = await readFile(
-      new URL("../fixtures/functionLikeForms.ts", import.meta.url),
-      "utf8",
-    );
+    const source = await readFixture("functionLikeForms.ts");
 
     const graph = scanTypeScriptSource({ file, source });
 
