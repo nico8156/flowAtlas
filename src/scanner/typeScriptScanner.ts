@@ -204,6 +204,35 @@ const getExternalReference = (
   return externalId;
 };
 
+const externalSupportsMethod = (
+  sourceFile: ts.SourceFile,
+  externalId: string,
+  methodName: string,
+): boolean => {
+  let supportsMethod = false;
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isInterfaceDeclaration(node) &&
+      node.name.text === externalId &&
+      node.members.some(
+        (member) =>
+          (ts.isMethodSignature(member) || ts.isPropertySignature(member)) &&
+          member.name &&
+          ts.isIdentifier(member.name) &&
+          member.name.text === methodName,
+      )
+    ) {
+      supportsMethod = true;
+      return;
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  return supportsMethod;
+};
+
 const getExternalIdsCalledByFunction = (
   sourceFile: ts.SourceFile,
   graph: ArchitectureGraph,
@@ -264,12 +293,25 @@ const getExternalIdsCalledByFunction = (
 
   const externalIds = new Set<string>();
   const visitBody = (node: ts.Node): void => {
-    if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression)) {
-      const resolvedExternalIds =
-        externalParameters.get(`${node.expression.text}.${node.name.text}`) ??
-        externalParameters.get(node.expression.text) ??
-        [];
-      for (const externalId of resolvedExternalIds) externalIds.add(externalId);
+    if (ts.isPropertyAccessExpression(node) && ts.isCallExpression(node.parent)) {
+      let parameterKey: string | undefined;
+      if (ts.isIdentifier(node.expression)) {
+        parameterKey = node.expression.text;
+      } else if (
+        ts.isPropertyAccessExpression(node.expression) &&
+        ts.isIdentifier(node.expression.expression)
+      ) {
+        parameterKey = `${node.expression.expression.text}.${node.expression.name.text}`;
+      }
+
+      if (parameterKey) {
+        const resolvedExternalIds = externalParameters.get(parameterKey) ?? [];
+        for (const externalId of resolvedExternalIds) {
+          if (externalSupportsMethod(sourceFile, externalId, node.name.text)) {
+            externalIds.add(externalId);
+          }
+        }
+      }
     }
 
     ts.forEachChild(node, visitBody);

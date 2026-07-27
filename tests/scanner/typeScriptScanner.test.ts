@@ -564,6 +564,27 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("selects the External gateway from a known command kind", async () => {
+    const file = "tests/fixtures/commandSelectedExternal.ts";
+    const source = await readFile(
+      new URL("../fixtures/commandSelectedExternal.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "processOutboxFactory",
+      target: "LikeGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.edges).not.toContainEqual({
+      source: "processOutboxFactory",
+      target: "CommentGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
