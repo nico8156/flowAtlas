@@ -7,6 +7,7 @@ import { detectListeners } from "./listenerDetector.js";
 import { detectStates, type StateIds } from "./stateDetector.js";
 import {
   type EventIds,
+  type ProjectSymbolResolution,
   type SymbolBindings,
   type TypeScriptSource,
 } from "./projectSymbolResolver.js";
@@ -22,8 +23,9 @@ export const scanSourceIntoGraph = (
   sourceFiles: readonly ts.SourceFile[] = [
     createTypeScriptSourceFile("flowatlas-input.ts", source),
   ],
+  semanticIndex?: ProjectSymbolResolution["semanticIndex"],
 ): void => {
-  const sourceFile = createTypeScriptSourceFile("flowatlas-input.ts", source);
+  const sourceFile = createTypeScriptSourceFile(file, source);
 
   detectExternalNodes(sourceFile, graph);
   detectEvents(sourceFile, file, graph, eventIds);
@@ -33,6 +35,7 @@ export const scanSourceIntoGraph = (
     bindings,
     collectRelationships,
     sourceFiles,
+    semanticIndex,
   });
   detectStates(
     sourceFile,

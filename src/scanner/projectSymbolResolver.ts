@@ -1,5 +1,7 @@
 import * as ts from "typescript";
 
+import { buildSemanticIndex, type SemanticIndex } from "./semanticIndex.js";
+
 export type TypeScriptSource = {
   file: string;
   source: string;
@@ -7,6 +9,8 @@ export type TypeScriptSource = {
 
 export type TypeScriptProject = {
   files: TypeScriptSource[];
+  projectFiles?: TypeScriptSource[];
+  onSemanticIndexBuilt?: (index: SemanticIndex) => void;
   tsconfig?: {
     compilerOptions?: {
       baseUrl?: string;
@@ -15,12 +19,22 @@ export type TypeScriptProject = {
   };
 };
 
+const getProjectFiles = (project: TypeScriptProject): TypeScriptSource[] =>
+  project.projectFiles ?? project.files;
+
 export type SymbolBindings = ReadonlyMap<string, string>;
 export type EventIds = ReadonlyMap<string, string>;
 
 export type ProjectSymbolResolution = {
   eventIds: EventIds;
   bindingsByFile: ReadonlyMap<string, SymbolBindings>;
+  sourceFiles: readonly ProjectSourceFile[];
+  semanticIndex: SemanticIndex;
+};
+
+export type ProjectSourceFile = {
+  file: string;
+  sourceFile: ts.SourceFile;
 };
 
 type VariableCall = {
@@ -75,7 +89,7 @@ const resolveImportFile = (
   moduleSpecifier: string,
   project: TypeScriptProject,
 ): string | undefined => {
-  const files = new Set(project.files.map((file) => normalizePath(file.file)));
+  const files = new Set(getProjectFiles(project).map((file) => normalizePath(file.file)));
   const paths = project.tsconfig?.compilerOptions?.paths ?? {};
   const baseUrl = project.tsconfig?.compilerOptions?.baseUrl ?? ".";
 
@@ -96,12 +110,11 @@ const resolveImportFile = (
   return undefined;
 };
 
-const getProjectEventIds = (files: TypeScriptSource[]): Map<string, string> => {
+const getProjectEventIds = (files: readonly ProjectSourceFile[]): Map<string, string> => {
   const occurrences = new Map<string, number>();
   const declarations: Array<{ file: string; name: string }> = [];
 
-  for (const file of files) {
-    const sourceFile = createSourceFile(file.file, file.source);
+  for (const { file, sourceFile } of files) {
     const visit = (node: ts.Node): void => {
       const variableCall = getVariableCall(node);
       if (
@@ -109,7 +122,7 @@ const getProjectEventIds = (files: TypeScriptSource[]): Map<string, string> => {
         ts.isIdentifier(variableCall.call.expression) &&
         variableCall.call.expression.text === "createAction"
       ) {
-        declarations.push({ file: normalizePath(file.file), name: variableCall.id });
+        declarations.push({ file: normalizePath(file), name: variableCall.id });
         occurrences.set(variableCall.id, (occurrences.get(variableCall.id) ?? 0) + 1);
       }
       ts.forEachChild(node, visit);
@@ -158,13 +171,24 @@ const getSymbolBindings = (
 };
 
 export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbolResolution => {
-  const eventIds = getProjectEventIds(project.files);
+  const projectFiles = getProjectFiles(project);
+  const sourceFiles = projectFiles.map(({ file, source }) => ({
+    file,
+    sourceFile: createSourceFile(file, source),
+  }));
+  const eventIds = getProjectEventIds(sourceFiles);
+  const semanticIndex = buildSemanticIndex(sourceFiles);
+  project.onSemanticIndexBuilt?.(semanticIndex);
+  const sourceFilesByPath = new Map(
+    sourceFiles.map((source) => [normalizePath(source.file), source]),
+  );
   const bindingsByFile = new Map<string, SymbolBindings>();
 
   for (const file of project.files) {
-    const sourceFile = createSourceFile(file.file, file.source);
+    const sourceFile = sourceFilesByPath.get(normalizePath(file.file))?.sourceFile;
+    if (!sourceFile) continue;
     bindingsByFile.set(file.file, getSymbolBindings(file, sourceFile, project, eventIds));
   }
 
-  return { eventIds, bindingsByFile };
+  return { eventIds, bindingsByFile, sourceFiles, semanticIndex };
 };

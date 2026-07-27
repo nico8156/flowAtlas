@@ -11,6 +11,7 @@ import {
 import { findFunctionLike, findReturnedFunctionLike } from "./functionResolver.js";
 import { getResolvedEventId } from "./eventDetector.js";
 import { getExternalProtocolEventId } from "./externalProtocolEvent.js";
+import { type SemanticIndex } from "./semanticIndex.js";
 
 type ListenerContext = {
   sourceFile: ts.SourceFile;
@@ -18,6 +19,7 @@ type ListenerContext = {
   bindings: ReadonlyMap<string, string>;
   collectRelationships: boolean;
   sourceFiles: readonly ts.SourceFile[];
+  semanticIndex?: SemanticIndex | undefined;
 };
 
 const isNestedFunctionLike = (node: ts.Node): boolean => {
@@ -137,6 +139,7 @@ const addInfrastructureListeningRelationship = (
   bindings: ReadonlyMap<string, string>,
   collectRelationships: boolean,
   sourceFiles: readonly ts.SourceFile[],
+  semanticIndex?: SemanticIndex,
 ): void => {
   graph.addNode({ id: handlerId, kind: "Handler" });
   if (!collectRelationships) return;
@@ -154,7 +157,7 @@ const addInfrastructureListeningRelationship = (
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
       const functionName = node.expression.text;
       if (!visitedFunctions.has(functionName)) {
-        const declaration = findFunctionLike(sourceFile, functionName, sourceFiles);
+        const declaration = findFunctionLike(sourceFile, functionName, sourceFiles, semanticIndex);
         if (declaration) {
           visitedFunctions.add(functionName);
           visitCallback(declaration.body);
@@ -175,6 +178,7 @@ const addExternalRelationships = ({
   configuration,
   collectRelationships,
   sourceFiles,
+  semanticIndex,
 }: ListenerContext & {
   handlerId: string;
   configuration: ts.ObjectLiteralExpression;
@@ -202,17 +206,30 @@ const addExternalRelationships = ({
         sourceFile,
         effectNode.initializer.expression.text,
         sourceFiles,
+        semanticIndex,
       );
       if (declaration) {
         localExternalIds.set(
           effectNode.name.text,
-          getExternalIdsReturnedByFunction(declaration, graph, sourceFile, new Set(), sourceFiles),
+          getExternalIdsReturnedByFunction(
+            declaration,
+            graph,
+            sourceFile,
+            new Set(),
+            sourceFiles,
+            semanticIndex,
+          ),
         );
       }
     }
 
     if (ts.isCallExpression(effectNode) && ts.isPropertyAccessExpression(effectNode.expression)) {
-      const externalId = getExternalReference(sourceFile, graph, effectNode.expression.expression);
+      const externalId = getExternalReference(
+        sourceFile,
+        graph,
+        effectNode.expression.expression,
+        semanticIndex,
+      );
       if (externalId) {
         graph.addEdge({ source: handlerId, target: externalId, kind: "CALLS_EXTERNAL" });
       }
@@ -222,6 +239,7 @@ const addExternalRelationships = ({
         sourceFile,
         localExternalIds,
         sourceFiles,
+        semanticIndex,
       );
       for (const externalId of getExternalIdsCalledByFunction(
         sourceFile,
@@ -230,6 +248,7 @@ const addExternalRelationships = ({
         new Set(),
         passedExternalParameters,
         sourceFiles,
+        semanticIndex,
       )) {
         graph.addEdge({ source: handlerId, target: externalId, kind: "CALLS_EXTERNAL" });
       }
@@ -247,6 +266,7 @@ export const detectListeners = ({
   bindings,
   collectRelationships,
   sourceFiles,
+  semanticIndex,
 }: ListenerContext): void => {
   const visit = (node: ts.Node): void => {
     let architecturalFunctionId: string | undefined;
@@ -324,6 +344,7 @@ export const detectListeners = ({
           bindings,
           collectRelationships,
           sourceFiles,
+          semanticIndex,
         );
       }
 
@@ -350,6 +371,7 @@ export const detectListeners = ({
           bindings,
           collectRelationships,
           sourceFiles,
+          semanticIndex,
           handlerId: architecturalFunctionId,
           configuration,
         });
@@ -377,6 +399,7 @@ export const detectListeners = ({
           bindings,
           collectRelationships,
           sourceFiles,
+          semanticIndex,
           handlerId,
           configuration,
         });
@@ -393,7 +416,12 @@ export const detectListeners = ({
     ) {
       graph.addNode({ id: node.name.text, kind: "Handler" });
       if (collectRelationships) {
-        const returnedFunction = findReturnedFunctionLike(sourceFile, node.name.text, sourceFiles);
+        const returnedFunction = findReturnedFunctionLike(
+          sourceFile,
+          node.name.text,
+          sourceFiles,
+          semanticIndex,
+        );
         if (returnedFunction) {
           addDispatchRelationshipsFromBody(
             graph,
@@ -410,6 +438,7 @@ export const detectListeners = ({
             new Set(),
             new Map(),
             sourceFiles,
+            semanticIndex,
           )) {
             graph.addEdge({ source: node.name.text, target: externalId, kind: "CALLS_EXTERNAL" });
           }

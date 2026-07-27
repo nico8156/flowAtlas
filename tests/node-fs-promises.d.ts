@@ -1,5 +1,9 @@
 declare module "node:fs/promises" {
   export function readFile(file: string | URL, encoding: "utf8"): Promise<string>;
+  export function readdir(
+    path: string | URL,
+    options: { withFileTypes: true },
+  ): Promise<ReadonlyArray<{ name: string; isDirectory(): boolean }>>;
 }
 
 declare module "node:fs" {

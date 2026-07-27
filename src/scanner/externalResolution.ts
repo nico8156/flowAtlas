@@ -2,6 +2,7 @@ import * as ts from "typescript";
 
 import { type ArchitectureGraph } from "../domain/architectureGraph.js";
 import { findFunctionLike, type FunctionLike } from "./functionResolver.js";
+import { type SemanticIndex } from "./semanticIndex.js";
 
 export const getExternalIdsReturnedByFunction = (
   declaration: FunctionLike,
@@ -9,6 +10,7 @@ export const getExternalIdsReturnedByFunction = (
   sourceFile: ts.SourceFile,
   visitedAliases: Set<string>,
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): string[] => {
   if (declaration.returnType) {
     return getExternalTypeNames(
@@ -17,6 +19,7 @@ export const getExternalIdsReturnedByFunction = (
       sourceFile,
       visitedAliases,
       sourceFiles,
+      semanticIndex,
     );
   }
 
@@ -61,6 +64,7 @@ export const getExternalIdsReturnedByFunction = (
               sourceFile,
               visitedAliases,
               sourceFiles,
+              semanticIndex,
             )) {
               externalIds.add(externalId);
             }
@@ -81,13 +85,21 @@ const getExternalTypeNames = (
   sourceFile: ts.SourceFile,
   visitedAliases = new Set<string>(),
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): string[] => {
   if (!typeNode) return [];
   if (ts.isUnionTypeNode(typeNode)) {
     return [
       ...new Set(
         typeNode.types.flatMap((member) =>
-          getExternalTypeNames(member, graph, sourceFile, visitedAliases, sourceFiles),
+          getExternalTypeNames(
+            member,
+            graph,
+            sourceFile,
+            visitedAliases,
+            sourceFiles,
+            semanticIndex,
+          ),
         ),
       ),
     ];
@@ -103,7 +115,12 @@ const getExternalTypeNames = (
     ts.isTypeQueryNode(returnTypeArgument) &&
     ts.isIdentifier(returnTypeArgument.exprName)
   ) {
-    const declaration = findFunctionLike(sourceFile, returnTypeArgument.exprName.text, sourceFiles);
+    const declaration = findFunctionLike(
+      sourceFile,
+      returnTypeArgument.exprName.text,
+      sourceFiles,
+      semanticIndex,
+    );
     if (!declaration) return [];
     return getExternalIdsReturnedByFunction(
       declaration,
@@ -111,6 +128,7 @@ const getExternalTypeNames = (
       sourceFile,
       visitedAliases,
       sourceFiles,
+      semanticIndex,
     );
   }
   if (graph.nodes.some((candidate) => candidate.id === typeName && candidate.kind === "External")) {
@@ -131,19 +149,34 @@ const getExternalTypeNames = (
     findAlias(candidate);
     if (aliasedType) break;
   }
-  return getExternalTypeNames(aliasedType, graph, sourceFile, visitedAliases, sourceFiles);
+  return getExternalTypeNames(
+    aliasedType,
+    graph,
+    sourceFile,
+    visitedAliases,
+    sourceFiles,
+    semanticIndex,
+  );
 };
 
 export const getExternalReference = (
   sourceFile: ts.SourceFile,
   graph: ArchitectureGraph,
   expression: ts.Expression,
+  semanticIndex?: SemanticIndex,
 ): string | undefined => {
   if (!ts.isIdentifier(expression)) return undefined;
   let externalId: string | undefined;
   const visit = (node: ts.Node): void => {
     const externalTypeName = ts.isVariableDeclaration(node)
-      ? getExternalTypeNames(node.type, graph, sourceFile)[0]
+      ? getExternalTypeNames(
+          node.type,
+          graph,
+          sourceFile,
+          new Set(),
+          [sourceFile],
+          semanticIndex,
+        )[0]
       : undefined;
     if (
       ts.isVariableDeclaration(node) &&
@@ -164,7 +197,10 @@ const externalSupportsMethod = (
   externalId: string,
   methodName: string,
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): boolean => {
+  if (semanticIndex) return semanticIndex.externalSupportsMethod(externalId, methodName);
+
   let supportsMethod = false;
   const visit = (node: ts.Node): void => {
     if (
@@ -195,27 +231,42 @@ const getExternalProperties = (
   graph: ArchitectureGraph,
   sourceFile: ts.SourceFile,
   sourceFiles: readonly ts.SourceFile[],
+  semanticIndex?: SemanticIndex,
 ): Array<[string, string[]]> => {
-  const typeLiteral = typeNode && ts.isTypeLiteralNode(typeNode) ? typeNode : undefined;
-  const typeReferenceName =
-    typeNode && ts.isTypeReferenceNode(typeNode) && ts.isIdentifier(typeNode.typeName)
-      ? typeNode.typeName.text
-      : undefined;
-  const typeAlias = typeReferenceName
-    ? sourceFiles
+  const getMembers = (currentType: ts.TypeNode | undefined): readonly ts.TypeElement[] => {
+    if (!currentType) return [];
+    if (ts.isUnionTypeNode(currentType)) {
+      return currentType.types.flatMap((member) => getMembers(member));
+    }
+    if (ts.isTypeLiteralNode(currentType)) return currentType.members;
+    if (ts.isTypeReferenceNode(currentType) && ts.isIdentifier(currentType.typeName)) {
+      const typeName = currentType.typeName.text;
+      const typeAlias = sourceFiles
         .flatMap((candidate) => [...candidate.statements])
         .find(
           (statement): statement is ts.TypeAliasDeclaration =>
-            ts.isTypeAliasDeclaration(statement) && statement.name.text === typeReferenceName,
-        )
-    : undefined;
-  const members =
-    typeLiteral?.members ??
-    (typeAlias && ts.isTypeLiteralNode(typeAlias.type) ? typeAlias.type.members : undefined);
+            ts.isTypeAliasDeclaration(statement) && statement.name.text === typeName,
+        );
+      return getMembers(typeAlias?.type);
+    }
+    if (ts.isIndexedAccessTypeNode(currentType)) {
+      const index = currentType.indexType;
+      const propertyName =
+        ts.isLiteralTypeNode(index) && ts.isStringLiteral(index.literal)
+          ? index.literal.text
+          : undefined;
+      const property = getMembers(currentType.objectType).find(
+        (member): member is ts.PropertySignature =>
+          ts.isPropertySignature(member) &&
+          ts.isIdentifier(member.name) &&
+          member.name.text === propertyName,
+      );
+      return getMembers(property?.type);
+    }
+    return [];
+  };
 
-  if (!members) return [];
-
-  return members.flatMap((member): Array<[string, string[]]> => {
+  return getMembers(typeNode).flatMap((member): Array<[string, string[]]> => {
     if (!ts.isPropertySignature(member) || !member.name || !ts.isIdentifier(member.name)) {
       return [];
     }
@@ -226,9 +277,32 @@ const getExternalProperties = (
       sourceFile,
       new Set(),
       sourceFiles,
+      semanticIndex,
     );
     return externalIds.length > 0 ? [[member.name.text, externalIds]] : [];
   });
+};
+
+const getReturnedFunctionParameterType = (
+  functionLike: FunctionLike,
+  parameterIndex: number,
+  sourceFiles: readonly ts.SourceFile[],
+): ts.TypeNode | undefined => {
+  const returnType = functionLike.factoryReturnType;
+  if (!returnType || !ts.isTypeReferenceNode(returnType) || !ts.isIdentifier(returnType.typeName)) {
+    return undefined;
+  }
+  const returnTypeName = returnType.typeName.text;
+
+  const typeAlias = sourceFiles
+    .flatMap((candidate) => [...candidate.statements])
+    .find(
+      (statement): statement is ts.TypeAliasDeclaration =>
+        ts.isTypeAliasDeclaration(statement) && statement.name.text === returnTypeName,
+    );
+  if (!typeAlias || !ts.isFunctionTypeNode(typeAlias.type)) return undefined;
+
+  return typeAlias.type.parameters[parameterIndex]?.type;
 };
 
 export const getExternalParametersPassedToFunction = (
@@ -236,10 +310,11 @@ export const getExternalParametersPassedToFunction = (
   sourceFile: ts.SourceFile,
   localExternalIds: ReadonlyMap<string, string[]>,
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): Map<string, string[]> => {
   const passedExternalParameters = new Map<string, string[]>();
   const calledDeclaration = ts.isIdentifier(call.expression)
-    ? findFunctionLike(sourceFile, call.expression.text, sourceFiles)
+    ? findFunctionLike(sourceFile, call.expression.text, sourceFiles, semanticIndex)
     : undefined;
   const firstParameter = calledDeclaration?.parameters[0];
   const firstArgument = call.arguments[0];
@@ -303,6 +378,7 @@ const getExternalIdsCalledByResolvedFunction = (
   visitedFunctions = new Set<string>(),
   inheritedExternalParameters = new Map<string, string[]>(),
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): string[] => {
   if (visitedFunctions.has(functionName)) return [];
   visitedFunctions.add(functionName);
@@ -312,23 +388,27 @@ const getExternalIdsCalledByResolvedFunction = (
     externalParameters.set(parameterKey, externalIds);
   }
   const localExternalIds = new Map<string, string[]>();
-  for (const parameter of parameters) {
+  for (const [parameterIndex, parameter] of parameters.entries()) {
+    const parameterType =
+      parameter.type ?? getReturnedFunctionParameterType(functionLike, parameterIndex, sourceFiles);
     const externalTypeNames = getExternalTypeNames(
-      parameter.type,
+      parameterType,
       graph,
       sourceFile,
       new Set(),
       sourceFiles,
+      semanticIndex,
     );
     if (ts.isIdentifier(parameter.name) && externalTypeNames.length > 0) {
       externalParameters.set(parameter.name.text, externalTypeNames);
     }
-    if (ts.isIdentifier(parameter.name) && parameter.type) {
+    if (ts.isIdentifier(parameter.name) && parameterType) {
       for (const [propertyName, externalIds] of getExternalProperties(
-        parameter.type,
+        parameterType,
         graph,
         sourceFile,
         sourceFiles,
+        semanticIndex,
       )) {
         externalParameters.set(`${parameter.name.text}.${propertyName}`, externalIds);
       }
@@ -343,6 +423,7 @@ const getExternalIdsCalledByResolvedFunction = (
           sourceFile,
           node.initializer.expression.text,
           sourceFiles,
+          semanticIndex,
         );
         if (declaration) {
           localExternalIds.set(
@@ -353,6 +434,7 @@ const getExternalIdsCalledByResolvedFunction = (
               sourceFile,
               new Set(),
               sourceFiles,
+              semanticIndex,
             ),
           );
         }
@@ -383,7 +465,15 @@ const getExternalIdsCalledByResolvedFunction = (
         const resolvedExternalIds =
           externalParameters.get(parameterKey) ?? localExternalIds.get(parameterKey) ?? [];
         for (const externalId of resolvedExternalIds) {
-          if (externalSupportsMethod(sourceFile, externalId, node.name.text, sourceFiles)) {
+          if (
+            externalSupportsMethod(
+              sourceFile,
+              externalId,
+              node.name.text,
+              sourceFiles,
+              semanticIndex,
+            )
+          ) {
             externalIds.add(externalId);
           }
         }
@@ -395,6 +485,7 @@ const getExternalIdsCalledByResolvedFunction = (
         sourceFile,
         localExternalIds,
         sourceFiles,
+        semanticIndex,
       );
       for (const externalId of getExternalIdsCalledByFunction(
         sourceFile,
@@ -403,6 +494,7 @@ const getExternalIdsCalledByResolvedFunction = (
         visitedFunctions,
         passedExternalParameters,
         sourceFiles,
+        semanticIndex,
       )) {
         externalIds.add(externalId);
       }
@@ -420,8 +512,9 @@ export const getExternalIdsCalledByFunction = (
   visitedFunctions = new Set<string>(),
   inheritedExternalParameters = new Map<string, string[]>(),
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): string[] => {
-  const functionLike = findFunctionLike(sourceFile, functionName, sourceFiles);
+  const functionLike = findFunctionLike(sourceFile, functionName, sourceFiles, semanticIndex);
   if (!functionLike) return [];
 
   return getExternalIdsCalledByResolvedFunction(
@@ -432,6 +525,7 @@ export const getExternalIdsCalledByFunction = (
     visitedFunctions,
     inheritedExternalParameters,
     sourceFiles,
+    semanticIndex,
   );
 };
 
@@ -443,6 +537,7 @@ export const getExternalIdsCalledByFunctionLike = (
   visitedFunctions = new Set<string>(),
   inheritedExternalParameters = new Map<string, string[]>(),
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): string[] =>
   getExternalIdsCalledByResolvedFunction(
     sourceFile,
@@ -452,4 +547,5 @@ export const getExternalIdsCalledByFunctionLike = (
     visitedFunctions,
     inheritedExternalParameters,
     sourceFiles,
+    semanticIndex,
   );

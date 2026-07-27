@@ -1,9 +1,12 @@
 import * as ts from "typescript";
 
+import { type SemanticIndex } from "./semanticIndex.js";
+
 export type FunctionLike = {
   parameters: readonly ts.ParameterDeclaration[];
   body: ts.Node;
   returnType?: ts.TypeNode | undefined;
+  factoryReturnType?: ts.TypeNode | undefined;
   sourceFile: ts.SourceFile;
 };
 
@@ -11,7 +14,12 @@ export const findFunctionLike = (
   sourceFile: ts.SourceFile,
   functionName: string,
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): FunctionLike | undefined => {
+  if (semanticIndex) {
+    return semanticIndex.findFunctionLike(sourceFile.fileName, functionName);
+  }
+
   let declaration: FunctionLike | undefined;
   const visit = (node: ts.Node, origin: ts.SourceFile): void => {
     if (declaration) return;
@@ -57,8 +65,9 @@ export const findReturnedFunctionLike = (
   sourceFile: ts.SourceFile,
   functionName: string,
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
+  semanticIndex?: SemanticIndex,
 ): FunctionLike | undefined => {
-  const declaration = findFunctionLike(sourceFile, functionName, sourceFiles);
+  const declaration = findFunctionLike(sourceFile, functionName, sourceFiles, semanticIndex);
   if (!declaration) return undefined;
 
   if (!ts.isArrowFunction(declaration.body) && !ts.isFunctionExpression(declaration.body)) {
@@ -69,6 +78,7 @@ export const findReturnedFunctionLike = (
     parameters: declaration.body.parameters,
     body: declaration.body.body,
     returnType: declaration.returnType,
+    factoryReturnType: declaration.returnType,
     sourceFile: declaration.sourceFile,
   };
 };

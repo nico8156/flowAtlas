@@ -33,6 +33,19 @@ describe("External resolution", () => {
     });
   });
 
+  it("resolves a thunk gateway from its factory return type", async () => {
+    const file = "tests/fixtures/thunkGatewayFromReturnType.ts";
+    const source = await readFixture("thunkGatewayFromReturnType.ts");
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "likesRetrieval",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+  });
+
   it("detects a gateway interface as an External node", async () => {
     const file = "tests/fixtures/externalGateway.ts";
     const source = await readFixture("externalGateway.ts");
