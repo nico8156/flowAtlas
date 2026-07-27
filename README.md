@@ -190,7 +190,9 @@ is source-in/source-out and is not yet a project scanner or CLI command.
 Named imports and renamed named imports are resolved for relative paths and
 configured `tsconfig` paths among the provided project files. Direct
 `startListening` registrations and local aliases such as `listen =
-mw.startListening as TypedStartListening<...>` are recognized as Handlers.
+mw.startListening as TypedStartListening<...>` are recognized as Handlers, and
+their statically identifiable `dispatch(actionCreator())` calls produce
+`DISPATCHES` edges.
 This is not yet
 full TypeScript program resolution: barrels, package boundaries and filesystem
 project loading remain out of scope. Slice detection is available, while

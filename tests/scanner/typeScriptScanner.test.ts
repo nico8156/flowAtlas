@@ -259,4 +259,20 @@ describe("TypeScript scanner", () => {
       kind: "LISTENS_TO",
     });
   });
+
+  it("detects an Event dispatched by a locally aliased listener", async () => {
+    const file = "tests/fixtures/localListenerAliasDispatch.ts";
+    const source = await readFile(
+      new URL("../fixtures/localListenerAliasDispatch.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "likeToggleUseCaseFactory",
+      target: "likeOptimisticApplied",
+      kind: "DISPATCHES",
+    });
+  });
 });

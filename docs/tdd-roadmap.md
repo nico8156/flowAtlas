@@ -32,6 +32,7 @@ and developed according to `AGENTS.md`.
 - [x] RED 24 - Preserve Event identity through a renamed import
 - [x] RED 25 - Resolve aliased imports against homonymous module symbols
 - [x] RED 27 - Detect a Handler registered through a local listener alias
+- [x] RED 28 - Detect dispatches inside an aliased listener effect
 
 ## Near-Term Candidate Behaviours
 

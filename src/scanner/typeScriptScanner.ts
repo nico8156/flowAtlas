@@ -66,6 +66,48 @@ const addListeningRelationship = (
   });
 };
 
+const addDispatchRelationships = (
+  graph: ArchitectureGraph,
+  handlerId: string,
+  configuration: ts.ObjectLiteralExpression,
+  bindings: SymbolBindings,
+): void => {
+  const effectProperty = configuration.properties.find(
+    (property): property is ts.PropertyAssignment =>
+      ts.isPropertyAssignment(property) &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === "effect",
+  );
+
+  if (!effectProperty) return;
+
+  const visitEffect = (effectNode: ts.Node): void => {
+    if (
+      ts.isCallExpression(effectNode) &&
+      ts.isPropertyAccessExpression(effectNode.expression) &&
+      effectNode.expression.name.text === "dispatch"
+    ) {
+      const dispatchedAction = effectNode.arguments[0];
+      if (
+        dispatchedAction &&
+        ts.isCallExpression(dispatchedAction) &&
+        ts.isIdentifier(dispatchedAction.expression)
+      ) {
+        graph.addEdge({
+          source: handlerId,
+          target:
+            bindings.get(dispatchedAction.expression.text) ?? dispatchedAction.expression.text,
+          kind: "DISPATCHES",
+        });
+      }
+    }
+
+    ts.forEachChild(effectNode, visitEffect);
+  };
+
+  visitEffect(effectProperty.initializer);
+};
+
 const scanSourceIntoGraph = (
   { file, source }: TypeScriptSource,
   graph: ArchitectureGraph,
@@ -130,6 +172,7 @@ const scanSourceIntoGraph = (
         if (!configuration || !ts.isObjectLiteralExpression(configuration)) continue;
 
         addListeningRelationship(graph, architecturalFunctionId, configuration, bindings);
+        addDispatchRelationships(graph, architecturalFunctionId, configuration, bindings);
       }
     }
 
@@ -159,42 +202,7 @@ const scanSourceIntoGraph = (
       const configuration = variableCall.call.arguments[0];
       if (configuration && ts.isObjectLiteralExpression(configuration)) {
         addListeningRelationship(graph, handlerId, configuration, bindings);
-
-        const effectProperty = configuration.properties.find(
-          (property): property is ts.PropertyAssignment =>
-            ts.isPropertyAssignment(property) &&
-            ts.isIdentifier(property.name) &&
-            property.name.text === "effect",
-        );
-
-        if (effectProperty) {
-          const visitEffect = (effectNode: ts.Node): void => {
-            if (
-              ts.isCallExpression(effectNode) &&
-              ts.isPropertyAccessExpression(effectNode.expression) &&
-              effectNode.expression.name.text === "dispatch"
-            ) {
-              const dispatchedAction = effectNode.arguments[0];
-              if (
-                dispatchedAction &&
-                ts.isCallExpression(dispatchedAction) &&
-                ts.isIdentifier(dispatchedAction.expression)
-              ) {
-                graph.addEdge({
-                  source: handlerId,
-                  target:
-                    bindings.get(dispatchedAction.expression.text) ??
-                    dispatchedAction.expression.text,
-                  kind: "DISPATCHES",
-                });
-              }
-            }
-
-            ts.forEachChild(effectNode, visitEffect);
-          };
-
-          visitEffect(effectProperty.initializer);
-        }
+        addDispatchRelationships(graph, handlerId, configuration, bindings);
       }
     }
 
