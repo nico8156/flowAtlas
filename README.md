@@ -19,22 +19,32 @@ runtime instrumentation or application code changes.
 
 FlowAtlas is currently at the first TypeScript analysis stage.
 
-| Area                            | Status                          |
-| ------------------------------- | ------------------------------- |
-| TypeScript / Node.js foundation | Available                       |
-| Strict type checking            | Available                       |
-| Test runner and build pipeline  | Available                       |
-| Architecture graph model        | Minimal V1 core available       |
-| TypeScript analysis             | Minimal `createAction` detector |
-| Redux Toolkit detectors         | Not started                     |
-| CLI                             | Not started                     |
-| Interactive visualizer          | Not started                     |
-| Fragments acceptance fixture    | Not started                     |
+| Area                            | Status                               |
+| ------------------------------- | ------------------------------------ |
+| TypeScript / Node.js foundation | Available                            |
+| Strict type checking            | Available                            |
+| Test runner and build pipeline  | Available                            |
+| Architecture graph model        | Minimal V1 core available            |
+| TypeScript analysis             | Minimal `createAction` detector      |
+| Redux Toolkit detectors         | Not started                          |
+| CLI                             | Not started                          |
+| Interactive visualizer          | Not started                          |
+| Fragments acceptance tests      | Available when the corpus is present |
 
 The domain graph and analysis capabilities are emerging through the TDD
-workflow described below. The current repository contains only a minimal
-TypeScript source scanner; it intentionally contains no CLI, visualizer or
-Fragments acceptance fixture yet.
+workflow described below. The repository includes acceptance tests for the
+Fragments Like and outbox slices. The Fragments application itself remains an
+external corpus and is not copied into this repository.
+
+To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
+Fragments. The default is `../fragmentsCleanFront` relative to the repository:
+
+```sh
+FLOWATLAS_FRAGMENTS_ROOT=../fragmentsCleanFront npm test
+```
+
+When the corpus is unavailable, the acceptance suites are reported as skipped;
+the focused scanner and domain suites remain runnable from a clean checkout.
 
 ## Product direction
 
@@ -359,7 +369,7 @@ capabilities.
 5. Validate each detector with a minimal fixture and then against Fragments.
 6. Add the CLI scan entry point.
 7. Build the first navigable visual map.
-8. Add the Fragments Like golden acceptance test.
+8. Extend the Fragments Like golden acceptance coverage.
 
 Diagnostics, runtime overlays and additional architecture adapters come later.
 They must not weaken the static truth guarantees of the MVP.
