@@ -131,6 +131,50 @@ const addDispatchRelationships = (
   visitEffect(effectProperty.initializer);
 };
 
+const getExternalTypeNames = (
+  typeNode: ts.TypeNode | undefined,
+  graph: ArchitectureGraph,
+  sourceFile: ts.SourceFile,
+  visitedAliases = new Set<string>(),
+): string[] => {
+  if (!typeNode) return [];
+
+  if (ts.isUnionTypeNode(typeNode)) {
+    return [
+      ...new Set(
+        typeNode.types.flatMap((member) =>
+          getExternalTypeNames(member, graph, sourceFile, visitedAliases),
+        ),
+      ),
+    ];
+  }
+
+  if (!ts.isTypeReferenceNode(typeNode) || !ts.isIdentifier(typeNode.typeName)) {
+    return [];
+  }
+
+  const typeName = typeNode.typeName.text;
+  if (graph.nodes.some((candidate) => candidate.id === typeName && candidate.kind === "External")) {
+    return [typeName];
+  }
+
+  if (visitedAliases.has(typeName)) return [];
+  visitedAliases.add(typeName);
+
+  let aliasedType: ts.TypeNode | undefined;
+  const findAlias = (node: ts.Node): void => {
+    if (ts.isTypeAliasDeclaration(node) && node.name.text === typeName) {
+      aliasedType = node.type;
+      return;
+    }
+
+    ts.forEachChild(node, findAlias);
+  };
+  findAlias(sourceFile);
+
+  return getExternalTypeNames(aliasedType, graph, sourceFile, visitedAliases);
+};
+
 const getExternalReference = (
   sourceFile: ts.SourceFile,
   graph: ArchitectureGraph,
@@ -141,17 +185,14 @@ const getExternalReference = (
   let externalId: string | undefined;
   const visit = (node: ts.Node): void => {
     const externalTypeName = ts.isVariableDeclaration(node)
-      ? getExternalTypeName(node.type, graph)
+      ? getExternalTypeNames(node.type, graph, sourceFile)[0]
       : undefined;
 
     if (
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
       node.name.text === expression.text &&
-      externalTypeName &&
-      graph.nodes.some(
-        (candidate) => candidate.id === externalTypeName && candidate.kind === "External",
-      )
+      externalTypeName
     ) {
       externalId = externalTypeName;
     }
@@ -161,22 +202,6 @@ const getExternalReference = (
 
   visit(sourceFile);
   return externalId;
-};
-
-const getExternalTypeName = (
-  typeNode: ts.TypeNode | undefined,
-  graph: ArchitectureGraph,
-): string | undefined => {
-  if (!typeNode || !ts.isTypeReferenceNode(typeNode) || !ts.isIdentifier(typeNode.typeName)) {
-    return undefined;
-  }
-
-  const externalTypeName = typeNode.typeName.text;
-  return graph.nodes.some(
-    (candidate) => candidate.id === externalTypeName && candidate.kind === "External",
-  )
-    ? externalTypeName
-    : undefined;
 };
 
 const getExternalIdsCalledByFunction = (
@@ -212,18 +237,12 @@ const getExternalIdsCalledByFunction = (
   findFunction(sourceFile);
   if (!parameters || !body) return [];
 
-  const externalParameters = new Map<string, string>();
+  const externalParameters = new Map<string, string[]>();
   for (const parameter of parameters) {
-    const externalTypeName = getExternalTypeName(parameter.type, graph);
+    const externalTypeNames = getExternalTypeNames(parameter.type, graph, sourceFile);
 
-    if (
-      ts.isIdentifier(parameter.name) &&
-      externalTypeName &&
-      graph.nodes.some(
-        (candidate) => candidate.id === externalTypeName && candidate.kind === "External",
-      )
-    ) {
-      externalParameters.set(parameter.name.text, externalTypeName);
+    if (ts.isIdentifier(parameter.name) && externalTypeNames.length > 0) {
+      externalParameters.set(parameter.name.text, externalTypeNames);
     }
 
     if (ts.isIdentifier(parameter.name) && parameter.type && ts.isTypeLiteralNode(parameter.type)) {
@@ -232,13 +251,13 @@ const getExternalIdsCalledByFunction = (
           continue;
         }
 
-        const externalTypeName = getExternalTypeName(member.type, graph);
+        const externalTypeNames = getExternalTypeNames(member.type, graph, sourceFile);
 
-        if (!externalTypeName) {
+        if (externalTypeNames.length === 0) {
           continue;
         }
 
-        externalParameters.set(`${parameter.name.text}.${member.name.text}`, externalTypeName);
+        externalParameters.set(`${parameter.name.text}.${member.name.text}`, externalTypeNames);
       }
     }
   }
@@ -246,10 +265,11 @@ const getExternalIdsCalledByFunction = (
   const externalIds = new Set<string>();
   const visitBody = (node: ts.Node): void => {
     if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression)) {
-      const externalId =
+      const resolvedExternalIds =
         externalParameters.get(`${node.expression.text}.${node.name.text}`) ??
-        externalParameters.get(node.expression.text);
-      if (externalId) externalIds.add(externalId);
+        externalParameters.get(node.expression.text) ??
+        [];
+      for (const externalId of resolvedExternalIds) externalIds.add(externalId);
     }
 
     ts.forEachChild(node, visitBody);

@@ -535,6 +535,35 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("keeps all statically possible External gateways", async () => {
+    const file = "tests/fixtures/multipleExternalGateways.ts";
+    const source = await readFile(
+      new URL("../fixtures/multipleExternalGateways.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "LikeGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "CommentGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendCommand",
+      kind: "Handler",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
