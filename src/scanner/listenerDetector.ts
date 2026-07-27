@@ -333,6 +333,16 @@ export const detectListeners = ({
       }
     }
 
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isArrowFunction(node.initializer) &&
+      (ts.isArrowFunction(node.initializer.body) || ts.isFunctionExpression(node.initializer.body))
+    ) {
+      graph.addNode({ id: node.name.text, kind: "Handler" });
+    }
+
     ts.forEachChild(node, visit);
   };
 
