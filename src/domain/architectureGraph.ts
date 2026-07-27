@@ -26,6 +26,7 @@ export type ArchitectureEdge = {
 export type ArchitectureGraph = {
   nodes: readonly ArchitectureNode[];
   edges: readonly ArchitectureEdge[];
+  findNode(nodeId: string): ArchitectureNode | undefined;
   addNode(node: ArchitectureNode): void;
   addEdge(edge: ArchitectureEdge): void;
   downstream(nodeId: string): readonly ArchitectureNode[];
@@ -69,6 +70,9 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
   return {
     nodes,
     edges,
+    findNode(nodeId) {
+      return nodes.find((node) => node.id === nodeId);
+    },
     addNode(node) {
       if (nodes.some((existingNode) => existingNode.id === node.id)) {
         return;
@@ -78,8 +82,8 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
     },
     addEdge(edge) {
       const expected = relationNodeKinds[edge.kind];
-      const sourceNode = nodes.find((node) => node.id === edge.source);
-      const targetNode = nodes.find((node) => node.id === edge.target);
+      const sourceNode = this.findNode(edge.source);
+      const targetNode = this.findNode(edge.target);
 
       if (sourceNode?.kind !== expected.source || targetNode?.kind !== expected.target) {
         throw new Error(`${edge.kind} requires ${expected.description}`);
@@ -95,7 +99,7 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
           continue;
         }
 
-        const targetNode = nodes.find((node) => node.id === edge.target);
+        const targetNode = this.findNode(edge.target);
         if (targetNode) {
           downstreamNodes.push(targetNode);
         }
@@ -111,7 +115,7 @@ export const createArchitectureGraph = (): ArchitectureGraph => {
           continue;
         }
 
-        const sourceNode = nodes.find((node) => node.id === edge.source);
+        const sourceNode = this.findNode(edge.source);
         if (sourceNode) {
           upstreamNodes.push(sourceNode);
         }

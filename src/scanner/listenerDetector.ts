@@ -9,6 +9,7 @@ import {
 } from "./externalResolution.js";
 import { findFunctionLike } from "./functionResolver.js";
 import { getResolvedEventId } from "./eventDetector.js";
+import { getExternalProtocolEventId } from "./externalProtocolEvent.js";
 
 type ListenerContext = {
   sourceFile: ts.SourceFile;
@@ -93,6 +94,31 @@ const addDispatchRelationships = (
   };
 
   visitEffect(effectProperty.initializer);
+};
+
+const addInfrastructureListeningRelationship = (
+  graph: ArchitectureGraph,
+  handlerId: string,
+  callback: ts.Expression,
+  bindings: ReadonlyMap<string, string>,
+  collectRelationships: boolean,
+): void => {
+  graph.addNode({ id: handlerId, kind: "Handler" });
+  if (!collectRelationships) return;
+
+  const visitCallback = (node: ts.Node): void => {
+    const externalProtocolEventId = getExternalProtocolEventId(node);
+    if (externalProtocolEventId) {
+      const target = getResolvedEventId(graph, externalProtocolEventId, bindings);
+      if (target) {
+        graph.addEdge({ source: handlerId, target, kind: "LISTENS_TO" });
+      }
+    }
+
+    ts.forEachChild(node, visitCallback);
+  };
+
+  visitCallback(callback);
 };
 
 const addExternalRelationships = ({
@@ -196,6 +222,7 @@ export const detectListeners = ({
     if (architecturalFunctionId && architecturalFunctionBody) {
       const listenerAliases = new Set<string>();
       const registrations: ts.CallExpression[] = [];
+      const infrastructureCallbacks: ts.Expression[] = [];
       const inspectFunction = (functionNode: ts.Node): void => {
         if (
           ts.isVariableDeclaration(functionNode) &&
@@ -216,9 +243,40 @@ export const detectListeners = ({
         ) {
           registrations.push(functionNode);
         }
+        if (
+          ts.isCallExpression(functionNode) &&
+          ts.isPropertyAccessExpression(functionNode.expression) &&
+          functionNode.expression.name.text === "connect" &&
+          functionNode.arguments[0] &&
+          ts.isObjectLiteralExpression(functionNode.arguments[0])
+        ) {
+          const onEvent = functionNode.arguments[0].properties.find(
+            (property): property is ts.PropertyAssignment =>
+              ts.isPropertyAssignment(property) &&
+              ts.isIdentifier(property.name) &&
+              property.name.text === "onEvent",
+          );
+          if (
+            onEvent &&
+            (ts.isArrowFunction(onEvent.initializer) ||
+              ts.isFunctionExpression(onEvent.initializer))
+          ) {
+            infrastructureCallbacks.push(onEvent.initializer);
+          }
+        }
         ts.forEachChild(functionNode, inspectFunction);
       };
       inspectFunction(architecturalFunctionBody);
+
+      for (const callback of infrastructureCallbacks) {
+        addInfrastructureListeningRelationship(
+          graph,
+          architecturalFunctionId,
+          callback,
+          bindings,
+          collectRelationships,
+        );
+      }
 
       for (const registration of registrations) {
         const configuration = registration.arguments[0];

@@ -2,6 +2,7 @@ import * as ts from "typescript";
 
 import { type ArchitectureGraph, type SourceLocation } from "../domain/architectureGraph.js";
 import { type EventIds } from "./projectSymbolResolver.js";
+import { getExternalProtocolEventId } from "./externalProtocolEvent.js";
 import { getVariableCall } from "./typeScriptAst.js";
 
 export const detectEvents = (
@@ -27,18 +28,11 @@ export const detectEvents = (
       });
     }
 
-    if (
-      ts.isBinaryExpression(node) &&
-      (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ||
-        node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken) &&
-      ts.isPropertyAccessExpression(node.left) &&
-      node.left.name.text === "eventName" &&
-      ts.isStringLiteral(node.right) &&
-      node.right.text === "projection.updated"
-    ) {
+    const externalProtocolEventId = getExternalProtocolEventId(node);
+    if (externalProtocolEventId === "projection.updated") {
       const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
       graph.addNode({
-        id: node.right.text,
+        id: externalProtocolEventId,
         kind: "Event",
         source: "external-protocol",
         sourceLocation: { file, line },
@@ -57,7 +51,5 @@ export const getResolvedEventId = (
   bindings: ReadonlyMap<string, string>,
 ): string | undefined => {
   const eventId = bindings.get(localName) ?? localName;
-  return graph.nodes.some((node) => node.id === eventId && node.kind === "Event")
-    ? eventId
-    : undefined;
+  return graph.findNode(eventId)?.kind === "Event" ? eventId : undefined;
 };

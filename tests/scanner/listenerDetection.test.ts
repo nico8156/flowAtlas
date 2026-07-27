@@ -100,4 +100,23 @@ describe("Handler and listener detection", () => {
       kind: "DISPATCHES",
     });
   });
+
+  it("detects a Handler listening through an infrastructure callback", async () => {
+    const file = "tests/fixtures/projectionSyncCallback.ts";
+    const source = await readFixture("projectionSyncCallback.ts");
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.nodes).toContainEqual(
+      expect.objectContaining({
+        id: "projectionSyncListenerFactory",
+        kind: "Handler",
+      }),
+    );
+    expect(graph.edges).toContainEqual({
+      source: "projectionSyncListenerFactory",
+      target: "projection.updated",
+      kind: "LISTENS_TO",
+    });
+  });
 });
