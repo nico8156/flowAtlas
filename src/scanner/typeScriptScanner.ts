@@ -68,6 +68,17 @@ const addListeningRelationship = (
   });
 };
 
+const getResolvedEventId = (
+  graph: ArchitectureGraph,
+  localName: string,
+  bindings: SymbolBindings,
+): string | undefined => {
+  const eventId = bindings.get(localName) ?? localName;
+  return graph.nodes.some((node) => node.id === eventId && node.kind === "Event")
+    ? eventId
+    : undefined;
+};
+
 const addDispatchRelationships = (
   graph: ArchitectureGraph,
   handlerId: string,
@@ -95,9 +106,8 @@ const addDispatchRelationships = (
         ts.isCallExpression(dispatchedAction) &&
         ts.isIdentifier(dispatchedAction.expression)
       ) {
-        const target =
-          bindings.get(dispatchedAction.expression.text) ?? dispatchedAction.expression.text;
-        if (!graph.nodes.some((node) => node.id === target && node.kind === "Event")) {
+        const target = getResolvedEventId(graph, dispatchedAction.expression.text, bindings);
+        if (!target) {
           return;
         }
 
@@ -292,8 +302,13 @@ const scanSourceIntoGraph = (
           ) {
             const handledEvent = reducerNode.arguments[0];
             if (handledEvent && ts.isIdentifier(handledEvent)) {
+              const source = getResolvedEventId(graph, handledEvent.text, bindings);
+              if (!source) {
+                return;
+              }
+
               graph.addEdge({
-                source: bindings.get(handledEvent.text) ?? handledEvent.text,
+                source,
                 target: stateId,
                 kind: "UPDATES",
               });

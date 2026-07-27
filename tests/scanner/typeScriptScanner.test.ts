@@ -331,6 +331,30 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("ignores an unresolved reducer Event without failing the scan", async () => {
+    const file = "tests/fixtures/unresolvedReducerCase.ts";
+    const source = await readFile(
+      new URL("../fixtures/unresolvedReducerCase.ts", import.meta.url),
+      "utf8",
+    );
+    let graph: ReturnType<typeof scanTypeScriptSource> | undefined;
+
+    expect(() => {
+      graph = scanTypeScriptSource({ file, source });
+    }).not.toThrow();
+
+    expect(graph?.edges).toContainEqual({
+      source: "knownEvent",
+      target: "stateReducer",
+      kind: "UPDATES",
+    });
+    expect(graph?.edges).not.toContainEqual({
+      source: "missingEvent",
+      target: "stateReducer",
+      kind: "UPDATES",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
