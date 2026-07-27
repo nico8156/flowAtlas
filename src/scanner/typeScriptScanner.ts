@@ -18,6 +18,8 @@ type VariableCall = {
   call: ts.CallExpression;
 };
 
+type StateIds = ReadonlyMap<string, string>;
+
 const getVariableCall = (node: ts.Node): VariableCall | undefined => {
   if (
     !ts.isVariableDeclaration(node) ||
@@ -108,11 +110,54 @@ const addDispatchRelationships = (
   visitEffect(effectProperty.initializer);
 };
 
+const getStoreStateIds = (project: TypeScriptProject): Map<string, string> => {
+  const stateIds = new Map<string, string>();
+
+  for (const { source } of project.files) {
+    const sourceFile = createTypeScriptSourceFile("flowatlas-store.ts", source);
+    const visit = (node: ts.Node): void => {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === "configureStore" &&
+        node.arguments[0] &&
+        ts.isObjectLiteralExpression(node.arguments[0])
+      ) {
+        const reducerProperty = node.arguments[0].properties.find(
+          (property): property is ts.PropertyAssignment =>
+            ts.isPropertyAssignment(property) &&
+            ts.isIdentifier(property.name) &&
+            property.name.text === "reducer",
+        );
+
+        if (reducerProperty && ts.isObjectLiteralExpression(reducerProperty.initializer)) {
+          for (const property of reducerProperty.initializer.properties) {
+            if (
+              ts.isPropertyAssignment(property) &&
+              ts.isIdentifier(property.name) &&
+              ts.isIdentifier(property.initializer)
+            ) {
+              stateIds.set(property.initializer.text, property.name.text);
+            }
+          }
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    };
+
+    visit(sourceFile);
+  }
+
+  return stateIds;
+};
+
 const scanSourceIntoGraph = (
   { file, source }: TypeScriptSource,
   graph: ArchitectureGraph,
   bindings: SymbolBindings = new Map(),
   eventIds: EventIds = new Map(),
+  stateIds: StateIds = new Map(),
 ): void => {
   const sourceFile = createTypeScriptSourceFile("flowatlas-input.ts", source);
 
@@ -212,7 +257,7 @@ const scanSourceIntoGraph = (
       (variableCall.call.expression.text === "createSlice" ||
         variableCall.call.expression.text === "createReducer")
     ) {
-      const stateId = variableCall.id;
+      const stateId = stateIds.get(variableCall.id) ?? variableCall.id;
       graph.addNode({ id: stateId, kind: "State" });
 
       const configuration = variableCall.call.arguments[0];
@@ -264,6 +309,7 @@ export const scanTypeScriptSource = (input: TypeScriptSource): ArchitectureGraph
 export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureGraph => {
   const graph = createArchitectureGraph();
   const resolution = resolveProjectSymbols(project);
+  const stateIds = getStoreStateIds(project);
 
   for (const file of project.files) {
     scanSourceIntoGraph(
@@ -271,6 +317,7 @@ export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureG
       graph,
       resolution.bindingsByFile.get(file.file) ?? new Map(),
       resolution.eventIds,
+      stateIds,
     );
   }
 

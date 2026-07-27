@@ -290,4 +290,24 @@ describe("TypeScript scanner", () => {
       kind: "State",
     });
   });
+
+  it("uses the store registration name as State identity", async () => {
+    const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
+    const graph = scanTypeScriptProject({
+      files: await Promise.all(
+        files.map(async (file) => ({
+          file,
+          source: await readFile(
+            new URL(`../fixtures/${file.split("/").pop()}`, import.meta.url),
+            "utf8",
+          ),
+        })),
+      ),
+    });
+
+    expect(graph.nodes).toContainEqual({
+      id: "lState",
+      kind: "State",
+    });
+  });
 });
