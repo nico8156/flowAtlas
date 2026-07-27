@@ -446,6 +446,29 @@ repeat
 
 Do not build a generic scanner and then attempt to make Fragments fit it.
 
+Acceptance scenarios are projections of the complete `ArchitectureGraph`, not
+exhaustive snapshots. They should assert the nodes and edges relevant to the
+scenario, plus explicitly important absent edges, while allowing additional
+statically justified topology to remain in the graph.
+
+## Current Scanner Adapter Structure
+
+The TypeScript adapter is intentionally split by responsibility:
+
+- `typeScriptScanner.ts` is the stable scanner facade;
+- `sourceScanner.ts` scans one source input;
+- `projectScanner.ts` coordinates project symbol resolution and multi-file passes;
+- `eventDetector.ts`, `listenerDetector.ts`, `stateDetector.ts` and
+  `externalDetector.ts` detect architectural patterns;
+- `functionResolver.ts` resolves function-like declarations uniformly;
+- `externalResolution.ts` propagates External candidates through internal
+  orchestration without promoting helpers to architecture nodes;
+- `projectSymbolResolver.ts` resolves the currently supported imports and
+  aliases.
+
+These modules are TypeScript analysis adapters. They must translate into the
+canonical graph and must not move Redux or TypeScript concepts into the domain.
+
 Build from real architectural evidence toward reusable capabilities.
 
 ---

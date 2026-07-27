@@ -17,7 +17,9 @@ runtime instrumentation or application code changes.
 
 ## Project status
 
-FlowAtlas is currently at the first TypeScript analysis stage.
+FlowAtlas is currently at the first static TypeScript analysis stage. The
+scanner can already reconstruct the first Like and outbox slices of the real
+Fragments application.
 
 | Area                            | Status                               |
 | ------------------------------- | ------------------------------------ |
@@ -25,16 +27,16 @@ FlowAtlas is currently at the first TypeScript analysis stage.
 | Strict type checking            | Available                            |
 | Test runner and build pipeline  | Available                            |
 | Architecture graph model        | Minimal V1 core available            |
-| TypeScript analysis             | Minimal `createAction` detector      |
-| Redux Toolkit detectors         | Not started                          |
+| TypeScript analysis             | Focused TypeScript project scanner   |
+| Redux Toolkit detectors         | Limited V1 patterns available        |
 | CLI                             | Not started                          |
 | Interactive visualizer          | Not started                          |
 | Fragments acceptance tests      | Available when the corpus is present |
 
-The domain graph and analysis capabilities are emerging through the TDD
-workflow described below. The repository includes acceptance tests for the
-Fragments Like and outbox slices. The Fragments application itself remains an
-external corpus and is not copied into this repository.
+The domain graph and analysis capabilities emerge through the TDD workflow
+described below. The repository includes acceptance tests for the Fragments
+Like and outbox slices. The Fragments application itself remains an external
+corpus and is not copied into this repository.
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:
@@ -181,48 +183,29 @@ The golden graph will capture the exact nodes, edges, source evidence and
 intentionally absent relationships from that codebase. It must not invent a
 causal link between the optimistic/outbox branch and the projection branch.
 
-## Scope of the first adapter
+## Current Scanner Scope
 
-The first scanner capability is deliberately small. Given TypeScript source
-containing declarations such as:
+The scanner is deliberately limited. Given TypeScript source containing
+declarations such as:
 
 ```ts
 const uiLikeToggleRequested = createAction("UI/LIKE/TOGGLE_REQUESTED");
 ```
 
-`scanTypeScriptSource` can produce an `Event` node whose id is derived from the
-declared symbol. It can also detect a simple `startListening` declaration and
-produce its `Handler` plus `LISTENS_TO` edge. The current AST traversal also
-preserves multiple simple `createAction` declarations found in one source
-input. Detected Events now retain their source file and line. This capability
-is source-in/source-out and is not yet a project scanner or CLI command.
+`scanTypeScriptSource` and `scanTypeScriptProject` currently support:
 
-Named imports and renamed named imports are resolved for relative paths and
-configured `tsconfig` paths among the provided project files. Direct
-`startListening` registrations and local aliases such as `listen =
-mw.startListening as TypedStartListening<...>` are recognized as Handlers, and
-their statically identifiable `dispatch(actionCreator())` calls produce
-`DISPATCHES` edges.
-This is not yet
-full TypeScript program resolution: barrels, package boundaries and filesystem
-project loading remain out of scope. Slice detection is available, while
-listener and dispatch detection require the relevant declarations and
-registrations to be statically identifiable in the provided sources.
+- `createAction` Event nodes, including multiple actions and source locations;
+- direct and locally aliased `startListening` Handler registrations;
+- statically identifiable `dispatch(actionCreator())` relationships;
+- `createSlice`, `createReducer` and `builder.addCase` State relationships;
+- relative imports, renamed imports and configured `tsconfig` aliases;
+- External gateway detection and bounded propagation through internal
+  orchestration;
+- order-independent multi-file scanning.
 
-Both `createSlice` and `createReducer` can currently produce a provisional
-`State` node identified by their declared symbol. Store registration identity
-and reducer-to-state `addCase` relationships are handled by later scanner
-capabilities.
-
-The next vertical detector capabilities are planned in this order:
-
-1. `startListening({ actionCreator })` to connect a `Handler` to an `Event`;
-2. `dispatch(actionCreator())` to produce a `DISPATCHES` edge;
-3. `builder.addCase` to produce an `Event` to `State` update;
-4. source locations and then multi-file symbol resolution.
-
-Each step is developed through one RED/GREEN/REFACTOR cycle and validated with
-a focused fixture before being applied to the Fragments acceptance scenario.
+This is not full TypeScript program resolution. Complex monorepos, generated
+code, workspace boundaries, dynamic dispatch and arbitrary call graphs remain
+out of scope.
 
 Redux Toolkit is the first analysis target because its conventions provide
 useful static signals. It is an adapter, not the FlowAtlas domain model.
@@ -254,6 +237,26 @@ Explicitly out of scope for the first version:
 - Zustand, XState and other adapters;
 - a full call graph;
 - line-by-line execution visualization.
+
+## Scanner Structure
+
+The TypeScript adapter is split by responsibility:
+
+```text
+typeScriptScanner.ts       public facade
+sourceScanner.ts           one source input
+projectScanner.ts          project orchestration
+eventDetector.ts           Event patterns
+listenerDetector.ts        Handler/listener, dispatch and External edges
+stateDetector.ts           State and reducer patterns
+externalDetector.ts        External abstractions
+functionResolver.ts        function-like symbol resolution
+externalResolution.ts      bounded External propagation
+projectSymbolResolver.ts   imports and aliases
+```
+
+The domain graph remains independent from TypeScript, Redux Toolkit and the
+filesystem.
 
 ## Granularity rule
 
@@ -342,9 +345,10 @@ Run tests in watch mode:
 npm run test:watch
 ```
 
-The bootstrap currently has no domain tests, so the test command succeeds with
-an explicit no-test configuration. This will be replaced by the first RED test
-when implementation begins.
+The repository contains focused domain and scanner tests plus optional
+Fragments acceptance tests. Acceptance scenarios assert a relevant graph
+projection, not equality with the complete graph; additional justified edges
+must remain available.
 
 ## Repository layout
 
@@ -352,8 +356,12 @@ The current layout is intentionally small:
 
 ```text
 src/
-  index.ts       technical package entry point only
-tests/           created with the first behavioral test
+  domain/        framework-independent architecture graph
+  scanner/       TypeScript analysis adapter
+tests/
+  domain/        graph behavior
+  scanner/       detector and resolution fixtures
+  acceptance/    optional Fragments projections
 ```
 
 The project is private during development. Publishing, the executable CLI and
@@ -362,14 +370,12 @@ capabilities.
 
 ## Roadmap
 
-1. Define the first smallest domain behavior through a RED test.
-2. Build the minimal graph model required by that behavior.
-3. Add graph traversal and evidence rules.
-4. Add the TypeScript analysis port and the smallest detector needed by a fixture.
-5. Validate each detector with a minimal fixture and then against Fragments.
-6. Add the CLI scan entry point.
-7. Build the first navigable visual map.
-8. Extend the Fragments Like golden acceptance coverage.
+1. Define the next projection/SSE behavior through a RED test.
+2. Resolve how a thunk/Handler dispatched by another Handler belongs in the
+   architectural vocabulary without inventing a `Handler -> Handler` edge.
+3. Extend the Fragments projection acceptance coverage.
+4. Add the CLI scan entry point.
+5. Build the first navigable visual map.
 
 Diagnostics, runtime overlays and additional architecture adapters come later.
 They must not weaken the static truth guarantees of the MVP.
