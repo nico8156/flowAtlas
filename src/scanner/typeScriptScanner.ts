@@ -131,11 +131,15 @@ const addDispatchRelationships = (
   visitEffect(effectProperty.initializer);
 };
 
-const getStoreStateIds = (project: TypeScriptProject): Map<string, string> => {
+const getStoreStateIds = (
+  project: TypeScriptProject,
+  bindingsByFile: ReadonlyMap<string, SymbolBindings>,
+): Map<string, string> => {
   const stateIds = new Map<string, string>();
 
-  for (const { source } of project.files) {
+  for (const { file, source } of project.files) {
     const sourceFile = createTypeScriptSourceFile("flowatlas-store.ts", source);
+    const bindings = bindingsByFile.get(file) ?? new Map();
     const visit = (node: ts.Node): void => {
       if (
         ts.isCallExpression(node) &&
@@ -153,12 +157,23 @@ const getStoreStateIds = (project: TypeScriptProject): Map<string, string> => {
 
         if (reducerProperty && ts.isObjectLiteralExpression(reducerProperty.initializer)) {
           for (const property of reducerProperty.initializer.properties) {
+            let storeName: string | undefined;
+            let reducerName: string | undefined;
+
             if (
               ts.isPropertyAssignment(property) &&
               ts.isIdentifier(property.name) &&
               ts.isIdentifier(property.initializer)
             ) {
-              stateIds.set(property.initializer.text, property.name.text);
+              storeName = property.name.text;
+              reducerName = property.initializer.text;
+            } else if (ts.isShorthandPropertyAssignment(property)) {
+              storeName = property.name.text;
+              reducerName = property.name.text;
+            }
+
+            if (storeName && reducerName) {
+              stateIds.set(bindings.get(reducerName) ?? reducerName, storeName);
             }
           }
         }
@@ -356,7 +371,7 @@ export const scanTypeScriptSource = (input: TypeScriptSource): ArchitectureGraph
 export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureGraph => {
   const graph = createArchitectureGraph();
   const resolution = resolveProjectSymbols(project);
-  const stateIds = getStoreStateIds(project);
+  const stateIds = getStoreStateIds(project, resolution.bindingsByFile);
 
   for (const collectRelationships of [false, true]) {
     for (const file of project.files) {

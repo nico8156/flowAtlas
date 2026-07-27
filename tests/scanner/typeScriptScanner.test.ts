@@ -412,6 +412,38 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("uses the aliased shorthand store property as State identity", async () => {
+    const files = [
+      "tests/fixtures/aliasedStoreReducer.ts",
+      "tests/fixtures/aliasedStoreRegistration.ts",
+    ];
+    const graph = scanTypeScriptProject({
+      files: await Promise.all(
+        files.map(async (file) => ({
+          file,
+          source: await readFile(
+            new URL(`../fixtures/${file.split("/").pop()}`, import.meta.url),
+            "utf8",
+          ),
+        })),
+      ),
+    });
+
+    expect(graph.nodes).toContainEqual({
+      id: "lState",
+      kind: "State",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "likeWlReducer",
+      kind: "State",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "likeOptimisticApplied",
+      target: "lState",
+      kind: "UPDATES",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
