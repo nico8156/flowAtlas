@@ -95,10 +95,15 @@ const addDispatchRelationships = (
         ts.isCallExpression(dispatchedAction) &&
         ts.isIdentifier(dispatchedAction.expression)
       ) {
+        const target =
+          bindings.get(dispatchedAction.expression.text) ?? dispatchedAction.expression.text;
+        if (!graph.nodes.some((node) => node.id === target && node.kind === "Event")) {
+          return;
+        }
+
         graph.addEdge({
           source: handlerId,
-          target:
-            bindings.get(dispatchedAction.expression.text) ?? dispatchedAction.expression.text,
+          target,
           kind: "DISPATCHES",
         });
       }

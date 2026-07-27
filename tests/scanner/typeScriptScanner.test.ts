@@ -307,6 +307,30 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("ignores an unresolved dispatched Event without failing the scan", async () => {
+    const file = "tests/fixtures/unresolvedDispatch.ts";
+    const source = await readFile(
+      new URL("../fixtures/unresolvedDispatch.ts", import.meta.url),
+      "utf8",
+    );
+    let graph: ReturnType<typeof scanTypeScriptSource> | undefined;
+
+    expect(() => {
+      graph = scanTypeScriptSource({ file, source });
+    }).not.toThrow();
+
+    expect(graph?.edges).toContainEqual({
+      source: "submitListener",
+      target: "knownEvent",
+      kind: "DISPATCHES",
+    });
+    expect(graph?.edges).not.toContainEqual({
+      source: "submitListener",
+      target: "missingEvent",
+      kind: "DISPATCHES",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
