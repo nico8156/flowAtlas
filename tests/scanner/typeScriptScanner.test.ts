@@ -444,6 +444,21 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("detects a gateway interface as an External node", async () => {
+    const file = "tests/fixtures/externalGateway.ts";
+    const source = await readFile(
+      new URL("../fixtures/externalGateway.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.nodes).toContainEqual({
+      id: "LikeWlGateway",
+      kind: "External",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({

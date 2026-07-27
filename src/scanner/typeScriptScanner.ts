@@ -201,6 +201,10 @@ const scanSourceIntoGraph = (
   const visit = (node: ts.Node): void => {
     const variableCall = getVariableCall(node);
 
+    if (ts.isInterfaceDeclaration(node) && node.name.text.endsWith("Gateway")) {
+      graph.addNode({ id: node.name.text, kind: "External" });
+    }
+
     let architecturalFunctionId: string | undefined;
     let architecturalFunctionBody: ts.Block | undefined;
 
