@@ -123,4 +123,44 @@ describe("Graph projection", () => {
     ]);
     expect(projection.edges).toEqual([edges[0]]);
   });
+
+  it("filters a projection by architectural node kind", () => {
+    const graph = createArchitectureGraph();
+    const nodes = [
+      { id: "uiTicketSubmitRequested", kind: "Event" as const },
+      { id: "ticketSubmitUseCaseFactory", kind: "Handler" as const },
+      { id: "ticketOptimisticCreated", kind: "Event" as const },
+      { id: "tState", kind: "State" as const },
+    ];
+    const edges = [
+      {
+        source: "ticketSubmitUseCaseFactory",
+        target: "uiTicketSubmitRequested",
+        kind: "LISTENS_TO" as const,
+      },
+      {
+        source: "ticketSubmitUseCaseFactory",
+        target: "ticketOptimisticCreated",
+        kind: "DISPATCHES" as const,
+      },
+      {
+        source: "ticketOptimisticCreated",
+        target: "tState",
+        kind: "UPDATES" as const,
+      },
+    ];
+    nodes.forEach((node) => graph.addNode(node));
+    edges.forEach((edge) => graph.addEdge(edge));
+
+    const projection = projectDownstream(graph, "uiTicketSubmitRequested", {
+      nodeKinds: ["Event", "Handler"],
+    });
+
+    expect(projection.nodes.map((node) => node.id)).toEqual([
+      "uiTicketSubmitRequested",
+      "ticketSubmitUseCaseFactory",
+      "ticketOptimisticCreated",
+    ]);
+    expect(projection.edges).toEqual(edges.slice(0, 2));
+  });
 });

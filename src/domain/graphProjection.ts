@@ -2,6 +2,7 @@ import {
   type ArchitectureEdge,
   type ArchitectureGraph,
   type ArchitectureNode,
+  type NodeKind,
 } from "./architectureGraph.js";
 
 export type GraphProjection = {
@@ -11,6 +12,7 @@ export type GraphProjection = {
 
 export type GraphProjectionOptions = {
   maxDepth?: number;
+  nodeKinds?: readonly NodeKind[];
 };
 
 const downstreamTarget = (edge: ArchitectureEdge, nodeId: string): string | undefined => {
@@ -33,7 +35,7 @@ const project = (
   graph: ArchitectureGraph,
   focusNodeId: string,
   nextNode: (edge: ArchitectureEdge, nodeId: string) => string | undefined,
-  { maxDepth = Number.POSITIVE_INFINITY }: GraphProjectionOptions = {},
+  { maxDepth = Number.POSITIVE_INFINITY, nodeKinds }: GraphProjectionOptions = {},
 ): GraphProjection => {
   const includedNodeIds = new Set<string>([focusNodeId]);
   const pendingNodeIds = [{ id: focusNodeId, depth: 0 }];
@@ -51,10 +53,20 @@ const project = (
     }
   }
 
+  const visibleNodeIds = new Set(
+    graph.nodes
+      .filter(
+        (node) =>
+          includedNodeIds.has(node.id) &&
+          (nodeKinds === undefined || nodeKinds.includes(node.kind)),
+      )
+      .map((node) => node.id),
+  );
+
   return {
-    nodes: graph.nodes.filter((node) => includedNodeIds.has(node.id)),
+    nodes: graph.nodes.filter((node) => visibleNodeIds.has(node.id)),
     edges: graph.edges.filter(
-      (edge) => includedNodeIds.has(edge.source) && includedNodeIds.has(edge.target),
+      (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target),
     ),
   };
 };
