@@ -20,6 +20,13 @@ type VariableCall = {
 
 type StateIds = ReadonlyMap<string, string>;
 
+type FunctionLike = {
+  parameters: readonly ts.ParameterDeclaration[];
+  body: ts.Node;
+  returnType?: ts.TypeNode | undefined;
+  sourceFile: ts.SourceFile;
+};
+
 const getVariableCall = (node: ts.Node): VariableCall | undefined => {
   if (
     !ts.isVariableDeclaration(node) ||
@@ -131,40 +138,67 @@ const addDispatchRelationships = (
   visitEffect(effectProperty.initializer);
 };
 
-const findFunctionDeclaration = (
+const findFunctionLike = (
   sourceFile: ts.SourceFile,
   functionName: string,
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
-): ts.FunctionDeclaration | undefined => {
-  let declaration: ts.FunctionDeclaration | undefined;
-  const visit = (node: ts.Node): void => {
+): FunctionLike | undefined => {
+  let declaration: FunctionLike | undefined;
+  const visit = (node: ts.Node, origin: ts.SourceFile): void => {
     if (declaration) return;
     if (ts.isFunctionDeclaration(node) && node.name?.text === functionName) {
-      declaration = node;
+      if (node.body) {
+        declaration = {
+          parameters: node.parameters,
+          body: node.body,
+          returnType: node.type,
+          sourceFile: origin,
+        };
+      }
       return;
     }
 
-    ts.forEachChild(node, visit);
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === functionName &&
+      node.initializer &&
+      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
+    ) {
+      declaration = {
+        parameters: node.initializer.parameters,
+        body: node.initializer.body,
+        returnType: node.initializer.type,
+        sourceFile: origin,
+      };
+      return;
+    }
+
+    ts.forEachChild(node, (child) => visit(child, origin));
   };
 
   for (const candidate of sourceFiles) {
-    visit(candidate);
+    visit(candidate, candidate);
     if (declaration) break;
   }
   return declaration;
 };
 
 const getExternalIdsReturnedByFunction = (
-  declaration: ts.FunctionDeclaration,
+  declaration: FunctionLike,
   graph: ArchitectureGraph,
   sourceFile: ts.SourceFile,
   visitedAliases: Set<string>,
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
 ): string[] => {
-  if (!declaration.body) return [];
-
-  if (declaration.type) {
-    return getExternalTypeNames(declaration.type, graph, sourceFile, visitedAliases, sourceFiles);
+  if (declaration.returnType) {
+    return getExternalTypeNames(
+      declaration.returnType,
+      graph,
+      sourceFile,
+      visitedAliases,
+      sourceFiles,
+    );
   }
 
   const externalIds = new Set<string>();
@@ -259,12 +293,8 @@ const getExternalTypeNames = (
     ts.isIdentifier(returnTypeArgument.exprName)
   ) {
     const functionName = returnTypeArgument.exprName.text;
-    const declaration = findFunctionDeclaration(sourceFile, functionName, sourceFiles);
-    if (!declaration?.body) return [];
-
-    if (declaration.type) {
-      return getExternalTypeNames(declaration.type, graph, sourceFile, visitedAliases, sourceFiles);
-    }
+    const declaration = findFunctionLike(sourceFile, functionName, sourceFiles);
+    if (!declaration) return [];
 
     return getExternalIdsReturnedByFunction(
       declaration,
@@ -369,7 +399,7 @@ const getExternalParametersPassedToFunction = (
 ): Map<string, string[]> => {
   const passedExternalParameters = new Map<string, string[]>();
   const calledDeclaration = ts.isIdentifier(call.expression)
-    ? findFunctionDeclaration(sourceFile, call.expression.text, sourceFiles)
+    ? findFunctionLike(sourceFile, call.expression.text, sourceFiles)
     : undefined;
   const firstParameter = calledDeclaration?.parameters[0];
   const firstArgument = call.arguments[0];
@@ -446,36 +476,10 @@ const getExternalIdsCalledByFunction = (
   if (visitedFunctions.has(functionName)) return [];
   visitedFunctions.add(functionName);
 
-  let parameters: readonly ts.ParameterDeclaration[] | undefined;
-  let body: ts.Node | undefined;
+  const functionLike = findFunctionLike(sourceFile, functionName, sourceFiles);
+  if (!functionLike) return [];
 
-  const findFunction = (node: ts.Node): void => {
-    if (ts.isFunctionDeclaration(node) && node.name?.text === functionName && node.body) {
-      parameters = node.parameters;
-      body = node.body;
-      return;
-    }
-
-    if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.name.text === functionName &&
-      node.initializer &&
-      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
-    ) {
-      parameters = node.initializer.parameters;
-      body = node.initializer.body;
-      return;
-    }
-
-    ts.forEachChild(node, findFunction);
-  };
-
-  for (const candidate of sourceFiles) {
-    findFunction(candidate);
-    if (parameters && body) break;
-  }
-  if (!parameters || !body) return [];
+  const { parameters, body } = functionLike;
 
   const externalParameters = new Map<string, string[]>();
   for (const [parameterKey, externalIds] of inheritedExternalParameters) {
@@ -528,7 +532,7 @@ const getExternalIdsCalledByFunction = (
       ts.isCallExpression(node.initializer) &&
       ts.isIdentifier(node.initializer.expression)
     ) {
-      const declaration = findFunctionDeclaration(
+      const declaration = findFunctionLike(
         sourceFile,
         node.initializer.expression.text,
         sourceFiles,
@@ -617,7 +621,7 @@ const addExternalRelationships = (
       ts.isCallExpression(effectNode.initializer) &&
       ts.isIdentifier(effectNode.initializer.expression)
     ) {
-      const declaration = findFunctionDeclaration(
+      const declaration = findFunctionLike(
         sourceFile,
         effectNode.initializer.expression.text,
         sourceFiles,

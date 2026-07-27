@@ -788,6 +788,27 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("resolves equivalent function and arrow function forms uniformly", async () => {
+    const file = "tests/fixtures/functionLikeForms.ts";
+    const source = await readFile(
+      new URL("../fixtures/functionLikeForms.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "CommentsGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
