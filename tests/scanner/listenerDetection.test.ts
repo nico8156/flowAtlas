@@ -119,4 +119,35 @@ describe("Handler and listener detection", () => {
       kind: "LISTENS_TO",
     });
   });
+
+  it("follows an infrastructure callback to its Event routing function", async () => {
+    const file = "tests/fixtures/infrastructureCallbackOrchestration.ts";
+    const source = await readFixture("infrastructureCallbackOrchestration.ts");
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "projectionSyncListenerFactory",
+      target: "projection.updated",
+      kind: "LISTENS_TO",
+    });
+  });
+
+  it("does not promote an internal connection helper to the projection Handler", async () => {
+    const file = "tests/fixtures/infrastructureConnectionHelper.ts";
+    const source = await readFixture("infrastructureConnectionHelper.ts");
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "projectionSyncListenerFactory",
+      target: "projection.updated",
+      kind: "LISTENS_TO",
+    });
+    expect(graph.edges).not.toContainEqual({
+      source: "ensureConnected",
+      target: "projection.updated",
+      kind: "LISTENS_TO",
+    });
+  });
 });

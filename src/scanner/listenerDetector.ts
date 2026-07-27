@@ -20,6 +20,21 @@ type ListenerContext = {
   sourceFiles: readonly ts.SourceFile[];
 };
 
+const isNestedFunctionLike = (node: ts.Node): boolean => {
+  let parent = node.parent;
+  while (parent) {
+    if (
+      ts.isFunctionDeclaration(parent) ||
+      ts.isArrowFunction(parent) ||
+      ts.isFunctionExpression(parent)
+    ) {
+      return true;
+    }
+    parent = parent.parent;
+  }
+  return false;
+};
+
 const getActionCreatorReference = (
   configuration: ts.ObjectLiteralExpression,
 ): string | undefined => {
@@ -115,21 +130,35 @@ const addDispatchRelationships = (
 };
 
 const addInfrastructureListeningRelationship = (
+  sourceFile: ts.SourceFile,
   graph: ArchitectureGraph,
   handlerId: string,
   callback: ts.Expression,
   bindings: ReadonlyMap<string, string>,
   collectRelationships: boolean,
+  sourceFiles: readonly ts.SourceFile[],
 ): void => {
   graph.addNode({ id: handlerId, kind: "Handler" });
   if (!collectRelationships) return;
 
+  const visitedFunctions = new Set<string>();
   const visitCallback = (node: ts.Node): void => {
     const externalProtocolEventId = getExternalProtocolEventId(node);
     if (externalProtocolEventId) {
       const target = getResolvedEventId(graph, externalProtocolEventId, bindings);
       if (target) {
         graph.addEdge({ source: handlerId, target, kind: "LISTENS_TO" });
+      }
+    }
+
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      const functionName = node.expression.text;
+      if (!visitedFunctions.has(functionName)) {
+        const declaration = findFunctionLike(sourceFile, functionName, sourceFiles);
+        if (declaration) {
+          visitedFunctions.add(functionName);
+          visitCallback(declaration.body);
+        }
       }
     }
 
@@ -237,7 +266,7 @@ export const detectListeners = ({
       architecturalFunctionBody = node.initializer.body;
     }
 
-    if (architecturalFunctionId && architecturalFunctionBody) {
+    if (!isNestedFunctionLike(node) && architecturalFunctionId && architecturalFunctionBody) {
       const listenerAliases = new Set<string>();
       const registrations: ts.CallExpression[] = [];
       const infrastructureCallbacks: ts.Expression[] = [];
@@ -288,11 +317,13 @@ export const detectListeners = ({
 
       for (const callback of infrastructureCallbacks) {
         addInfrastructureListeningRelationship(
+          sourceFile,
           graph,
           architecturalFunctionId,
           callback,
           bindings,
           collectRelationships,
+          sourceFiles,
         );
       }
 
@@ -326,6 +357,7 @@ export const detectListeners = ({
     }
 
     if (
+      !isNestedFunctionLike(node) &&
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
       node.initializer &&
@@ -352,6 +384,7 @@ export const detectListeners = ({
     }
 
     if (
+      !isNestedFunctionLike(node) &&
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
       node.initializer &&
