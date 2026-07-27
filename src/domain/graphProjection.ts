@@ -17,9 +17,18 @@ const downstreamTarget = (edge: ArchitectureEdge, nodeId: string): string | unde
   return edge.source === nodeId ? edge.target : undefined;
 };
 
-export const projectDownstream = (
+const upstreamTarget = (edge: ArchitectureEdge, nodeId: string): string | undefined => {
+  if (edge.kind === "LISTENS_TO") {
+    return edge.source === nodeId ? edge.target : undefined;
+  }
+
+  return edge.target === nodeId ? edge.source : undefined;
+};
+
+const project = (
   graph: ArchitectureGraph,
   focusNodeId: string,
+  nextNode: (edge: ArchitectureEdge, nodeId: string) => string | undefined,
 ): GraphProjection => {
   const includedNodeIds = new Set<string>([focusNodeId]);
   const pendingNodeIds = [focusNodeId];
@@ -29,7 +38,7 @@ export const projectDownstream = (
     if (!currentNodeId) continue;
 
     for (const edge of graph.edges) {
-      const nextNodeId = downstreamTarget(edge, currentNodeId);
+      const nextNodeId = nextNode(edge, currentNodeId);
       if (!nextNodeId || includedNodeIds.has(nextNodeId)) continue;
 
       includedNodeIds.add(nextNodeId);
@@ -44,3 +53,9 @@ export const projectDownstream = (
     ),
   };
 };
+
+export const projectDownstream = (graph: ArchitectureGraph, focusNodeId: string): GraphProjection =>
+  project(graph, focusNodeId, downstreamTarget);
+
+export const projectUpstream = (graph: ArchitectureGraph, focusNodeId: string): GraphProjection =>
+  project(graph, focusNodeId, upstreamTarget);
