@@ -291,6 +291,22 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("detects an Event updating a State through createReducer addCase", async () => {
+    const file = "tests/fixtures/createReducerUpdates.ts";
+    const source = await readFile(
+      new URL("../fixtures/createReducerUpdates.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "likeOptimisticApplied",
+      target: "likeWlReducer",
+      kind: "UPDATES",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({

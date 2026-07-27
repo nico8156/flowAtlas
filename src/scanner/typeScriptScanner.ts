@@ -261,36 +261,44 @@ const scanSourceIntoGraph = (
       graph.addNode({ id: stateId, kind: "State" });
 
       const configuration = variableCall.call.arguments[0];
-      if (configuration && ts.isObjectLiteralExpression(configuration)) {
+      let reducerBuilder: ts.Node | undefined;
+
+      if (
+        ts.isIdentifier(variableCall.call.expression) &&
+        variableCall.call.expression.text === "createReducer"
+      ) {
+        reducerBuilder = variableCall.call.arguments[1];
+      } else if (configuration && ts.isObjectLiteralExpression(configuration)) {
         const extraReducersProperty = configuration.properties.find(
           (property): property is ts.PropertyAssignment =>
             ts.isPropertyAssignment(property) &&
             ts.isIdentifier(property.name) &&
             property.name.text === "extraReducers",
         );
+        reducerBuilder = extraReducersProperty?.initializer;
+      }
 
-        if (extraReducersProperty) {
-          const visitExtraReducers = (reducerNode: ts.Node): void => {
-            if (
-              ts.isCallExpression(reducerNode) &&
-              ts.isPropertyAccessExpression(reducerNode.expression) &&
-              reducerNode.expression.name.text === "addCase"
-            ) {
-              const handledEvent = reducerNode.arguments[0];
-              if (handledEvent && ts.isIdentifier(handledEvent)) {
-                graph.addEdge({
-                  source: bindings.get(handledEvent.text) ?? handledEvent.text,
-                  target: stateId,
-                  kind: "UPDATES",
-                });
-              }
+      if (reducerBuilder) {
+        const visitReducerBuilder = (reducerNode: ts.Node): void => {
+          if (
+            ts.isCallExpression(reducerNode) &&
+            ts.isPropertyAccessExpression(reducerNode.expression) &&
+            reducerNode.expression.name.text === "addCase"
+          ) {
+            const handledEvent = reducerNode.arguments[0];
+            if (handledEvent && ts.isIdentifier(handledEvent)) {
+              graph.addEdge({
+                source: bindings.get(handledEvent.text) ?? handledEvent.text,
+                target: stateId,
+                kind: "UPDATES",
+              });
             }
+          }
 
-            ts.forEachChild(reducerNode, visitExtraReducers);
-          };
+          ts.forEachChild(reducerNode, visitReducerBuilder);
+        };
 
-          visitExtraReducers(extraReducersProperty.initializer);
-        }
+        visitReducerBuilder(reducerBuilder);
       }
     }
 
