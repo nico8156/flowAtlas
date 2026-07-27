@@ -241,13 +241,18 @@ const getExternalProperties = (
     if (ts.isTypeLiteralNode(currentType)) return currentType.members;
     if (ts.isTypeReferenceNode(currentType) && ts.isIdentifier(currentType.typeName)) {
       const typeName = currentType.typeName.text;
-      const typeAlias = sourceFiles
+      if (typeName === "Partial" && currentType.typeArguments?.length === 1) {
+        return getMembers(currentType.typeArguments[0]);
+      }
+      const declaration = sourceFiles
         .flatMap((candidate) => [...candidate.statements])
         .find(
-          (statement): statement is ts.TypeAliasDeclaration =>
-            ts.isTypeAliasDeclaration(statement) && statement.name.text === typeName,
+          (statement): statement is ts.TypeAliasDeclaration | ts.InterfaceDeclaration =>
+            (ts.isTypeAliasDeclaration(statement) || ts.isInterfaceDeclaration(statement)) &&
+            statement.name.text === typeName,
         );
-      return getMembers(typeAlias?.type);
+      if (declaration && ts.isInterfaceDeclaration(declaration)) return declaration.members;
+      return getMembers(declaration?.type);
     }
     if (ts.isIndexedAccessTypeNode(currentType)) {
       const index = currentType.indexType;
@@ -292,17 +297,41 @@ const getReturnedFunctionParameterType = (
   if (!returnType || !ts.isTypeReferenceNode(returnType) || !ts.isIdentifier(returnType.typeName)) {
     return undefined;
   }
-  const returnTypeName = returnType.typeName.text;
+  const findTypeAlias = (name: string): ts.TypeAliasDeclaration | undefined =>
+    sourceFiles
+      .flatMap((candidate) => [...candidate.statements])
+      .find(
+        (statement): statement is ts.TypeAliasDeclaration =>
+          ts.isTypeAliasDeclaration(statement) && statement.name.text === name,
+      );
 
-  const typeAlias = sourceFiles
-    .flatMap((candidate) => [...candidate.statements])
-    .find(
-      (statement): statement is ts.TypeAliasDeclaration =>
-        ts.isTypeAliasDeclaration(statement) && statement.name.text === returnTypeName,
-    );
-  if (!typeAlias || !ts.isFunctionTypeNode(typeAlias.type)) return undefined;
+  const resolveParameterType = (
+    typeNode: ts.TypeNode,
+    visitedAliases = new Set<string>(),
+  ): ts.TypeNode | undefined => {
+    if (ts.isFunctionTypeNode(typeNode)) {
+      return typeNode.parameters[parameterIndex]?.type;
+    }
+    if (!ts.isTypeReferenceNode(typeNode) || !ts.isIdentifier(typeNode.typeName)) {
+      return undefined;
+    }
 
-  return typeAlias.type.parameters[parameterIndex]?.type;
+    const typeName = typeNode.typeName.text;
+    if (visitedAliases.has(typeName)) return undefined;
+    visitedAliases.add(typeName);
+
+    const typeAlias = findTypeAlias(typeName);
+    if (!typeAlias) return typeNode.typeArguments?.[parameterIndex];
+    if (ts.isFunctionTypeNode(typeAlias.type)) {
+      return typeAlias.type.parameters[parameterIndex]?.type;
+    }
+    if (ts.isTypeReferenceNode(typeAlias.type) && typeAlias.type.typeArguments) {
+      return typeAlias.type.typeArguments[parameterIndex];
+    }
+    return resolveParameterType(typeAlias.type, visitedAliases);
+  };
+
+  return resolveParameterType(returnType);
 };
 
 export const getExternalParametersPassedToFunction = (
