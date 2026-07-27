@@ -167,6 +167,73 @@ const getExternalReference = (
   return externalId;
 };
 
+const getExternalIdsCalledByFunction = (
+  sourceFile: ts.SourceFile,
+  graph: ArchitectureGraph,
+  functionName: string,
+): string[] => {
+  let parameters: readonly ts.ParameterDeclaration[] | undefined;
+  let body: ts.Node | undefined;
+
+  const findFunction = (node: ts.Node): void => {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === functionName && node.body) {
+      parameters = node.parameters;
+      body = node.body;
+      return;
+    }
+
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === functionName &&
+      node.initializer &&
+      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
+    ) {
+      parameters = node.initializer.parameters;
+      body = node.initializer.body;
+      return;
+    }
+
+    ts.forEachChild(node, findFunction);
+  };
+
+  findFunction(sourceFile);
+  if (!parameters || !body) return [];
+
+  const externalParameters = new Map<string, string>();
+  for (const parameter of parameters) {
+    const externalTypeName =
+      parameter.type &&
+      ts.isTypeReferenceNode(parameter.type) &&
+      ts.isIdentifier(parameter.type.typeName)
+        ? parameter.type.typeName.text
+        : undefined;
+
+    if (
+      ts.isIdentifier(parameter.name) &&
+      externalTypeName &&
+      graph.nodes.some(
+        (candidate) => candidate.id === externalTypeName && candidate.kind === "External",
+      )
+    ) {
+      externalParameters.set(parameter.name.text, externalTypeName);
+    }
+  }
+
+  const externalIds = new Set<string>();
+  const visitBody = (node: ts.Node): void => {
+    if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression)) {
+      const externalId = externalParameters.get(node.expression.text);
+      if (externalId) externalIds.add(externalId);
+    }
+
+    ts.forEachChild(node, visitBody);
+  };
+
+  visitBody(body);
+  return [...externalIds];
+};
+
 const addExternalRelationships = (
   sourceFile: ts.SourceFile,
   graph: ArchitectureGraph,
@@ -189,6 +256,18 @@ const addExternalRelationships = (
     if (ts.isCallExpression(effectNode) && ts.isPropertyAccessExpression(effectNode.expression)) {
       const externalId = getExternalReference(sourceFile, graph, effectNode.expression.expression);
       if (externalId) {
+        graph.addEdge({
+          source: handlerId,
+          target: externalId,
+          kind: "CALLS_EXTERNAL",
+        });
+      }
+    } else if (ts.isCallExpression(effectNode) && ts.isIdentifier(effectNode.expression)) {
+      for (const externalId of getExternalIdsCalledByFunction(
+        sourceFile,
+        graph,
+        effectNode.expression.text,
+      )) {
         graph.addEdge({
           source: handlerId,
           target: externalId,

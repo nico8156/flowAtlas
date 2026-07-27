@@ -475,6 +475,34 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("traverses internal orchestration to the External gateway", async () => {
+    const file = "tests/fixtures/transitiveExternalCall.ts";
+    const source = await readFile(
+      new URL("../fixtures/transitiveExternalCall.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.nodes).toContainEqual({
+      id: "processOutboxFactory",
+      kind: "Handler",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "processOutboxFactory",
+      target: "LikeWlGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendOutboxCommand",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getOutboxCommandGateway",
+      kind: "Handler",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
