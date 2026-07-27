@@ -140,13 +140,9 @@ const getExternalReference = (
 
   let externalId: string | undefined;
   const visit = (node: ts.Node): void => {
-    const externalTypeName =
-      ts.isVariableDeclaration(node) &&
-      node.type &&
-      ts.isTypeReferenceNode(node.type) &&
-      ts.isIdentifier(node.type.typeName)
-        ? node.type.typeName.text
-        : undefined;
+    const externalTypeName = ts.isVariableDeclaration(node)
+      ? getExternalTypeName(node.type, graph)
+      : undefined;
 
     if (
       ts.isVariableDeclaration(node) &&
@@ -165,6 +161,22 @@ const getExternalReference = (
 
   visit(sourceFile);
   return externalId;
+};
+
+const getExternalTypeName = (
+  typeNode: ts.TypeNode | undefined,
+  graph: ArchitectureGraph,
+): string | undefined => {
+  if (!typeNode || !ts.isTypeReferenceNode(typeNode) || !ts.isIdentifier(typeNode.typeName)) {
+    return undefined;
+  }
+
+  const externalTypeName = typeNode.typeName.text;
+  return graph.nodes.some(
+    (candidate) => candidate.id === externalTypeName && candidate.kind === "External",
+  )
+    ? externalTypeName
+    : undefined;
 };
 
 const getExternalIdsCalledByFunction = (
@@ -202,12 +214,7 @@ const getExternalIdsCalledByFunction = (
 
   const externalParameters = new Map<string, string>();
   for (const parameter of parameters) {
-    const externalTypeName =
-      parameter.type &&
-      ts.isTypeReferenceNode(parameter.type) &&
-      ts.isIdentifier(parameter.type.typeName)
-        ? parameter.type.typeName.text
-        : undefined;
+    const externalTypeName = getExternalTypeName(parameter.type, graph);
 
     if (
       ts.isIdentifier(parameter.name) &&
@@ -218,12 +225,30 @@ const getExternalIdsCalledByFunction = (
     ) {
       externalParameters.set(parameter.name.text, externalTypeName);
     }
+
+    if (ts.isIdentifier(parameter.name) && parameter.type && ts.isTypeLiteralNode(parameter.type)) {
+      for (const member of parameter.type.members) {
+        if (!ts.isPropertySignature(member) || !member.name || !ts.isIdentifier(member.name)) {
+          continue;
+        }
+
+        const externalTypeName = getExternalTypeName(member.type, graph);
+
+        if (!externalTypeName) {
+          continue;
+        }
+
+        externalParameters.set(`${parameter.name.text}.${member.name.text}`, externalTypeName);
+      }
+    }
   }
 
   const externalIds = new Set<string>();
   const visitBody = (node: ts.Node): void => {
     if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression)) {
-      const externalId = externalParameters.get(node.expression.text);
+      const externalId =
+        externalParameters.get(`${node.expression.text}.${node.name.text}`) ??
+        externalParameters.get(node.expression.text);
       if (externalId) externalIds.add(externalId);
     }
 

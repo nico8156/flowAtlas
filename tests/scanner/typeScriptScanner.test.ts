@@ -503,6 +503,38 @@ describe("TypeScript scanner", () => {
     });
   });
 
+  it("traverses an External gateway passed through an internal object argument", async () => {
+    const file = "tests/fixtures/transitiveExternalObjectArgument.ts";
+    const source = await readFile(
+      new URL("../fixtures/transitiveExternalObjectArgument.ts", import.meta.url),
+      "utf8",
+    );
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.nodes).toContainEqual({
+      id: "handlerFactory",
+      kind: "Handler",
+    });
+    expect(graph.nodes).toContainEqual({
+      id: "LikeGateway",
+      kind: "External",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "handlerFactory",
+      target: "LikeGateway",
+      kind: "CALLS_EXTERNAL",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "getGateway",
+      kind: "Handler",
+    });
+    expect(graph.nodes).not.toContainEqual({
+      id: "sendCommand",
+      kind: "Handler",
+    });
+  });
+
   it("uses the store registration name as State identity", async () => {
     const files = ["tests/fixtures/storeReducer.ts", "tests/fixtures/storeRegistration.ts"];
     const graph = scanTypeScriptProject({
