@@ -326,7 +326,10 @@ The browser implementation is not the M7 product target. The TUI still needs:
 
 - Explorer, Map and Inspector panes with responsive terminal sizing;
 - more expressive edge routing when branches become dense;
-- a visual review on a full-size real Fragments terminal session.
+- a visual review on a full-size real Fragments terminal session;
+- a prompt first frame on the full Fragments project. The latest PTY
+  observation produced no visible frame before the process was stopped, so the
+  startup loading strategy remains an open performance gap.
 
 ### Before-layout evidence
 
