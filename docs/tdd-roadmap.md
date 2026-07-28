@@ -286,6 +286,7 @@ Delivered so far:
 - depth-limited downstream projections from the visualizer.
 - reset from a focused projection to the complete graph.
 - viewport controls for zoom in, zoom out and fit view.
+- relation visibility constrained to the active projection.
 
 Still to explore:
 

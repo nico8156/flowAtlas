@@ -110,4 +110,22 @@ describe("ArchitectureMap projection navigation", () => {
 
     expect(screen.getByRole("button", { name: "unrelated" })).toBeTruthy();
   });
+
+  it("hides relations outside the focused projection", () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "requested", kind: "Event" });
+    graph.addNode({ id: "listener", kind: "Handler" });
+    graph.addNode({ id: "unrelated", kind: "Event" });
+    graph.addNode({ id: "otherListener", kind: "Handler" });
+    graph.addEdge({ source: "listener", target: "requested", kind: "LISTENS_TO" });
+    graph.addEdge({ source: "otherListener", target: "unrelated", kind: "LISTENS_TO" });
+
+    render(<ArchitectureMap graph={graph} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "requested" }));
+    fireEvent.click(screen.getByRole("button", { name: "Explore downstream from requested" }));
+
+    expect(screen.getByLabelText("listener LISTENS_TO requested")).toBeTruthy();
+    expect(screen.queryByLabelText("otherListener LISTENS_TO unrelated")).toBeNull();
+  });
 });

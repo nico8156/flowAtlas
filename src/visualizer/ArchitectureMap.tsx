@@ -155,7 +155,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
           <Controls />
         </ReactFlow>
         <div aria-label="Architectural relations">
-          {graph.edges.map((edge) => (
+          {displayedGraph.edges.map((edge) => (
             <span
               key={`${edge.source}-${edge.kind}-${edge.target}`}
               aria-label={relationLabel(edge)}
