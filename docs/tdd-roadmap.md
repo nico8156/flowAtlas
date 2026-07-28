@@ -16,7 +16,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 4. Evidence and trust                      | PROPOSED                                  |
 | 5. Graph projections                       | DELIVERED                                 |
 | 6. CLI productization                      | DELIVERED                                 |
-| 7. Visualizer MVP                          | PROPOSED                                  |
+| 7. Visualizer MVP                          | ACTIVE                                    |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -263,7 +263,7 @@ boundary and supports the first terminal exploration workflow.
 
 ## Milestone 7 - Visualizer MVP
 
-**Status: PROPOSED**
+**Status: ACTIVE**
 
 ### Goal
 
@@ -276,12 +276,26 @@ the source manually.
 
 ### Candidate work
 
-Search, focus, upstream/downstream exploration, zoom, filters, inspector,
-source locations and evidence.
+Delivered so far:
+
+- controlled `ArchitectureGraph` rendering through the React visualizer;
+- node search and selection;
+- visual distinction and filtering by `NodeKind`;
+- inspector with kind, source location and immediate relations;
+- downstream and upstream territory exploration through `GraphProjection`.
+
+Still to explore:
+
+- depth controls;
+- boundary visibility and projection reset;
+- pan/zoom usability on focused territories;
+- validation on a real Fragments graph before considering M7 complete.
 
 ### Completion criteria
 
-The visualizer consumes `ArchitectureGraph` and never defines its model.
+The visualizer consumes `ArchitectureGraph` and never defines its model. A
+developer can search, focus and explore both directions of a real architectural
+slice without manually reconstructing the graph from source files.
 
 ## Milestone 8 - Broader Validation
 

@@ -17,9 +17,10 @@ runtime instrumentation or application code changes.
 
 ## Project status
 
-FlowAtlas is currently at the first static TypeScript analysis stage. The
-scanner can already reconstruct the Like, outbox and projection slices of the
-real Fragments application.
+FlowAtlas currently combines a focused static TypeScript scanner with the first
+visualizer MVP. The scanner can reconstruct the Like, outbox and projection
+slices of the real Fragments application, and the visualizer can render and
+explore a supplied architecture graph.
 
 | Area                            | Status                                   |
 | ------------------------------- | ---------------------------------------- |
@@ -30,7 +31,7 @@ real Fragments application.
 | TypeScript analysis             | Focused TypeScript project scanner       |
 | Redux Toolkit detectors         | Limited V1 patterns available            |
 | CLI                             | MVP scan and graph exploration available |
-| Interactive visualizer          | Not started                              |
+| Interactive visualizer          | M7 foundation available                  |
 | Fragments acceptance tests      | Available when the corpus is present     |
 
 The domain graph and analysis capabilities emerge through acceptance-driven

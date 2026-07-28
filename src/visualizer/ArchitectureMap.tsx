@@ -13,7 +13,11 @@ import type {
   ArchitectureNode,
   NodeKind,
 } from "../domain/architectureGraph.js";
-import { projectDownstream, type GraphProjection } from "../domain/graphProjection.js";
+import {
+  projectDownstream,
+  projectUpstream,
+  type GraphProjection,
+} from "../domain/graphProjection.js";
 import "@xyflow/react/dist/style.css";
 
 type ArchitectureNodeData = {
@@ -183,6 +187,13 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
               onClick={() => setProjection(projectDownstream(graph, selectedNode.id))}
             >
               Explore downstream
+            </button>
+            <button
+              type="button"
+              aria-label={`Explore upstream from ${selectedNode.id}`}
+              onClick={() => setProjection(projectUpstream(graph, selectedNode.id))}
+            >
+              Explore upstream
             </button>
           </>
         ) : (
