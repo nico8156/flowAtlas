@@ -7,7 +7,7 @@ import {
   type Node as FlowNode,
   type NodeProps,
 } from "@xyflow/react";
-import type { ArchitectureGraph, ArchitectureNode } from "../domain/architectureGraph.js";
+import type { ArchitectureGraph, ArchitectureNode, NodeKind } from "../domain/architectureGraph.js";
 import "@xyflow/react/dist/style.css";
 
 type ArchitectureNodeData = {
@@ -16,11 +16,26 @@ type ArchitectureNodeData = {
 
 type ArchitectureFlowNode = FlowNode<ArchitectureNodeData, "architecture">;
 
+const nodeKindStyles: Record<NodeKind, { borderColor: string; backgroundColor: string }> = {
+  Event: { borderColor: "#2f80ed", backgroundColor: "#eaf3ff" },
+  Handler: { borderColor: "#9b51e0", backgroundColor: "#f5edff" },
+  State: { borderColor: "#27ae60", backgroundColor: "#eaf8ef" },
+  External: { borderColor: "#f2994a", backgroundColor: "#fff3e8" },
+};
+
+const nodeKindClass = (kind: NodeKind): string => `architecture-node-${kind.toLowerCase()}`;
+
 const nodeTypes = {
   architecture: ({ data }: NodeProps<ArchitectureFlowNode>) => (
     <>
       <Handle type="target" position={Position.Left} />
-      <button type="button" aria-label={data.node.id}>
+      <button
+        type="button"
+        aria-label={data.node.id}
+        className={`architecture-node ${nodeKindClass(data.node.kind)}`}
+        data-node-kind={data.node.kind}
+        style={nodeKindStyles[data.node.kind]}
+      >
         {data.node.id}
       </button>
       <Handle type="source" position={Position.Right} />
@@ -78,7 +93,14 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
           />
         </label>
         {visibleNodes.map((node) => (
-          <button key={node.id} type="button" onClick={() => setSelectedNodeId(node.id)}>
+          <button
+            key={node.id}
+            type="button"
+            className={`architecture-node ${nodeKindClass(node.kind)}`}
+            data-node-kind={node.kind}
+            style={nodeKindStyles[node.kind]}
+            onClick={() => setSelectedNodeId(node.id)}
+          >
             {node.id}
           </button>
         ))}
