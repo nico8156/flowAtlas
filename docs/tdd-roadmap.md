@@ -292,6 +292,7 @@ Delivered so far:
 - acceptance coverage exploring a real Fragments Ticket territory downstream.
 - acceptance coverage exploring a real Fragments Ticket state territory upstream.
 - acceptance coverage filtering a real Fragments graph by node kind.
+- acceptance coverage displaying source locations from a real Fragments graph.
 
 Still to explore:
 

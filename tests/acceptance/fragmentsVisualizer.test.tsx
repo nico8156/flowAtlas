@@ -114,4 +114,17 @@ describeFragments("Fragments visualizer acceptance", () => {
     expect(explorer.getByRole("button", { name: "uiTicketSubmitRequested" })).toBeTruthy();
     expect(explorer.queryByRole("button", { name: "tState" })).toBeNull();
   }, 20_000);
+
+  it("shows the source location of a real scanned node", async () => {
+    const graph = await scanTicketGraph();
+
+    render(<ArchitectureMap graph={graph} />);
+
+    const explorer = within(screen.getByRole("complementary", { name: "Explorer" }));
+    fireEvent.click(explorer.getByRole("button", { name: "uiTicketSubmitRequested" }));
+
+    expect(screen.getByRole("region", { name: "Inspector" }).textContent).toContain(
+      "ticketSubmitWlUseCase.ts:",
+    );
+  }, 20_000);
 });
