@@ -63,8 +63,8 @@ const createFlowNodes = (nodes: readonly ArchitectureNode[]): ArchitectureFlowNo
   }));
 
 const createFlowEdges = (edges: readonly ArchitectureEdge[]): FlowEdge[] =>
-  edges.map((edge) => ({
-    id: `${edge.source}-${edge.kind}-${edge.target}`,
+  edges.map((edge, index) => ({
+    id: `${edge.source}-${edge.kind}-${edge.target}-${index}`,
     source: edge.source,
     target: edge.target,
     label: edge.kind,
@@ -156,9 +156,9 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
           <Controls />
         </ReactFlow>
         <div aria-label="Architectural relations">
-          {displayedGraph.edges.map((edge) => (
+          {displayedGraph.edges.map((edge, index) => (
             <span
-              key={`${edge.source}-${edge.kind}-${edge.target}`}
+              key={`${edge.source}-${edge.kind}-${edge.target}-${index}`}
               aria-label={relationLabel(edge)}
             >
               {edge.kind}

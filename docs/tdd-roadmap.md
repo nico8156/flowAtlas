@@ -288,12 +288,13 @@ Delivered so far:
 - reset from a focused projection to the complete graph.
 - viewport controls for zoom in, zoom out and fit view.
 - relation visibility constrained to the active projection.
+- acceptance coverage rendering and inspecting a real Fragments-scanned graph.
 
 Still to explore:
 
 - boundary visibility;
 - broader pan usability on focused territories;
-- validation on a real Fragments graph before considering M7 complete.
+- validation on additional real graph slices before considering M7 complete.
 
 ### Completion criteria
 
