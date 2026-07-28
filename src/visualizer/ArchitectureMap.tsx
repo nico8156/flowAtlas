@@ -7,7 +7,13 @@ import {
   type Node as FlowNode,
   type NodeProps,
 } from "@xyflow/react";
-import type { ArchitectureGraph, ArchitectureNode, NodeKind } from "../domain/architectureGraph.js";
+import type {
+  ArchitectureEdge,
+  ArchitectureGraph,
+  ArchitectureNode,
+  NodeKind,
+} from "../domain/architectureGraph.js";
+import { projectDownstream, type GraphProjection } from "../domain/graphProjection.js";
 import "@xyflow/react/dist/style.css";
 
 type ArchitectureNodeData = {
@@ -51,8 +57,8 @@ const createFlowNodes = (nodes: readonly ArchitectureNode[]): ArchitectureFlowNo
     type: "architecture",
   }));
 
-const createFlowEdges = (graph: ArchitectureGraph): FlowEdge[] =>
-  graph.edges.map((edge) => ({
+const createFlowEdges = (edges: readonly ArchitectureEdge[]): FlowEdge[] =>
+  edges.map((edge) => ({
     id: `${edge.source}-${edge.kind}-${edge.target}`,
     source: edge.source,
     target: edge.target,
@@ -69,7 +75,9 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState<NodeKind | "All">("All");
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
-  const visibleNodes = graph.nodes.filter(
+  const [projection, setProjection] = useState<GraphProjection>();
+  const displayedGraph = projection ?? graph;
+  const visibleNodes = displayedGraph.nodes.filter(
     (node) =>
       node.id.toLowerCase().includes(query.toLowerCase()) &&
       (kindFilter === "All" || node.kind === kindFilter),
@@ -78,10 +86,10 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const flowNodes = useMemo(() => createFlowNodes(visibleNodes), [visibleNodes]);
   const flowEdges = useMemo(
     () =>
-      createFlowEdges(graph).filter(
+      createFlowEdges(displayedGraph.edges).filter(
         (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target),
       ),
-    [graph, visibleNodeIds],
+    [displayedGraph, visibleNodeIds],
   );
   const selectedNode = selectedNodeId ? graph.findNode(selectedNodeId) : undefined;
   const incoming = selectedNode
@@ -169,6 +177,13 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
             {outgoing.map((edge) => (
               <p key={`${edge.kind}-${edge.target}`}>{formatRelation(edge)}</p>
             ))}
+            <button
+              type="button"
+              aria-label={`Explore downstream from ${selectedNode.id}`}
+              onClick={() => setProjection(projectDownstream(graph, selectedNode.id))}
+            >
+              Explore downstream
+            </button>
           </>
         ) : (
           <p>Select a node</p>
