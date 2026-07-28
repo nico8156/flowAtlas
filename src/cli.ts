@@ -2,11 +2,11 @@ import { formatArchitectureSummary } from "./application/architectureSummary.js"
 import { formatGraphProjection } from "./application/graphProjectionOutput.js";
 import { formatNodeInspection } from "./application/nodeInspection.js";
 import { loadTypeScriptProject } from "./cli/projectLoader.js";
-import { projectDownstream } from "./domain/graphProjection.js";
+import { projectDownstream, projectUpstream } from "./domain/graphProjection.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
 
 const usage =
-  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path]";
+  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path]";
 
 export const runCli = async (
   arguments_: readonly string[] = process.argv.slice(2),
@@ -17,7 +17,7 @@ export const runCli = async (
   const projectPath = command === "scan" ? (firstArgument ?? ".") : (secondArgument ?? ".");
 
   if (
-    !["scan", "inspect", "downstream"].includes(command) ||
+    !["scan", "inspect", "downstream", "upstream"].includes(command) ||
     (command !== "scan" && !nodeId) ||
     unexpectedArguments.length > 0
   ) {
@@ -42,6 +42,16 @@ export const runCli = async (
     }
 
     const projection = projectDownstream(graph, nodeId);
+    process.stdout.write(`${formatGraphProjection(nodeId, projection)}\n`);
+    return;
+  }
+
+  if (command === "upstream") {
+    if (!nodeId || !graph.findNode(nodeId)) {
+      throw new Error(`Node not found: ${nodeId ?? ""}`.trim());
+    }
+
+    const projection = projectUpstream(graph, nodeId);
     process.stdout.write(`${formatGraphProjection(nodeId, projection)}\n`);
     return;
   }
