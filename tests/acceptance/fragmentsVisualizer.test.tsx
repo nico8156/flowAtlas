@@ -100,4 +100,18 @@ describeFragments("Fragments visualizer acceptance", () => {
     expect(explorer.getByRole("button", { name: "ticketRetrieval" })).toBeTruthy();
     expect(explorer.getByRole("button", { name: "uiTicketSubmitRequested" })).toBeTruthy();
   }, 20_000);
+
+  it("filters a real scanned graph by architectural node kind", async () => {
+    const graph = await scanTicketGraph();
+
+    render(<ArchitectureMap graph={graph} />);
+
+    const explorer = within(screen.getByRole("complementary", { name: "Explorer" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Filter by node kind" }), {
+      target: { value: "Event" },
+    });
+
+    expect(explorer.getByRole("button", { name: "uiTicketSubmitRequested" })).toBeTruthy();
+    expect(explorer.queryByRole("button", { name: "tState" })).toBeNull();
+  }, 20_000);
 });
