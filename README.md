@@ -31,7 +31,7 @@ explore a supplied architecture graph.
 | TypeScript analysis             | Focused TypeScript project scanner       |
 | Redux Toolkit detectors         | Limited V1 patterns available            |
 | CLI                             | MVP scan and graph exploration available |
-| Interactive visualizer          | M7 browser shell available               |
+| Interactive visualizer          | M7 MVP delivered                         |
 | Fragments acceptance tests      | Available when the corpus is present     |
 
 The domain graph and analysis capabilities emerge through acceptance-driven

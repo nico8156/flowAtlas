@@ -16,7 +16,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 4. Evidence and trust                      | PROPOSED                                  |
 | 5. Graph projections                       | DELIVERED                                 |
 | 6. CLI productization                      | DELIVERED                                 |
-| 7. Visualizer MVP                          | ACTIVE                                    |
+| 7. Visualizer MVP                          | DELIVERED                                 |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -263,7 +263,7 @@ boundary and supports the first terminal exploration workflow.
 
 ## Milestone 7 - Visualizer MVP
 
-**Status: ACTIVE**
+**Status: DELIVERED**
 
 ### Goal
 
@@ -274,7 +274,7 @@ Make the map the primary product experience.
 A developer understands a real architectural slice faster than by navigating
 the source manually.
 
-### Candidate work
+### Delivered capabilities
 
 Delivered so far:
 
@@ -297,19 +297,16 @@ Delivered so far:
 - JSON graph deserialization is available for visualizer consumers.
 - `ArchitectureMapFromJson` connects serialized graph input to the visualizer.
 - local JSON file loading is available through `ArchitectureMapLoader`.
-- a Vite browser shell is available through `npm run visualizer`.
-
-Still to explore:
-
-- boundary visibility;
-- broader pan usability on focused territories;
-- validation on additional real graph slices before considering M7 complete.
+- a Vite browser shell is available through `npm run visualizer`;
+- a real Fragments Ticket graph can be loaded and explored in both directions.
 
 ### Completion criteria
 
 The visualizer consumes `ArchitectureGraph` and never defines its model. A
-developer can search, focus and explore both directions of a real architectural
-slice without manually reconstructing the graph from source files.
+developer can run `npm run visualizer`, load a graph exported by the CLI, search
+and select nodes, inspect source locations, and explore both directions of a
+real architectural slice without manually reconstructing the graph from source
+files.
 
 ## Milestone 8 - Broader Validation
 
