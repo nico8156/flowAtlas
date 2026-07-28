@@ -295,6 +295,7 @@ Delivered so far:
 - acceptance coverage displaying source locations from a real Fragments graph.
 - acceptance coverage exposing viewport controls on a real Fragments graph.
 - JSON graph deserialization is available for visualizer consumers.
+- `ArchitectureMapFromJson` connects serialized graph input to the visualizer.
 
 Still to explore:
 
