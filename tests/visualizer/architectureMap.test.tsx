@@ -35,7 +35,7 @@ describe("ArchitectureMap", () => {
 
     render(<ArchitectureMap graph={graph} />);
 
-    expect(screen.getByTestId("architecture-map")).toBeTruthy();
+    expect(screen.getByTestId("architecture-map").className).toContain("architecture-map-shell");
     expect(screen.getByRole("textbox", { name: "Search nodes" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "likeRequested" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "submitLikeListener" })).toBeTruthy();

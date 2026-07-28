@@ -20,6 +20,7 @@ import {
   type GraphProjection,
 } from "../domain/graphProjection.js";
 import "@xyflow/react/dist/style.css";
+import "./ArchitectureMap.css";
 
 type ArchitectureNodeData = {
   node: ArchitectureNode;
@@ -117,8 +118,8 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const outgoing = selectedNode ? graphEdges.filter((edge) => edge.source === selectedNode.id) : [];
 
   return (
-    <main data-testid="architecture-map">
-      <aside aria-label="Explorer">
+    <main data-testid="architecture-map" className="architecture-map-shell">
+      <aside aria-label="Explorer" className="architecture-map-explorer">
         <label>
           Search nodes
           <input
@@ -155,7 +156,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
         ))}
       </aside>
 
-      <section aria-label="Map" style={{ height: 420 }}>
+      <section aria-label="Map" className="architecture-map-canvas" style={{ height: 420 }}>
         <ReactFlow
           nodes={flowNodes}
           edges={flowEdges}
@@ -177,7 +178,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
         </div>
       </section>
 
-      <aside aria-label="Inspector" role="region">
+      <aside aria-label="Inspector" role="region" className="architecture-map-inspector">
         {selectedNode ? (
           <>
             <h2>{selectedNode.id}</h2>

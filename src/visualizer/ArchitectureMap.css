@@ -1,0 +1,167 @@
+.architecture-map-shell {
+  --atlas-ink: #172033;
+  --atlas-muted: #64748b;
+  --atlas-border: #dbe3ee;
+  --atlas-surface: #ffffff;
+  --atlas-canvas: #f5f7fb;
+  display: grid;
+  grid-template-columns: minmax(190px, 220px) minmax(0, 1fr) minmax(240px, 280px);
+  min-height: 620px;
+  color: var(--atlas-ink);
+  background: var(--atlas-canvas);
+  border: 1px solid var(--atlas-border);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.architecture-map-shell > aside,
+.architecture-map-canvas {
+  min-width: 0;
+  background: var(--atlas-surface);
+}
+
+.architecture-map-explorer,
+.architecture-map-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+}
+
+.architecture-map-explorer {
+  border-right: 1px solid var(--atlas-border);
+}
+
+.architecture-map-inspector {
+  border-left: 1px solid var(--atlas-border);
+}
+
+.architecture-map-explorer label,
+.architecture-map-inspector label {
+  display: grid;
+  gap: 6px;
+  color: var(--atlas-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.architecture-map-explorer input,
+.architecture-map-explorer select,
+.architecture-map-inspector select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 9px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 6px;
+  color: var(--atlas-ink);
+  background: var(--atlas-surface);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.architecture-map-explorer > button,
+.architecture-map-inspector button {
+  padding: 8px 10px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 6px;
+  color: var(--atlas-ink);
+  background: var(--atlas-surface);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.architecture-map-explorer > button:hover,
+.architecture-map-inspector button:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.architecture-map-canvas {
+  position: relative;
+  min-height: 620px;
+  background-color: var(--atlas-canvas);
+  background-image: radial-gradient(#d5deeb 0.7px, transparent 0.7px);
+  background-size: 18px 18px;
+}
+
+.architecture-map-canvas .react-flow {
+  min-height: 620px;
+}
+
+.architecture-map-canvas > [aria-label="Architectural relations"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--atlas-border);
+  background: rgb(255 255 255 / 85%);
+  color: var(--atlas-muted);
+  font-size: 11px;
+}
+
+.architecture-map-canvas > [aria-label="Architectural relations"] span {
+  padding: 3px 6px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 999px;
+  background: var(--atlas-surface);
+}
+
+.architecture-map-inspector h2,
+.architecture-map-inspector h3 {
+  margin: 0;
+}
+
+.architecture-map-inspector h2 {
+  overflow-wrap: anywhere;
+  font-size: 18px;
+}
+
+.architecture-map-inspector h3 {
+  color: var(--atlas-muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.architecture-map-inspector p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .architecture-map-shell {
+    grid-template-columns: minmax(170px, 0.8fr) minmax(0, 1.6fr);
+  }
+
+  .architecture-map-inspector {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--atlas-border);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .architecture-map-shell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .architecture-map-explorer,
+  .architecture-map-inspector {
+    border: 0;
+  }
+
+  .architecture-map-explorer {
+    border-bottom: 1px solid var(--atlas-border);
+  }
+
+  .architecture-map-inspector {
+    border-top: 1px solid var(--atlas-border);
+  }
+}
