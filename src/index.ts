@@ -1,5 +1,9 @@
-/**
- * FlowAtlas public entry point.
- *
- * Domain capabilities will be introduced through the TDD workflow.
- */
+#!/usr/bin/env node
+
+import { runCli } from "./cli.js";
+
+runCli().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  process.stderr.write(`FlowAtlas: ${message}\n`);
+  process.exitCode = 1;
+});

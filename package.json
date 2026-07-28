@@ -4,10 +4,16 @@
   "private": true,
   "description": "An architecture map for event-driven applications.",
   "license": "MIT",
+  "bin": {
+    "flowatlas": "dist/index.js"
+  },
   "type": "module",
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "typescript": "^5.8.3"
+  },
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
@@ -22,7 +28,6 @@
     "eslint": "^9.30.0",
     "prettier": "^3.6.2",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.3",
     "typescript-eslint": "^8.35.1",
     "vitest": "^3.2.4"
   }
