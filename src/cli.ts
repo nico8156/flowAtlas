@@ -10,7 +10,7 @@ import { formatTerminalMap } from "./application/terminalMapOutput.js";
 import { loadTypeScriptProject } from "./cli/projectLoader.js";
 import { projectDownstream, projectUpstream } from "./domain/graphProjection.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
-import { TerminalTui } from "./tui/TerminalTui.js";
+import { TerminalTui, type ProjectionChange } from "./tui/TerminalTui.js";
 
 const usage =
   "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas tui <nodeId> [path]";
@@ -95,16 +95,33 @@ export const runCli = async (
       throw new Error(`Node not found: ${nodeId ?? ""}`.trim());
     }
 
-    const projection = projectFocusedTerritory(graph, nodeId);
+    const focusedProjection = projectFocusedTerritory(graph, nodeId);
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
-      process.stdout.write(`${formatTerminalMap(nodeId, projection, false)}\n`);
+      process.stdout.write(`${formatTerminalMap(nodeId, focusedProjection, false)}\n`);
       return;
     }
+
+    const fullProjection = { nodes: graph.nodes, edges: graph.edges };
+    const projectionChange = (
+      mode: ProjectionChange["mode"],
+      createProjection: (selectedNodeId: string) => ProjectionChange["projection"],
+      selectedNodeId: string,
+    ): ProjectionChange => ({
+      mode,
+      projection: createProjection(selectedNodeId),
+      rootNodeId: selectedNodeId,
+    });
 
     const instance = render(
       createElement(TerminalTui, {
         initialSelectedNodeId: nodeId,
-        projection,
+        projection: fullProjection,
+        projectFocus: (selectedNodeId) =>
+          projectionChange("focus", (id) => projectFocusedTerritory(graph, id), selectedNodeId),
+        projectDownstream: (selectedNodeId) =>
+          projectionChange("downstream", (id) => projectDownstream(graph, id), selectedNodeId),
+        projectUpstream: (selectedNodeId) =>
+          projectionChange("upstream", (id) => projectUpstream(graph, id), selectedNodeId),
       }),
     );
     await instance.waitUntilExit();

@@ -1,5 +1,6 @@
 import type { ArchitectureEdge, ArchitectureNode } from "../domain/architectureGraph.js";
 import type { GraphProjection } from "../domain/graphProjection.js";
+import type { NodeKind } from "../domain/architectureGraph.js";
 
 type TerminalVisualizerSession = {
   search(query: string): void;
@@ -14,6 +15,22 @@ export type TerminalView = {
     readonly node?: ArchitectureNode;
     readonly incoming: readonly string[];
     readonly outgoing: readonly string[];
+  };
+};
+
+export const filterTerminalProjection = (
+  projection: GraphProjection,
+  nodeKinds: readonly NodeKind[],
+): GraphProjection => {
+  const visibleNodeIds = new Set(
+    projection.nodes.filter((node) => nodeKinds.includes(node.kind)).map((node) => node.id),
+  );
+
+  return {
+    nodes: projection.nodes.filter((node) => visibleNodeIds.has(node.id)),
+    edges: projection.edges.filter(
+      (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target),
+    ),
   };
 };
 

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { NodeKind } from "../domain/architectureGraph.js";
 import type { GraphProjection } from "../domain/graphProjection.js";
-import { buildTerminalView } from "./terminalVisualizer.js";
+import { buildTerminalView, filterTerminalProjection } from "./terminalVisualizer.js";
 import {
   createViewport,
   ensureNodeVisible,
@@ -14,13 +14,31 @@ import {
 } from "./terminalMapLayout.js";
 
 type Pane = "explorer" | "map" | "inspector";
+export type ProjectionMode = "full" | "focus" | "upstream" | "downstream";
+
+export type ProjectionChange = {
+  readonly projection: GraphProjection;
+  readonly mode: ProjectionMode;
+  readonly rootNodeId: string;
+};
 
 type TerminalTuiProps = {
   readonly projection: GraphProjection;
   readonly initialSelectedNodeId?: string;
+  readonly initialMode?: ProjectionMode;
+  readonly projectFocus?: (nodeId: string) => ProjectionChange;
+  readonly projectUpstream?: (nodeId: string) => ProjectionChange;
+  readonly projectDownstream?: (nodeId: string) => ProjectionChange;
+};
+
+type ViewState = ProjectionChange & {
+  readonly selectedNodeId: string | undefined;
+  readonly nodeKinds: readonly NodeKind[];
 };
 
 const paneOrder: readonly Pane[] = ["explorer", "map", "inspector"];
+const allNodeKinds: readonly NodeKind[] = ["Event", "Handler", "State", "External"];
+const densities: readonly Density[] = ["compact", "normal", "detailed"];
 const theme = {
   foreground: "#F8F8F2",
   muted: "#75715E",
@@ -35,59 +53,111 @@ const markerFor = (kind: NodeKind): string => (kind === "External" ? "X" : kind.
 
 const paneTitle = (name: string, active: boolean): string => (active ? `${name} · active` : name);
 
-const densities: readonly Density[] = ["compact", "normal", "detailed"];
+const modeTitle = (mode: ProjectionMode, rootNodeId: string): string =>
+  mode === "full" ? "FULL" : `${mode.toUpperCase()} · ${rootNodeId}`;
 
-export const TerminalTui = ({ projection, initialSelectedNodeId }: TerminalTuiProps) => {
+const nextVisibleSelection = (
+  projection: GraphProjection,
+  nodeKinds: readonly NodeKind[],
+  selectedNodeId: string | undefined,
+): string | undefined => {
+  const filtered = filterTerminalProjection(projection, nodeKinds);
+  return filtered.nodes.some((node) => node.id === selectedNodeId)
+    ? selectedNodeId
+    : filtered.nodes[0]?.id;
+};
+
+export const TerminalTui = ({
+  projection,
+  initialSelectedNodeId,
+  initialMode = "full",
+  projectFocus,
+  projectUpstream,
+  projectDownstream,
+}: TerminalTuiProps) => {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const [activePane, setActivePane] = useState<Pane>("explorer");
   const [searchMode, setSearchMode] = useState(false);
   const [query, setQuery] = useState("");
-  const [cursor, setCursor] = useState(() => {
-    const index = projection.nodes.findIndex((node) => node.id === initialSelectedNodeId);
-    return index >= 0 ? index : 0;
-  });
-  const [selectedNodeId, setSelectedNodeId] = useState(initialSelectedNodeId);
+  const [cursor, setCursor] = useState(0);
   const [density, setDensity] = useState<Density>("normal");
-  const mapWidth = Math.max(24, Math.floor((stdout.columns ?? 80) * 0.5) - 4);
-  const mapHeight = Math.max(8, (stdout.rows ?? 24) - 8);
-  const [viewport, setViewport] = useState(() => createViewport(mapWidth, mapHeight));
+  const [viewport, setViewport] = useState(() =>
+    createViewport(Math.max(24, Math.floor((stdout.columns ?? 80) * 0.5) - 4), 16),
+  );
+  const [history, setHistory] = useState<readonly ViewState[]>([]);
+  const [viewState, setViewState] = useState<ViewState>({
+    projection,
+    mode: initialMode,
+    rootNodeId: initialSelectedNodeId ?? projection.nodes[0]?.id ?? "",
+    selectedNodeId: initialSelectedNodeId,
+    nodeKinds: allNodeKinds,
+  });
 
-  const layout = useMemo(() => layoutProjection(projection, { density }), [density, projection]);
-
+  const filteredProjection = useMemo(
+    () => filterTerminalProjection(viewState.projection, viewState.nodeKinds),
+    [viewState.nodeKinds, viewState.projection],
+  );
   const view = useMemo(
-    () => buildTerminalView(projection, selectedNodeId, query),
-    [projection, query, selectedNodeId],
+    () => buildTerminalView(filteredProjection, viewState.selectedNodeId, query),
+    [filteredProjection, query, viewState.selectedNodeId],
+  );
+  const layout = useMemo(
+    () => layoutProjection(filteredProjection, { density }),
+    [density, filteredProjection],
   );
   const cursorNode = view.visibleNodes[cursor] ?? view.visibleNodes[0];
+  const mapWidth = Math.max(24, Math.floor((stdout.columns ?? 80) * 0.5) - 4);
+  const mapHeight = Math.max(8, (stdout.rows ?? 24) - 8);
 
   useEffect(() => {
     setViewport((current) => ({ ...current, width: mapWidth, height: mapHeight }));
   }, [mapHeight, mapWidth]);
 
   useEffect(() => {
-    setViewport((current) => ensureNodeVisible(layout, current, selectedNodeId));
-  }, [layout, selectedNodeId]);
+    setViewport((current) => ensureNodeVisible(layout, current, viewState.selectedNodeId));
+  }, [layout, viewState.selectedNodeId]);
+
+  useEffect(() => {
+    setViewState((current) => {
+      const selectedNodeId = nextVisibleSelection(
+        current.projection,
+        current.nodeKinds,
+        current.selectedNodeId,
+      );
+      return selectedNodeId === current.selectedNodeId ? current : { ...current, selectedNodeId };
+    });
+  }, [viewState.nodeKinds]);
+
+  const changeProjection = (action: ((nodeId: string) => ProjectionChange) | undefined): void => {
+    if (!action || !viewState.selectedNodeId) return;
+    const next = action(viewState.selectedNodeId);
+    setHistory((current) => [...current, viewState]);
+    setViewState({
+      ...next,
+      selectedNodeId: next.rootNodeId,
+      nodeKinds: viewState.nodeKinds,
+    });
+    setQuery("");
+    setCursor(0);
+  };
 
   useInput((input, key) => {
     if (searchMode) {
-      if (key.escape) {
+      if (key.escape || input === "\u001b") {
         setSearchMode(false);
         return;
       }
-
       if (key.return) {
-        if (cursorNode) setSelectedNodeId(cursorNode.id);
+        if (cursorNode) setViewState((current) => ({ ...current, selectedNodeId: cursorNode.id }));
         setSearchMode(false);
         return;
       }
-
       if (key.backspace || key.delete) {
         setQuery((current) => current.slice(0, -1));
         setCursor(0);
         return;
       }
-
       if (input && !key.ctrl && !key.meta) {
         setQuery((current) => current + input);
         setCursor(0);
@@ -99,6 +169,19 @@ export const TerminalTui = ({ projection, initialSelectedNodeId }: TerminalTuiPr
       exit();
       return;
     }
+    if (key.escape || input === "\u001b") {
+      const previous = history.at(-1);
+      if (previous) {
+        setHistory((current) => current.slice(0, -1));
+        setViewState(previous);
+        setQuery("");
+        setCursor(0);
+      }
+      return;
+    }
+    if (input === "f") changeProjection(projectFocus);
+    if (input === "u") changeProjection(projectUpstream);
+    if (input === "d") changeProjection(projectDownstream);
 
     if (key.tab) {
       setActivePane((current) => {
@@ -109,50 +192,60 @@ export const TerminalTui = ({ projection, initialSelectedNodeId }: TerminalTuiPr
     }
 
     if (activePane === "map") {
-      if (input === "h" || key.leftArrow) {
+      if (input === "h" || key.leftArrow)
         setViewport((current) => panViewport(current, { x: -4, y: 0 }));
-      } else if (input === "l" || key.rightArrow) {
+      if (input === "l" || key.rightArrow)
         setViewport((current) => panViewport(current, { x: 4, y: 0 }));
-      } else if (input === "k" || key.upArrow) {
+      if (input === "k" || key.upArrow)
         setViewport((current) => panViewport(current, { x: 0, y: -2 }));
-      } else if (input === "j" || key.downArrow) {
+      if (input === "j" || key.downArrow)
         setViewport((current) => panViewport(current, { x: 0, y: 2 }));
-      } else if (input === "+") {
-        setDensity((current) => {
-          const next = densities[densities.indexOf(current) + 1];
-          return next ?? current;
-        });
-      } else if (input === "-") {
-        setDensity((current) => {
-          const previous = densities[densities.indexOf(current) - 1];
-          return previous ?? current;
-        });
+      if (input === "+") {
+        setDensity((current) => densities[densities.indexOf(current) + 1] ?? current);
+      }
+      if (input === "-") {
+        setDensity((current) => densities[densities.indexOf(current) - 1] ?? current);
       }
       return;
     }
 
     if (activePane !== "explorer") return;
-
     if (input === "/") {
       setSearchMode(true);
       return;
     }
-
-    if (key.upArrow || input === "k") {
-      setCursor((current) => Math.max(0, current - 1));
+    if (input === "1" || input === "2" || input === "3" || input === "4") {
+      const kind = allNodeKinds[Number(input) - 1];
+      if (kind) {
+        setViewState((current) => ({
+          ...current,
+          nodeKinds: current.nodeKinds.includes(kind)
+            ? current.nodeKinds.filter((candidate) => candidate !== kind)
+            : [...current.nodeKinds, kind],
+        }));
+        setCursor(0);
+      }
+      return;
     }
-
+    if (input === "0") {
+      setViewState((current) => ({ ...current, nodeKinds: allNodeKinds }));
+      setCursor(0);
+      return;
+    }
+    if (key.upArrow || input === "k") setCursor((current) => Math.max(0, current - 1));
     if (key.downArrow || input === "j") {
       setCursor((current) => Math.min(view.visibleNodes.length - 1, current + 1));
     }
-
     if (key.return && cursorNode) {
-      setSelectedNodeId(cursorNode.id);
+      setViewState((current) => ({ ...current, selectedNodeId: cursorNode.id }));
     }
   });
 
   return (
     <Box flexDirection="column" height="100%" width="100%" padding={1}>
+      <Text color={theme.selection} bold>
+        FlowAtlas · {modeTitle(viewState.mode, viewState.rootNodeId)}
+      </Text>
       <Box flexDirection="row" flexGrow={1}>
         <Box
           borderColor={activePane === "explorer" ? theme.selection : theme.muted}
@@ -167,16 +260,15 @@ export const TerminalTui = ({ projection, initialSelectedNodeId }: TerminalTuiPr
           <Text color={searchMode ? theme.selection : theme.muted}>
             {searchMode ? `/${query}` : "/ search"}
           </Text>
+          <Text color={theme.muted}>
+            Kinds: {viewState.nodeKinds.map(markerFor).join(" ") || "none"} · 0 all
+          </Text>
           {view.visibleNodes.map((node, index) => (
-            <Text
-              color={node.kind in theme ? theme[node.kind as keyof typeof theme] : theme.foreground}
-              key={node.id}
-            >
+            <Text color={theme[node.kind]} key={node.id}>
               {index === cursor ? ">" : " "} [{markerFor(node.kind)}] {node.id}
             </Text>
           ))}
         </Box>
-
         <Box
           borderColor={activePane === "map" ? theme.selection : theme.muted}
           borderStyle="single"
@@ -188,11 +280,10 @@ export const TerminalTui = ({ projection, initialSelectedNodeId }: TerminalTuiPr
             {paneTitle("Map", activePane === "map")}
           </Text>
           <Text color={theme.muted}>Density: {density}</Text>
-          {renderTerminalMap(layout, viewport, selectedNodeId).map((line, index) => (
+          {renderTerminalMap(layout, viewport, viewState.selectedNodeId).map((line, index) => (
             <Text key={`${line}-${index}`}>{line}</Text>
           ))}
         </Box>
-
         <Box
           borderColor={activePane === "inspector" ? theme.selection : theme.muted}
           borderStyle="single"
@@ -230,8 +321,8 @@ export const TerminalTui = ({ projection, initialSelectedNodeId }: TerminalTuiPr
       <Box borderColor={theme.muted} borderStyle="single" paddingX={1}>
         <Text color={theme.muted}>
           {activePane === "map"
-            ? "hjkl pan   +/- density   tab pane   q quit"
-            : "/ search   ↑↓/jk navigate   enter select   tab pane   q quit"}
+            ? "hjkl pan   +/- density   f focus   u upstream   d downstream   tab pane   q quit"
+            : "/ search   ↑↓/jk navigate   enter select   f focus   u upstream   d downstream   tab pane   q quit"}
         </Text>
       </Box>
     </Box>

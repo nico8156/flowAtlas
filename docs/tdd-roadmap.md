@@ -314,6 +314,11 @@ Delivered so far:
   layout, viewport and density invariants;
 - Map pan and density changes preserve the projected node/edge set and
   selection.
+- `f`, `u` and `d` request focus, upstream and downstream projections through
+  callbacks supplied by the CLI;
+- `Esc` restores presentation-only projection history;
+- NodeKind filters operate after projection and remove incident edges without
+  reconnecting hidden nodes.
 
 ### Known gaps
 
@@ -321,7 +326,6 @@ The browser implementation is not the M7 product target. The TUI still needs:
 
 - Explorer, Map and Inspector panes with responsive terminal sizing;
 - more expressive edge routing when branches become dense;
-- focus/upstream/downstream commands wired to the existing projections;
 - a visual review on a full-size real Fragments terminal session.
 
 ### Before-layout evidence

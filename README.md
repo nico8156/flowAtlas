@@ -78,7 +78,9 @@ npx flowatlas tui uiLikeToggleRequested .
 It provides Explorer, Map and Inspector panes with `Tab`, `/`, `j/k`, arrows,
 `Enter`, `Esc` and `q`. When Map is active, `h/j/k/l` pans the viewport and
 `+/-` changes presentation density. It consumes the existing graph projection
-and does not add traversal or analysis logic to the terminal adapter.
+and `f/u/d` request focus, upstream and downstream projections through the CLI
+application boundary. It does not add traversal or analysis logic to the
+terminal adapter.
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:
