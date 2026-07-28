@@ -36,6 +36,9 @@ const nodeKindStyles: Record<NodeKind, { borderColor: string; backgroundColor: s
 };
 
 const nodeKindClass = (kind: NodeKind): string => `architecture-node-${kind.toLowerCase()}`;
+const defaultFocusDepth = 2;
+const createProjectionOptions = (maxDepth: number | undefined) =>
+  maxDepth === undefined ? undefined : { maxDepth };
 
 const nodeTypes = {
   architecture: ({ data }: NodeProps<ArchitectureFlowNode>) => (
@@ -188,6 +191,24 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const incoming = selectedNode ? graphEdges.filter((edge) => edge.target === selectedNode.id) : [];
   const outgoing = selectedNode ? graphEdges.filter((edge) => edge.source === selectedNode.id) : [];
 
+  const focusTerritory = (
+    nodeId: string,
+    nextDownstreamDepth: number | undefined,
+    nextUpstreamDepth: number | undefined,
+  ): void => {
+    setProjection(
+      mergeProjections(
+        projectDownstream(graph, nodeId, createProjectionOptions(nextDownstreamDepth)),
+        projectUpstream(graph, nodeId, createProjectionOptions(nextUpstreamDepth)),
+      ),
+    );
+  };
+
+  const selectNode = (nodeId: string): void => {
+    setSelectedNodeId(nodeId);
+    focusTerritory(nodeId, defaultFocusDepth, defaultFocusDepth);
+  };
+
   return (
     <main data-testid="architecture-map" className="architecture-map-shell">
       <aside aria-label="Explorer" className="architecture-map-explorer">
@@ -220,7 +241,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
             className={`architecture-node ${nodeKindClass(node.kind)}`}
             data-node-kind={node.kind}
             style={nodeKindStyles[node.kind]}
-            onClick={() => setSelectedNodeId(node.id)}
+            onClick={() => selectNode(node.id)}
           >
             {node.id}
           </button>
@@ -232,7 +253,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
           nodes={flowNodes}
           edges={flowEdges}
           nodeTypes={nodeTypes}
-          onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+          onNodeClick={(_, node) => selectNode(node.id)}
           fitView
         >
           <Controls />
@@ -271,22 +292,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
             <button
               type="button"
               aria-label={`Focus territory from ${selectedNode.id}`}
-              onClick={() =>
-                setProjection(
-                  mergeProjections(
-                    projectDownstream(
-                      graph,
-                      selectedNode.id,
-                      downstreamDepth === undefined ? undefined : { maxDepth: downstreamDepth },
-                    ),
-                    projectUpstream(
-                      graph,
-                      selectedNode.id,
-                      upstreamDepth === undefined ? undefined : { maxDepth: upstreamDepth },
-                    ),
-                  ),
-                )
-              }
+              onClick={() => focusTerritory(selectedNode.id, downstreamDepth, upstreamDepth)}
             >
               Focus territory
             </button>

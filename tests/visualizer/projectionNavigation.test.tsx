@@ -134,6 +134,25 @@ describe("ArchitectureMap projection navigation", () => {
     expect(screen.queryByRole("button", { name: "unrelated" })).toBeNull();
   });
 
+  it("automatically focuses the selected node at a bounded default depth", () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "requested", kind: "Event" });
+    graph.addNode({ id: "listener", kind: "Handler" });
+    graph.addNode({ id: "accepted", kind: "Event" });
+    graph.addNode({ id: "unrelated", kind: "Event" });
+    graph.addEdge({ source: "listener", target: "requested", kind: "LISTENS_TO" });
+    graph.addEdge({ source: "listener", target: "accepted", kind: "DISPATCHES" });
+
+    render(<ArchitectureMap graph={graph} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "requested" }));
+
+    expect(screen.getByRole("button", { name: "requested" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "listener" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "unrelated" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Reset projection" })).toBeTruthy();
+  });
+
   it("hides relations outside the focused projection", () => {
     const graph = createArchitectureGraph();
     graph.addNode({ id: "requested", kind: "Event" });
