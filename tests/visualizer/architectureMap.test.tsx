@@ -63,4 +63,16 @@ describe("ArchitectureMap", () => {
     expect(screen.getByRole("button", { name: "Zoom Out" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Fit View" })).toBeTruthy();
   });
+
+  it("renders one visual relation for duplicate architectural edges", () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "requested", kind: "Event" });
+    graph.addNode({ id: "listener", kind: "Handler" });
+    graph.addEdge({ source: "listener", target: "requested", kind: "LISTENS_TO" });
+    graph.addEdge({ source: "listener", target: "requested", kind: "LISTENS_TO" });
+
+    render(<ArchitectureMap graph={graph} />);
+
+    expect(screen.getAllByLabelText("listener LISTENS_TO requested")).toHaveLength(1);
+  });
 });

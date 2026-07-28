@@ -16,7 +16,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 4. Evidence and trust                      | PROPOSED                                  |
 | 5. Graph projections                       | DELIVERED                                 |
 | 6. CLI productization                      | DELIVERED                                 |
-| 7. Visualizer MVP                          | DELIVERED                                 |
+| 7. Visualizer MVP                          | ACTIVE                                    |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -263,7 +263,7 @@ boundary and supports the first terminal exploration workflow.
 
 ## Milestone 7 - Visualizer MVP
 
-**Status: DELIVERED**
+**Status: ACTIVE**
 
 ### Goal
 
@@ -300,13 +300,32 @@ Delivered so far:
 - a Vite browser shell is available through `npm run visualizer`;
 - a real Fragments Ticket graph can be loaded and explored in both directions.
 
+### Known gaps
+
+The first real-graph visualizer run exposed product-level readability issues
+that must be closed before this milestone is complete:
+
+- the selected node inspector must show only relations connected to the
+  selected node and must not display stale or unrelated relations;
+- duplicate architectural edges must not be presented as duplicate visual
+  facts;
+- the initial map needs a readable focused layout rather than a flat grid of
+  all nodes;
+- relation labels and the Explorer/Map/Inspector regions need enough visual
+  structure to support navigation;
+- focused navigation must remain consistent between the rendered projection
+  and the inspector.
+
+These are visualizer/application concerns. They must not be solved by changing
+the canonical graph vocabulary or inventing new architectural relationships.
+
 ### Completion criteria
 
 The visualizer consumes `ArchitectureGraph` and never defines its model. A
 developer can run `npm run visualizer`, load a graph exported by the CLI, search
-and select nodes, inspect source locations, and explore both directions of a
-real architectural slice without manually reconstructing the graph from source
-files.
+and select nodes, inspect only the selected node's relations and source
+location, and explore both directions of a readable real architectural slice
+without manually reconstructing the graph from source files.
 
 ## Milestone 8 - Broader Validation
 

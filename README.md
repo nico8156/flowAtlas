@@ -22,17 +22,17 @@ visualizer MVP. The scanner can reconstruct the Like, outbox and projection
 slices of the real Fragments application, and the visualizer can render and
 explore a supplied architecture graph.
 
-| Area                            | Status                                   |
-| ------------------------------- | ---------------------------------------- |
-| TypeScript / Node.js foundation | Available                                |
-| Strict type checking            | Available                                |
-| Test runner and build pipeline  | Available                                |
-| Architecture graph model        | V1 core and graph projections available  |
-| TypeScript analysis             | Focused TypeScript project scanner       |
-| Redux Toolkit detectors         | Limited V1 patterns available            |
-| CLI                             | MVP scan and graph exploration available |
-| Interactive visualizer          | M7 MVP delivered                         |
-| Fragments acceptance tests      | Available when the corpus is present     |
+| Area                            | Status                                                    |
+| ------------------------------- | --------------------------------------------------------- |
+| TypeScript / Node.js foundation | Available                                                 |
+| Strict type checking            | Available                                                 |
+| Test runner and build pipeline  | Available                                                 |
+| Architecture graph model        | V1 core and graph projections available                   |
+| TypeScript analysis             | Focused TypeScript project scanner                        |
+| Redux Toolkit detectors         | Limited V1 patterns available                             |
+| CLI                             | MVP scan and graph exploration available                  |
+| Interactive visualizer          | M7 active: functional shell, readability work in progress |
+| Fragments acceptance tests      | Available when the corpus is present                      |
 
 The domain graph and analysis capabilities emerge through acceptance-driven
 TDD. The repository includes acceptance tests for the Fragments Like, outbox

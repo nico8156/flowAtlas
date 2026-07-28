@@ -70,6 +70,18 @@ const createFlowEdges = (edges: readonly ArchitectureEdge[]): FlowEdge[] =>
     label: edge.kind,
   }));
 
+const uniqueEdges = (edges: readonly ArchitectureEdge[]): ArchitectureEdge[] => {
+  const seen = new Set<string>();
+
+  return edges.filter((edge) => {
+    const identity = `${edge.source}\u0000${edge.kind}\u0000${edge.target}`;
+    if (seen.has(identity)) return false;
+
+    seen.add(identity);
+    return true;
+  });
+};
+
 const formatRelation = (edge: ArchitectureGraph["edges"][number]): string =>
   `${edge.source} --${edge.kind}--> ${edge.target}`;
 
@@ -84,6 +96,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const [downstreamDepth, setDownstreamDepth] = useState<number>();
   const [upstreamDepth, setUpstreamDepth] = useState<number>();
   const displayedGraph = projection ?? graph;
+  const displayedEdges = uniqueEdges(displayedGraph.edges);
   const visibleNodes = displayedGraph.nodes.filter(
     (node) =>
       node.id.toLowerCase().includes(query.toLowerCase()) &&
@@ -93,18 +106,15 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const flowNodes = useMemo(() => createFlowNodes(visibleNodes), [visibleNodes]);
   const flowEdges = useMemo(
     () =>
-      createFlowEdges(displayedGraph.edges).filter(
+      createFlowEdges(displayedEdges).filter(
         (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target),
       ),
-    [displayedGraph, visibleNodeIds],
+    [displayedEdges, visibleNodeIds],
   );
   const selectedNode = selectedNodeId ? graph.findNode(selectedNodeId) : undefined;
-  const incoming = selectedNode
-    ? graph.edges.filter((edge) => edge.target === selectedNode.id)
-    : [];
-  const outgoing = selectedNode
-    ? graph.edges.filter((edge) => edge.source === selectedNode.id)
-    : [];
+  const graphEdges = uniqueEdges(graph.edges);
+  const incoming = selectedNode ? graphEdges.filter((edge) => edge.target === selectedNode.id) : [];
+  const outgoing = selectedNode ? graphEdges.filter((edge) => edge.source === selectedNode.id) : [];
 
   return (
     <main data-testid="architecture-map">
@@ -156,7 +166,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
           <Controls />
         </ReactFlow>
         <div aria-label="Architectural relations">
-          {displayedGraph.edges.map((edge, index) => (
+          {displayedEdges.map((edge, index) => (
             <span
               key={`${edge.source}-${edge.kind}-${edge.target}-${index}`}
               aria-label={relationLabel(edge)}
