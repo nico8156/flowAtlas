@@ -127,4 +127,14 @@ describeFragments("Fragments visualizer acceptance", () => {
       "ticketSubmitWlUseCase.ts:",
     );
   }, 20_000);
+
+  it("exposes viewport controls for a real scanned graph", async () => {
+    const graph = await scanTicketGraph();
+
+    render(<ArchitectureMap graph={graph} />);
+
+    expect(screen.getByRole("button", { name: "Zoom In" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Zoom Out" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Fit View" })).toBeTruthy();
+  }, 20_000);
 });
