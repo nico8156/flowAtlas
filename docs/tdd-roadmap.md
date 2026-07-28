@@ -288,6 +288,7 @@ Delivered so far:
 - reset from a focused projection to the complete graph.
 - viewport controls for zoom in, zoom out and fit view.
 - relation visibility constrained to the active projection.
+- explicit bidirectional territory focus from a selected node;
 - acceptance coverage rendering and inspecting a real Fragments-scanned graph.
 - acceptance coverage exploring a real Fragments Ticket territory downstream.
 - acceptance coverage exploring a real Fragments Ticket state territory upstream.

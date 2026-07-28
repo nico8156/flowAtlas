@@ -137,6 +137,20 @@ const uniqueEdges = (edges: readonly ArchitectureEdge[]): ArchitectureEdge[] => 
   });
 };
 
+const mergeProjections = (...projections: readonly GraphProjection[]): GraphProjection => {
+  const nodes = new Map<string, ArchitectureNode>();
+  const edges = new Map<string, ArchitectureEdge>();
+
+  for (const projection of projections) {
+    for (const node of projection.nodes) nodes.set(node.id, node);
+    for (const edge of uniqueEdges(projection.edges)) {
+      edges.set(`${edge.source}\u0000${edge.kind}\u0000${edge.target}`, edge);
+    }
+  }
+
+  return { nodes: [...nodes.values()], edges: [...edges.values()] };
+};
+
 const formatRelation = (edge: ArchitectureGraph["edges"][number]): string =>
   `${edge.source} --${edge.kind}--> ${edge.target}`;
 
@@ -254,6 +268,28 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
             {outgoing.map((edge) => (
               <p key={`${edge.kind}-${edge.target}`}>{formatRelation(edge)}</p>
             ))}
+            <button
+              type="button"
+              aria-label={`Focus territory from ${selectedNode.id}`}
+              onClick={() =>
+                setProjection(
+                  mergeProjections(
+                    projectDownstream(
+                      graph,
+                      selectedNode.id,
+                      downstreamDepth === undefined ? undefined : { maxDepth: downstreamDepth },
+                    ),
+                    projectUpstream(
+                      graph,
+                      selectedNode.id,
+                      upstreamDepth === undefined ? undefined : { maxDepth: upstreamDepth },
+                    ),
+                  ),
+                )
+              }
+            >
+              Focus territory
+            </button>
             <label>
               Downstream depth
               <select

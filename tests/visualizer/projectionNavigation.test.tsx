@@ -111,6 +111,29 @@ describe("ArchitectureMap projection navigation", () => {
     expect(screen.getByRole("button", { name: "unrelated" })).toBeTruthy();
   });
 
+  it("focuses the selected node on both connected directions", () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "requested", kind: "Event" });
+    graph.addNode({ id: "listener", kind: "Handler" });
+    graph.addNode({ id: "accepted", kind: "Event" });
+    graph.addNode({ id: "socialState", kind: "State" });
+    graph.addNode({ id: "unrelated", kind: "Event" });
+    graph.addEdge({ source: "listener", target: "requested", kind: "LISTENS_TO" });
+    graph.addEdge({ source: "listener", target: "accepted", kind: "DISPATCHES" });
+    graph.addEdge({ source: "accepted", target: "socialState", kind: "UPDATES" });
+
+    render(<ArchitectureMap graph={graph} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "accepted" }));
+    fireEvent.click(screen.getByRole("button", { name: "Focus territory from accepted" }));
+
+    expect(screen.getByRole("button", { name: "accepted" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "listener" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "socialState" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "requested" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "unrelated" })).toBeNull();
+  });
+
   it("hides relations outside the focused projection", () => {
     const graph = createArchitectureGraph();
     graph.addNode({ id: "requested", kind: "Event" });
