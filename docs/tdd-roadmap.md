@@ -283,10 +283,10 @@ Delivered so far:
 - visual distinction and filtering by `NodeKind`;
 - inspector with kind, source location and immediate relations;
 - downstream and upstream territory exploration through `GraphProjection`.
+- depth-limited downstream projections from the visualizer.
 
 Still to explore:
 
-- depth controls;
 - boundary visibility and projection reset;
 - pan/zoom usability on focused territories;
 - validation on a real Fragments graph before considering M7 complete.

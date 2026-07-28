@@ -80,6 +80,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const [kindFilter, setKindFilter] = useState<NodeKind | "All">("All");
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
   const [projection, setProjection] = useState<GraphProjection>();
+  const [downstreamDepth, setDownstreamDepth] = useState<number>();
   const displayedGraph = projection ?? graph;
   const visibleNodes = displayedGraph.nodes.filter(
     (node) =>
@@ -181,10 +182,34 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
             {outgoing.map((edge) => (
               <p key={`${edge.kind}-${edge.target}`}>{formatRelation(edge)}</p>
             ))}
+            <label>
+              Downstream depth
+              <select
+                aria-label="Downstream depth"
+                value={downstreamDepth === undefined ? "all" : downstreamDepth}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setDownstreamDepth(value === "all" ? undefined : Number(value));
+                }}
+              >
+                <option value="all">All</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </label>
             <button
               type="button"
               aria-label={`Explore downstream from ${selectedNode.id}`}
-              onClick={() => setProjection(projectDownstream(graph, selectedNode.id))}
+              onClick={() =>
+                setProjection(
+                  projectDownstream(
+                    graph,
+                    selectedNode.id,
+                    downstreamDepth === undefined ? undefined : { maxDepth: downstreamDepth },
+                  ),
+                )
+              }
             >
               Explore downstream
             </button>

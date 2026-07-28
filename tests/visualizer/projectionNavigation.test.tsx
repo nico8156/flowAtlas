@@ -68,4 +68,28 @@ describe("ArchitectureMap projection navigation", () => {
     expect(screen.getByRole("button", { name: "requested" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "unrelated" })).toBeNull();
   });
+
+  it("limits a downstream projection to the selected depth", () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "requested", kind: "Event" });
+    graph.addNode({ id: "listener", kind: "Handler" });
+    graph.addNode({ id: "accepted", kind: "Event" });
+    graph.addNode({ id: "socialState", kind: "State" });
+    graph.addEdge({ source: "listener", target: "requested", kind: "LISTENS_TO" });
+    graph.addEdge({ source: "listener", target: "accepted", kind: "DISPATCHES" });
+    graph.addEdge({ source: "accepted", target: "socialState", kind: "UPDATES" });
+
+    render(<ArchitectureMap graph={graph} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "requested" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Downstream depth" }), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Explore downstream from requested" }));
+
+    expect(screen.getByRole("button", { name: "requested" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "listener" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "accepted" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "socialState" })).toBeNull();
+  });
 });
