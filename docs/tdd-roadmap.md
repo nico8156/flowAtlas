@@ -14,7 +14,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 2. Static TypeScript / Redux understanding | DELIVERED for the current Fragments scope |
 | 3. Complete Fragments Like architecture    | PROPOSED                                  |
 | 4. Evidence and trust                      | PROPOSED                                  |
-| 5. Graph projections                       | PROPOSED                                  |
+| 5. Graph projections                       | DELIVERED                                 |
 | 6. CLI productization                      | PROPOSED                                  |
 | 7. Visualizer MVP                          | PROPOSED                                  |
 | 8. Broader validation                      | PROPOSED                                  |
@@ -190,26 +190,38 @@ semantics.
 
 ## Milestone 5 - Graph Projections
 
-**Status: PROPOSED**
+**Status: DELIVERED**
 
 ### Goal
 
-Formalize graph views already used by acceptance tests.
+Formalize focused graph views without introducing a stored linear `Flow`.
 
-### Candidate acceptance driver
+### Acceptance driver
 
-Real-node exploration from the Fragments graph in upstream and downstream
-directions.
+Real-node exploration from the Fragments Ticket graph in upstream and
+downstream directions.
 
-### Candidate work
+### Delivered capabilities
 
-Depth limits, node-kind/region filters, scenario projections and explicit
-forbidden/speculative edges. Do not add a stored linear `Flow` model.
+- downstream and upstream projections;
+- depth-limited projections;
+- node-kind filtering;
+- projection immutability and endpoint-safe edge filtering;
+- acceptance coverage on the real Ticket graph.
+
+### Decisions
+
+- `GraphProjection` is a view over `ArchitectureGraph`, not a persisted flow;
+- projections preserve the canonical graph and return only visible nodes and
+  edges;
+- asynchronous gaps and absent relations remain absent from projections;
+- region filtering remains a future concern because no region model is needed
+  by the current product behavior.
 
 ### Completion criteria
 
-Views remain projections over `ArchitectureGraph` and preserve bidirectional
-exploration.
+Views remain projections over `ArchitectureGraph`, preserve bidirectional
+exploration, and are validated against a real application graph.
 
 ## Milestone 6 - CLI Productization
 

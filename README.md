@@ -21,17 +21,17 @@ FlowAtlas is currently at the first static TypeScript analysis stage. The
 scanner can already reconstruct the Like, outbox and projection slices of the
 real Fragments application.
 
-| Area                            | Status                               |
-| ------------------------------- | ------------------------------------ |
-| TypeScript / Node.js foundation | Available                            |
-| Strict type checking            | Available                            |
-| Test runner and build pipeline  | Available                            |
-| Architecture graph model        | Minimal V1 core available            |
-| TypeScript analysis             | Focused TypeScript project scanner   |
-| Redux Toolkit detectors         | Limited V1 patterns available        |
-| CLI                             | Not started                          |
-| Interactive visualizer          | Not started                          |
-| Fragments acceptance tests      | Available when the corpus is present |
+| Area                            | Status                                  |
+| ------------------------------- | --------------------------------------- |
+| TypeScript / Node.js foundation | Available                               |
+| Strict type checking            | Available                               |
+| Test runner and build pipeline  | Available                               |
+| Architecture graph model        | V1 core and graph projections available |
+| TypeScript analysis             | Focused TypeScript project scanner      |
+| Redux Toolkit detectors         | Limited V1 patterns available           |
+| CLI                             | Not started                             |
+| Interactive visualizer          | Not started                             |
+| Fragments acceptance tests      | Available when the corpus is present    |
 
 The domain graph and analysis capabilities emerge through acceptance-driven
 TDD. The repository includes acceptance tests for the Fragments Like, outbox
@@ -396,12 +396,12 @@ capabilities.
 
 ## Roadmap
 
-1. Define the next projection/SSE behavior through a RED test.
-2. Resolve how a thunk/Handler dispatched by another Handler belongs in the
+1. Resolve how a thunk/Handler dispatched by another Handler belongs in the
    architectural vocabulary without inventing a `Handler -> Handler` edge.
-3. Extend the Fragments projection acceptance coverage.
-4. Add the CLI scan entry point.
-5. Build the first navigable visual map.
+2. Extend the Fragments acceptance coverage only when a real architectural
+   gap is identified.
+3. Add the CLI scan entry point.
+4. Build the first navigable visual map.
 
 Diagnostics, runtime overlays and additional architecture adapters come later.
 They must not weaken the static truth guarantees of the MVP.
