@@ -19,6 +19,8 @@
   },
   "scripts": {
     "build": "tsup",
+    "visualizer": "vite",
+    "visualizer:build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
@@ -37,6 +39,7 @@
     "prettier": "^3.6.2",
     "tsup": "^8.5.0",
     "typescript-eslint": "^8.35.1",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "vite": "^7.3.6"
   }
 }

@@ -31,7 +31,7 @@ explore a supplied architecture graph.
 | TypeScript analysis             | Focused TypeScript project scanner       |
 | Redux Toolkit detectors         | Limited V1 patterns available            |
 | CLI                             | MVP scan and graph exploration available |
-| Interactive visualizer          | M7 foundation available                  |
+| Interactive visualizer          | M7 browser shell available               |
 | Fragments acceptance tests      | Available when the corpus is present     |
 
 The domain graph and analysis capabilities emerge through acceptance-driven
@@ -48,6 +48,15 @@ npx flowatlas downstream <nodeId> .
 npx flowatlas upstream <nodeId> .
 npx flowatlas scan --json .
 ```
+
+The visualizer can be run locally with:
+
+```sh
+npm run visualizer
+```
+
+It opens a browser shell where a serialized graph exported by
+`flowatlas scan --json .` can be loaded and explored.
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:

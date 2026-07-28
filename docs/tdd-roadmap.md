@@ -297,6 +297,7 @@ Delivered so far:
 - JSON graph deserialization is available for visualizer consumers.
 - `ArchitectureMapFromJson` connects serialized graph input to the visualizer.
 - local JSON file loading is available through `ArchitectureMapLoader`.
+- a Vite browser shell is available through `npm run visualizer`.
 
 Still to explore:
 
