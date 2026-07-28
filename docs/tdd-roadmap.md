@@ -15,7 +15,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 3. Complete Fragments Like architecture    | PROPOSED                                  |
 | 4. Evidence and trust                      | PROPOSED                                  |
 | 5. Graph projections                       | DELIVERED                                 |
-| 6. CLI productization                      | PROPOSED                                  |
+| 6. CLI productization                      | DELIVERED                                 |
 | 7. Visualizer MVP                          | PROPOSED                                  |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
@@ -225,11 +225,11 @@ exploration, and are validated against a real application graph.
 
 ## Milestone 6 - CLI Productization
 
-**Status: PROPOSED**
+**Status: DELIVERED**
 
 ### Goal
 
-Provide the product entry point:
+Provide the first usable product entry point:
 
 ```text
 npx flowatlas .
@@ -237,18 +237,29 @@ npx flowatlas .
 
 ### Acceptance driver
 
-A real project can be scanned and its graph exported without CLI-specific
-analysis logic.
+A controlled TypeScript project can be scanned and explored from the terminal
+without CLI-specific analysis logic.
 
-### Candidate work
+### Delivered capabilities
 
-`scan`, `inspect`, `downstream`, `upstream`, JSON export and possibly Mermaid
-export. The CLI consumes application capabilities.
+- `scan [path]` summary;
+- `inspect <nodeId> [path]` with source and immediate relations;
+- `downstream <nodeId> [path]` projection;
+- `upstream <nodeId> [path]` projection;
+- `scan --json [path]` graph export;
+- deterministic non-zero errors for invalid nodes.
+
+### Decisions
+
+- the CLI is an adapter and delegates scanning, inspection and projections;
+- JSON exports the canonical `{ nodes, edges }` graph shape;
+- the CLI does not start a server, open a browser or own analysis logic;
+- Mermaid export, watch mode and richer configuration remain future proposals.
 
 ### Completion criteria
 
-The CLI is useful without a visualizer and keeps scanner logic out of the
-adapter boundary.
+The CLI is useful without a visualizer, keeps scanner logic out of the adapter
+boundary and supports the first terminal exploration workflow.
 
 ## Milestone 7 - Visualizer MVP
 

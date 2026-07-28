@@ -21,22 +21,32 @@ FlowAtlas is currently at the first static TypeScript analysis stage. The
 scanner can already reconstruct the Like, outbox and projection slices of the
 real Fragments application.
 
-| Area                            | Status                                  |
-| ------------------------------- | --------------------------------------- |
-| TypeScript / Node.js foundation | Available                               |
-| Strict type checking            | Available                               |
-| Test runner and build pipeline  | Available                               |
-| Architecture graph model        | V1 core and graph projections available |
-| TypeScript analysis             | Focused TypeScript project scanner      |
-| Redux Toolkit detectors         | Limited V1 patterns available           |
-| CLI                             | Not started                             |
-| Interactive visualizer          | Not started                             |
-| Fragments acceptance tests      | Available when the corpus is present    |
+| Area                            | Status                                   |
+| ------------------------------- | ---------------------------------------- |
+| TypeScript / Node.js foundation | Available                                |
+| Strict type checking            | Available                                |
+| Test runner and build pipeline  | Available                                |
+| Architecture graph model        | V1 core and graph projections available  |
+| TypeScript analysis             | Focused TypeScript project scanner       |
+| Redux Toolkit detectors         | Limited V1 patterns available            |
+| CLI                             | MVP scan and graph exploration available |
+| Interactive visualizer          | Not started                              |
+| Fragments acceptance tests      | Available when the corpus is present     |
 
 The domain graph and analysis capabilities emerge through acceptance-driven
 TDD. The repository includes acceptance tests for the Fragments Like, outbox
 and projection slices. The Fragments application itself remains an external
 corpus and is not copied into this repository.
+
+The CLI currently supports:
+
+```sh
+npx flowatlas scan .
+npx flowatlas inspect <nodeId> .
+npx flowatlas downstream <nodeId> .
+npx flowatlas upstream <nodeId> .
+npx flowatlas scan --json .
+```
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:
@@ -400,8 +410,7 @@ capabilities.
    architectural vocabulary without inventing a `Handler -> Handler` edge.
 2. Extend the Fragments acceptance coverage only when a real architectural
    gap is identified.
-3. Add the CLI scan entry point.
-4. Build the first navigable visual map.
+3. Build the first navigable visual map.
 
 Diagnostics, runtime overlays and additional architecture adapters come later.
 They must not weaken the static truth guarantees of the MVP.
