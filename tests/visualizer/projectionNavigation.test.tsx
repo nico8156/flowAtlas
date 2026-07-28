@@ -92,4 +92,22 @@ describe("ArchitectureMap projection navigation", () => {
     expect(screen.queryByRole("button", { name: "accepted" })).toBeNull();
     expect(screen.queryByRole("button", { name: "socialState" })).toBeNull();
   });
+
+  it("returns to the complete graph after exploring a projection", () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "requested", kind: "Event" });
+    graph.addNode({ id: "listener", kind: "Handler" });
+    graph.addNode({ id: "unrelated", kind: "Event" });
+    graph.addEdge({ source: "listener", target: "requested", kind: "LISTENS_TO" });
+
+    render(<ArchitectureMap graph={graph} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "requested" }));
+    fireEvent.click(screen.getByRole("button", { name: "Explore downstream from requested" }));
+    expect(screen.queryByRole("button", { name: "unrelated" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset projection" }));
+
+    expect(screen.getByRole("button", { name: "unrelated" })).toBeTruthy();
+  });
 });

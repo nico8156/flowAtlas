@@ -220,6 +220,18 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
             >
               Explore upstream
             </button>
+            {projection ? (
+              <button
+                type="button"
+                aria-label="Reset projection"
+                onClick={() => {
+                  setProjection(undefined);
+                  setDownstreamDepth(undefined);
+                }}
+              >
+                Reset projection
+              </button>
+            ) : null}
           </>
         ) : (
           <p>Select a node</p>

@@ -284,10 +284,11 @@ Delivered so far:
 - inspector with kind, source location and immediate relations;
 - downstream and upstream territory exploration through `GraphProjection`.
 - depth-limited downstream projections from the visualizer.
+- reset from a focused projection to the complete graph.
 
 Still to explore:
 
-- boundary visibility and projection reset;
+- boundary visibility;
 - pan/zoom usability on focused territories;
 - validation on a real Fragments graph before considering M7 complete.
 
