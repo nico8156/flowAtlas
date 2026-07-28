@@ -310,16 +310,33 @@ Delivered so far:
 - `flowatlas tui <nodeId> [path]` launches the interactive Ink shell;
 - the TUI acceptance covers the three panes, pane switching, search, keyboard
   selection and inspector synchronization.
+- a real Fragments Ticket projection is covered by deterministic layered
+  layout, viewport and density invariants;
+- Map pan and density changes preserve the projected node/edge set and
+  selection.
 
 ### Known gaps
 
 The browser implementation is not the M7 product target. The TUI still needs:
 
 - Explorer, Map and Inspector panes with responsive terminal sizing;
-- a terminal map layout with readable directions and selected-node emphasis;
+- more expressive edge routing when branches become dense;
 - focus/upstream/downstream commands wired to the existing projections;
-- discrete density/zoom and pan state;
-- a real Fragments terminal acceptance slice.
+- a visual review on a full-size real Fragments terminal session.
+
+### Before-layout evidence
+
+The existing non-interactive rendering of the real Ticket slice was a flat
+list:
+
+```text
+Nodes: five ids
+Relations: four labels
+```
+
+It contained no coordinates, no branch separation, no viewport and no density
+state. This justified a presentation-only layered layout and viewport rather
+than a change to `ArchitectureGraph` or its projections.
 
 The earlier browser run also exposed product-level readability issues that
 remain relevant to any renderer:
@@ -344,6 +361,9 @@ The TUI consumes `ArchitectureGraph` and existing projections without defining
 their model. A developer can launch FlowAtlas in a terminal, search and select
 nodes, inspect kind/source/relations, focus a territory, explore both
 directions, pan and adjust density on a readable real architectural slice.
+
+The current layout is deterministic and layered left-to-right. It is an
+adapter concern and does not attempt to solve arbitrary edge crossing.
 
 The browser adapter may remain available, but it is not required to complete
 M7.

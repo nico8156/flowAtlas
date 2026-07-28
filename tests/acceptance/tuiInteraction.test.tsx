@@ -57,9 +57,23 @@ describe("Terminal visualizer interaction acceptance", () => {
     expect(frame).toContain("LikeHandler");
     expect(frame).toContain("Kind: Handler");
     expect(frame).toContain("social/like.ts:42");
-    expect(frame).toContain("LikeHandler --LISTENS_TO--> LikeRequested");
-    expect(frame).toContain("LikeHandler --DISPATCHES--> LikeAccepted");
-    expect(frame).toContain("LikeHandler --CALLS_EXTERNAL--> SocialApi");
+    expect(frame).toContain("LikeRequested");
+    expect(frame).toContain("LikeAccepted");
+    expect(frame).toContain("SocialApi");
+    expect(frame).toContain("LISTENS_TO");
+    expect(frame).toContain("DISPATCHES");
+    expect(frame).toContain("CALLS_EXTERNAL");
+
+    instance.stdin.write("\t");
+    await nextFrame();
+    instance.stdin.write("l");
+    instance.stdin.write("+");
+    await nextFrame();
+    const mapFrame = instance.lastFrame() ?? "";
+    expect(mapFrame).toContain("Map · active");
+    expect(mapFrame).toContain("Density: detailed");
+    expect(mapFrame).toContain("LikeHandler");
+    expect(mapFrame).toContain("Kind: Handler");
 
     instance.stdin.write("q");
     await nextFrame();
