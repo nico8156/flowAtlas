@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeAll, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { createArchitectureGraph } from "../../src/domain/architectureGraph.js";
 import { ArchitectureMap } from "../../src/visualizer/ArchitectureMap.js";
@@ -17,6 +17,8 @@ beforeAll(() => {
 });
 
 describe("ArchitectureMap", () => {
+  afterEach(cleanup);
+
   it("renders, searches and inspects a selected architectural node", () => {
     const graph = createArchitectureGraph();
     graph.addNode({
@@ -49,5 +51,16 @@ describe("ArchitectureMap", () => {
     expect(inspector.textContent).toContain("Event");
     expect(inspector.textContent).toContain("social/actions.ts:12");
     expect(inspector.textContent).toContain("submitLikeListener --LISTENS_TO--> likeRequested");
+  });
+
+  it("exposes controls for navigating the map viewport", () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "requested", kind: "Event" });
+
+    render(<ArchitectureMap graph={graph} />);
+
+    expect(screen.getByRole("button", { name: "Zoom In" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Zoom Out" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Fit View" })).toBeTruthy();
   });
 });

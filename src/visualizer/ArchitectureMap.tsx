@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  Controls,
   Handle,
   Position,
   ReactFlow,
@@ -150,7 +151,9 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
           nodeTypes={nodeTypes}
           onNodeClick={(_, node) => setSelectedNodeId(node.id)}
           fitView
-        />
+        >
+          <Controls />
+        </ReactFlow>
         <div aria-label="Architectural relations">
           {graph.edges.map((edge) => (
             <span

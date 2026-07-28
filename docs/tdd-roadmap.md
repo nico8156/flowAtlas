@@ -285,11 +285,12 @@ Delivered so far:
 - downstream and upstream territory exploration through `GraphProjection`.
 - depth-limited downstream projections from the visualizer.
 - reset from a focused projection to the complete graph.
+- viewport controls for zoom in, zoom out and fit view.
 
 Still to explore:
 
 - boundary visibility;
-- pan/zoom usability on focused territories;
+- broader pan usability on focused territories;
 - validation on a real Fragments graph before considering M7 complete.
 
 ### Completion criteria
