@@ -294,6 +294,7 @@ Delivered so far:
 - acceptance coverage filtering a real Fragments graph by node kind.
 - acceptance coverage displaying source locations from a real Fragments graph.
 - acceptance coverage exposing viewport controls on a real Fragments graph.
+- JSON graph deserialization is available for visualizer consumers.
 
 Still to explore:
 
