@@ -16,8 +16,8 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 4. Evidence and trust                      | PROPOSED                                  |
 | 5. Graph projections                       | DELIVERED                                 |
 | 6. CLI productization                      | DELIVERED                                 |
-| 7. Visualizer MVP                          | ACTIVE                                    |
-| 7A. Terminal Map CLI                       | ACTIVE                                    |
+| 7. Visualizer MVP                          | ACTIVE: CLI/TUI pivot                     |
+| 7A. Terminal Map CLI                       | DELIVERED: absorbed into M7               |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -262,13 +262,15 @@ without CLI-specific analysis logic.
 The CLI is useful without a visualizer, keeps scanner logic out of the adapter
 boundary and supports the first terminal exploration workflow.
 
-## Milestone 7 - Visualizer MVP
+## Milestone 7 - Visualizer MVP (CLI/TUI)
 
-**Status: ACTIVE**
+**Status: ACTIVE - product direction pivoted from browser to terminal**
 
 ### Goal
 
-Make the map the primary product experience.
+Make the map understandable directly from the terminal. The browser
+visualizer remains a reusable secondary adapter/prototype; the primary M7
+experience is a keyboard-first CLI/TUI.
 
 ### Acceptance driver
 
@@ -302,11 +304,23 @@ Delivered so far:
 - local JSON file loading is available through `ArchitectureMapLoader`.
 - a Vite browser shell is available through `npm run visualizer`;
 - a real Fragments Ticket graph can be loaded and explored in both directions.
+- `flowatlas focus` renders a bounded terminal territory without a browser;
+- the first controlled TUI presentation session renders node-kind markers,
+  relations, search results, selection and an inspector.
 
 ### Known gaps
 
-The first real-graph visualizer run exposed product-level readability issues
-that must be closed before this milestone is complete:
+The browser implementation is not the M7 product target. The TUI still needs:
+
+- a real interactive terminal entrypoint and keyboard event loop;
+- Explorer, Map and Inspector panes with responsive terminal sizing;
+- a terminal map layout with readable directions and selected-node emphasis;
+- focus/upstream/downstream commands wired to the existing projections;
+- discrete density/zoom and pan state;
+- a real Fragments terminal acceptance slice.
+
+The earlier browser run also exposed product-level readability issues that
+remain relevant to any renderer:
 
 - the selected node inspector must show only relations connected to the
   selected node and must not display stale or unrelated relations;
@@ -324,21 +338,23 @@ the canonical graph vocabulary or inventing new architectural relationships.
 
 ### Completion criteria
 
-The visualizer consumes `ArchitectureGraph` and never defines its model. A
-developer can run `npm run visualizer`, load a graph exported by the CLI, search
-and select nodes, inspect only the selected node's relations and source
-location, and explore both directions of a readable real architectural slice
-without manually reconstructing the graph from source files.
+The TUI consumes `ArchitectureGraph` and existing projections without defining
+their model. A developer can launch FlowAtlas in a terminal, search and select
+nodes, inspect kind/source/relations, focus a territory, explore both
+directions, pan and adjust density on a readable real architectural slice.
 
-## Milestone 7A - Terminal Map CLI
+The browser adapter may remain available, but it is not required to complete
+M7.
 
-**Status: ACTIVE**
+## Milestone 7A - Terminal Map CLI (historical)
+
+**Status: DELIVERED / absorbed into M7**
 
 ### Goal
 
-Provide a fast terminal-first architecture map for focused territories. The
-terminal is a secondary presentation adapter, not a replacement for the
-canonical graph or the browser visualizer.
+Provide a fast terminal-first architecture map for focused territories. This
+slice established the CLI presentation boundary now being extended into the
+interactive TUI.
 
 ### Acceptance driver
 

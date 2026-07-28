@@ -17,22 +17,23 @@ runtime instrumentation or application code changes.
 
 ## Project status
 
-FlowAtlas currently combines a focused static TypeScript scanner with the first
-visualizer MVP. The scanner can reconstruct the Like, outbox and projection
-slices of the real Fragments application, and the visualizer can render and
-explore a supplied architecture graph.
+FlowAtlas currently combines a focused static TypeScript scanner with a CLI
+exploration path and an active terminal visualizer MVP. The scanner can
+reconstruct the Like, outbox and projection slices of the real Fragments
+application. The browser visualizer remains available as a secondary adapter;
+M7 is now focused on a keyboard-first terminal experience.
 
-| Area                            | Status                                                    |
-| ------------------------------- | --------------------------------------------------------- |
-| TypeScript / Node.js foundation | Available                                                 |
-| Strict type checking            | Available                                                 |
-| Test runner and build pipeline  | Available                                                 |
-| Architecture graph model        | V1 core and graph projections available                   |
-| TypeScript analysis             | Focused TypeScript project scanner                        |
-| Redux Toolkit detectors         | Limited V1 patterns available                             |
-| CLI                             | MVP scan, graph exploration and Terminal Map in progress  |
-| Interactive visualizer          | M7 active: functional shell, readability work in progress |
-| Fragments acceptance tests      | Available when the corpus is present                      |
+| Area                            | Status                                                   |
+| ------------------------------- | -------------------------------------------------------- |
+| TypeScript / Node.js foundation | Available                                                |
+| Strict type checking            | Available                                                |
+| Test runner and build pipeline  | Available                                                |
+| Architecture graph model        | V1 core and graph projections available                  |
+| TypeScript analysis             | Focused TypeScript project scanner                       |
+| Redux Toolkit detectors         | Limited V1 patterns available                            |
+| CLI                             | MVP scan, graph exploration and Terminal Map in progress |
+| Interactive visualizer          | M7 active: CLI/TUI primary, browser secondary            |
+| Fragments acceptance tests      | Available when the corpus is present                     |
 
 The domain graph and analysis capabilities emerge through acceptance-driven
 TDD. The repository includes acceptance tests for the Fragments Like, outbox
@@ -50,22 +51,26 @@ npx flowatlas scan --json .
 npx flowatlas focus <nodeId> .
 ```
 
-The visualizer can be run locally with:
+The browser adapter can still be run locally with:
 
 ```sh
 npm run visualizer
 ```
 
-It opens a browser shell where a serialized graph exported by
+It opens a browser prototype where a serialized graph exported by
 `flowatlas scan --json .` can be loaded and explored.
 
-The terminal map is the fast, focused CLI presentation path. It renders a
-bounded territory directly in the terminal and does not require the browser
-visualizer:
+The terminal map is the current product direction. The existing focused CLI
+presentation renders a bounded territory directly in the terminal and does not
+require the browser adapter:
 
 ```sh
 npx flowatlas focus uiLikeToggleRequested .
 ```
+
+The interactive TUI is being built on top of this boundary. Its first
+acceptance slice is a controlled graph rendered as Explorer, Map and Inspector;
+it will not add traversal or analysis logic to the terminal adapter.
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:
