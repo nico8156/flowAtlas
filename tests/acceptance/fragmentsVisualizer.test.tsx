@@ -21,35 +21,40 @@ beforeAll(() => {
 
 afterEach(cleanup);
 
+const scanTicketGraph = async () => {
+  const files = [
+    "app/core-logic/contextWL/ticketWl/usecases/write/ticketSubmitWlUseCase.ts",
+    "app/core-logic/contextWL/ticketWl/reducer/ticketWl.reducer.ts",
+    "app/core-logic/contextWL/ticketWl/gateway/ticketWl.gateway.ts",
+    "app/core-logic/contextWL/outboxWl/typeAction/outbox.actions.ts",
+    "app/core-logic/contextWL/outboxWl/typeAction/outbox.type.ts",
+    "app/core-logic/contextWL/outboxWl/reducer/outboxWl.reducer.ts",
+    "app/core-logic/contextWL/outboxWl/processOutbox.ts",
+    "app/core-logic/contextWL/outboxWl/commandHandlers/outboxCommandHandlers.ts",
+    "app/store/reduxStoreWl.ts",
+  ];
+  const tsconfig = JSON.parse(await readFragment("tsconfig.json")) as {
+    compilerOptions?: {
+      baseUrl?: string;
+      paths?: Record<string, string[]>;
+    };
+  };
+
+  return scanTypeScriptProject({
+    tsconfig,
+    files: await Promise.all(
+      files.map(async (file) => ({
+        file,
+        source: await readFragment(file),
+      })),
+    ),
+    projectFiles: await readFragmentProjectSources(),
+  });
+};
+
 describeFragments("Fragments visualizer acceptance", () => {
   it("renders and inspects a node from a real scanned graph", async () => {
-    const files = [
-      "app/core-logic/contextWL/ticketWl/usecases/write/ticketSubmitWlUseCase.ts",
-      "app/core-logic/contextWL/ticketWl/reducer/ticketWl.reducer.ts",
-      "app/core-logic/contextWL/ticketWl/gateway/ticketWl.gateway.ts",
-      "app/core-logic/contextWL/outboxWl/typeAction/outbox.actions.ts",
-      "app/core-logic/contextWL/outboxWl/typeAction/outbox.type.ts",
-      "app/core-logic/contextWL/outboxWl/reducer/outboxWl.reducer.ts",
-      "app/core-logic/contextWL/outboxWl/processOutbox.ts",
-      "app/core-logic/contextWL/outboxWl/commandHandlers/outboxCommandHandlers.ts",
-      "app/store/reduxStoreWl.ts",
-    ];
-    const tsconfig = JSON.parse(await readFragment("tsconfig.json")) as {
-      compilerOptions?: {
-        baseUrl?: string;
-        paths?: Record<string, string[]>;
-      };
-    };
-    const graph = scanTypeScriptProject({
-      tsconfig,
-      files: await Promise.all(
-        files.map(async (file) => ({
-          file,
-          source: await readFragment(file),
-        })),
-      ),
-      projectFiles: await readFragmentProjectSources(),
-    });
+    const graph = await scanTicketGraph();
 
     render(<ArchitectureMap graph={graph} />);
 
@@ -59,5 +64,19 @@ describeFragments("Fragments visualizer acceptance", () => {
     const inspector = screen.getByRole("region", { name: "Inspector" });
     expect(inspector.textContent).toContain("uiTicketSubmitRequested");
     expect(inspector.textContent).toContain("Event");
+  }, 20_000);
+
+  it("explores a real scanned ticket territory downstream", async () => {
+    const graph = await scanTicketGraph();
+
+    render(<ArchitectureMap graph={graph} />);
+
+    const explorer = within(screen.getByRole("complementary", { name: "Explorer" }));
+    fireEvent.click(explorer.getByRole("button", { name: "uiTicketSubmitRequested" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Explore downstream from uiTicketSubmitRequested" }),
+    );
+
+    expect(explorer.getByRole("button", { name: "TicketsWlGateway" })).toBeTruthy();
   }, 20_000);
 });
