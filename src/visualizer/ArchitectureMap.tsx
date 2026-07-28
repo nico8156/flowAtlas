@@ -110,13 +110,20 @@ export const layoutArchitectureNodes = (
   }));
 };
 
-const createFlowEdges = (edges: readonly ArchitectureEdge[]): FlowEdge[] =>
-  edges.map((edge, index) => ({
-    id: `${edge.source}-${edge.kind}-${edge.target}-${index}`,
-    source: edge.source,
-    target: edge.target,
+export const createVisualEdge = (edge: ArchitectureEdge, index: number): FlowEdge => {
+  const source = edge.kind === "LISTENS_TO" ? edge.target : edge.source;
+  const target = edge.kind === "LISTENS_TO" ? edge.source : edge.target;
+
+  return {
+    id: `${source}-${edge.kind}-${target}-${index}`,
+    source,
+    target,
     label: edge.kind,
-  }));
+  };
+};
+
+const createFlowEdges = (edges: readonly ArchitectureEdge[]): FlowEdge[] =>
+  edges.map(createVisualEdge);
 
 const uniqueEdges = (edges: readonly ArchitectureEdge[]): ArchitectureEdge[] => {
   const seen = new Set<string>();

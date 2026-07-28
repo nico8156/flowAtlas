@@ -4,7 +4,11 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { createArchitectureGraph } from "../../src/domain/architectureGraph.js";
-import { ArchitectureMap, layoutArchitectureNodes } from "../../src/visualizer/ArchitectureMap.js";
+import {
+  ArchitectureMap,
+  createVisualEdge,
+  layoutArchitectureNodes,
+} from "../../src/visualizer/ArchitectureMap.js";
 
 beforeAll(() => {
   class ResizeObserverMock {
@@ -98,5 +102,15 @@ describe("ArchitectureMap", () => {
     expect(layout.find(({ id }) => id === "unrelated")?.position.x).toBeGreaterThan(
       layout.find(({ id }) => id === "accepted")?.position.x ?? 0,
     );
+  });
+
+  it("renders LISTENS_TO in the narrative Event to Handler direction", () => {
+    const visualEdge = createVisualEdge(
+      { source: "listener", target: "requested", kind: "LISTENS_TO" },
+      0,
+    );
+
+    expect(visualEdge.source).toBe("requested");
+    expect(visualEdge.target).toBe("listener");
   });
 });
