@@ -290,6 +290,7 @@ Delivered so far:
 - relation visibility constrained to the active projection.
 - acceptance coverage rendering and inspecting a real Fragments-scanned graph.
 - acceptance coverage exploring a real Fragments Ticket territory downstream.
+- acceptance coverage exploring a real Fragments Ticket state territory upstream.
 
 Still to explore:
 

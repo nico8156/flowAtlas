@@ -24,13 +24,20 @@ afterEach(cleanup);
 const scanTicketGraph = async () => {
   const files = [
     "app/core-logic/contextWL/ticketWl/usecases/write/ticketSubmitWlUseCase.ts",
+    "app/core-logic/contextWL/ticketWl/usecases/read/ticketRetrieval.ts",
     "app/core-logic/contextWL/ticketWl/reducer/ticketWl.reducer.ts",
     "app/core-logic/contextWL/ticketWl/gateway/ticketWl.gateway.ts",
+    "app/core-logic/contextWL/ticketWl/typeAction/ticket.type.ts",
     "app/core-logic/contextWL/outboxWl/typeAction/outbox.actions.ts",
     "app/core-logic/contextWL/outboxWl/typeAction/outbox.type.ts",
     "app/core-logic/contextWL/outboxWl/reducer/outboxWl.reducer.ts",
     "app/core-logic/contextWL/outboxWl/processOutbox.ts",
     "app/core-logic/contextWL/outboxWl/commandHandlers/outboxCommandHandlers.ts",
+    "app/core-logic/contextWL/projectionSyncWl/usecases/projectionSyncListenerFactory.ts",
+    "app/core-logic/contextWL/projectionSyncWl/typeAction/projectionSync.action.ts",
+    "app/core-logic/contextWL/projectionSyncWl/gateway/projectionSync.gateway.ts",
+    "app/core-logic/contextWL/userWl/typeAction/user.action.ts",
+    "app/core-logic/contextWL/appWl/typeAction/appWl.action.ts",
     "app/store/reduxStoreWl.ts",
   ];
   const tsconfig = JSON.parse(await readFragment("tsconfig.json")) as {
@@ -78,5 +85,19 @@ describeFragments("Fragments visualizer acceptance", () => {
     );
 
     expect(explorer.getByRole("button", { name: "TicketsWlGateway" })).toBeTruthy();
+  }, 20_000);
+
+  it("explores a real scanned ticket state territory upstream", async () => {
+    const graph = await scanTicketGraph();
+
+    render(<ArchitectureMap graph={graph} />);
+
+    const explorer = within(screen.getByRole("complementary", { name: "Explorer" }));
+    fireEvent.click(explorer.getByRole("button", { name: "tState" }));
+    fireEvent.click(screen.getByRole("button", { name: "Explore upstream from tState" }));
+
+    expect(explorer.getByRole("button", { name: "ticketSubmitUseCaseFactory" })).toBeTruthy();
+    expect(explorer.getByRole("button", { name: "ticketRetrieval" })).toBeTruthy();
+    expect(explorer.getByRole("button", { name: "uiTicketSubmitRequested" })).toBeTruthy();
   }, 20_000);
 });
