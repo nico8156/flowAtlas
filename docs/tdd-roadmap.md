@@ -284,6 +284,7 @@ Delivered so far:
 - inspector with kind, source location and immediate relations;
 - downstream and upstream territory exploration through `GraphProjection`.
 - depth-limited downstream projections from the visualizer.
+- depth-limited upstream projections from the visualizer.
 - reset from a focused projection to the complete graph.
 - viewport controls for zoom in, zoom out and fit view.
 - relation visibility constrained to the active projection.

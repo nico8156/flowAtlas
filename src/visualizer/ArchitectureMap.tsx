@@ -82,6 +82,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
   const [projection, setProjection] = useState<GraphProjection>();
   const [downstreamDepth, setDownstreamDepth] = useState<number>();
+  const [upstreamDepth, setUpstreamDepth] = useState<number>();
   const displayedGraph = projection ?? graph;
   const visibleNodes = displayedGraph.nodes.filter(
     (node) =>
@@ -219,10 +220,34 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
             <button
               type="button"
               aria-label={`Explore upstream from ${selectedNode.id}`}
-              onClick={() => setProjection(projectUpstream(graph, selectedNode.id))}
+              onClick={() =>
+                setProjection(
+                  projectUpstream(
+                    graph,
+                    selectedNode.id,
+                    upstreamDepth === undefined ? undefined : { maxDepth: upstreamDepth },
+                  ),
+                )
+              }
             >
               Explore upstream
             </button>
+            <label>
+              Upstream depth
+              <select
+                aria-label="Upstream depth"
+                value={upstreamDepth === undefined ? "all" : upstreamDepth}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setUpstreamDepth(value === "all" ? undefined : Number(value));
+                }}
+              >
+                <option value="all">All</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </label>
             {projection ? (
               <button
                 type="button"
@@ -230,6 +255,7 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
                 onClick={() => {
                   setProjection(undefined);
                   setDownstreamDepth(undefined);
+                  setUpstreamDepth(undefined);
                 }}
               >
                 Reset projection
