@@ -49,6 +49,7 @@ npx flowatlas downstream <nodeId> .
 npx flowatlas upstream <nodeId> .
 npx flowatlas scan --json .
 npx flowatlas focus <nodeId> .
+npx flowatlas tui <nodeId> .
 ```
 
 The browser adapter can still be run locally with:
@@ -68,9 +69,15 @@ require the browser adapter:
 npx flowatlas focus uiLikeToggleRequested .
 ```
 
-The interactive TUI is being built on top of this boundary. Its first
-acceptance slice is a controlled graph rendered as Explorer, Map and Inspector;
-it will not add traversal or analysis logic to the terminal adapter.
+The interactive TUI is available for a focused territory:
+
+```sh
+npx flowatlas tui uiLikeToggleRequested .
+```
+
+It provides Explorer, Map and Inspector panes with `Tab`, `/`, `j/k`, arrows,
+`Enter`, `Esc` and `q`. It consumes the existing graph projection and does not
+add traversal or analysis logic to the terminal adapter.
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:

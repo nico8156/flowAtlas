@@ -307,12 +307,14 @@ Delivered so far:
 - `flowatlas focus` renders a bounded terminal territory without a browser;
 - the first controlled TUI presentation session renders node-kind markers,
   relations, search results, selection and an inspector.
+- `flowatlas tui <nodeId> [path]` launches the interactive Ink shell;
+- the TUI acceptance covers the three panes, pane switching, search, keyboard
+  selection and inspector synchronization.
 
 ### Known gaps
 
 The browser implementation is not the M7 product target. The TUI still needs:
 
-- a real interactive terminal entrypoint and keyboard event loop;
 - Explorer, Map and Inspector panes with responsive terminal sizing;
 - a terminal map layout with readable directions and selected-node emphasis;
 - focus/upstream/downstream commands wired to the existing projections;

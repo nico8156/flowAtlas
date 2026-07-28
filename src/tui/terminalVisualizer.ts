@@ -7,6 +7,16 @@ type TerminalVisualizerSession = {
   render(): string;
 };
 
+export type TerminalView = {
+  readonly visibleNodes: readonly ArchitectureNode[];
+  readonly mapLines: readonly string[];
+  readonly inspector: {
+    readonly node?: ArchitectureNode;
+    readonly incoming: readonly string[];
+    readonly outgoing: readonly string[];
+  };
+};
+
 const formatNode = (node: ArchitectureNode, selected: boolean): string =>
   `${selected ? ">" : " "} [${node.kind === "External" ? "X" : node.kind[0]}] ${node.id}`;
 
@@ -30,6 +40,27 @@ const relationLines = (
     })
     .map(formatEdge);
 
+export const buildTerminalView = (
+  projection: GraphProjection,
+  selectedNodeId: string | undefined,
+  query = "",
+): TerminalView => {
+  const visibleNodes = projection.nodes.filter((node) =>
+    node.id.toLowerCase().includes(query.toLowerCase()),
+  );
+  const selectedNode = projection.nodes.find((node) => node.id === selectedNodeId);
+
+  return {
+    visibleNodes,
+    mapLines: projection.edges.map(formatEdge),
+    inspector: {
+      ...(selectedNode ? { node: selectedNode } : {}),
+      incoming: selectedNode ? relationLines(projection, selectedNode.id, "incoming") : ["- none"],
+      outgoing: selectedNode ? relationLines(projection, selectedNode.id, "outgoing") : ["- none"],
+    },
+  };
+};
+
 export const createTerminalVisualizerSession = (
   projection: GraphProjection,
 ): TerminalVisualizerSession => {
@@ -46,25 +77,17 @@ export const createTerminalVisualizerSession = (
       }
     },
     render() {
-      const visibleNodes = projection.nodes.filter((node) =>
-        node.id.toLowerCase().includes(query.toLowerCase()),
-      );
-      const selectedNode = projection.nodes.find((node) => node.id === selectedNodeId);
-      const incoming = selectedNode
-        ? relationLines(projection, selectedNode.id, "incoming")
-        : ["- none"];
-      const outgoing = selectedNode
-        ? relationLines(projection, selectedNode.id, "outgoing")
-        : ["- none"];
+      const view = buildTerminalView(projection, selectedNodeId, query);
+      const selectedNode = view.inspector.node;
 
       return [
         "FlowAtlas · Terminal Map",
         "",
         "Explorer",
-        ...visibleNodes.map((node) => formatNode(node, node.id === selectedNodeId)),
+        ...view.visibleNodes.map((node) => formatNode(node, node.id === selectedNodeId)),
         "",
         "Map",
-        ...projection.edges.map(formatEdge),
+        ...view.mapLines,
         "",
         "Inspector",
         ...(selectedNode
@@ -76,10 +99,10 @@ export const createTerminalVisualizerSession = (
                 : "Source: unavailable",
               "",
               "Incoming",
-              ...incoming,
+              ...view.inspector.incoming,
               "",
               "Outgoing",
-              ...outgoing,
+              ...view.inspector.outgoing,
             ]
           : ["No node selected"]),
       ].join("\n");
