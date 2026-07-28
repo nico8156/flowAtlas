@@ -17,6 +17,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 5. Graph projections                       | DELIVERED                                 |
 | 6. CLI productization                      | DELIVERED                                 |
 | 7. Visualizer MVP                          | ACTIVE                                    |
+| 7A. Terminal Map CLI                       | ACTIVE                                    |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -328,6 +329,41 @@ developer can run `npm run visualizer`, load a graph exported by the CLI, search
 and select nodes, inspect only the selected node's relations and source
 location, and explore both directions of a readable real architectural slice
 without manually reconstructing the graph from source files.
+
+## Milestone 7A - Terminal Map CLI
+
+**Status: ACTIVE**
+
+### Goal
+
+Provide a fast terminal-first architecture map for focused territories. The
+terminal is a secondary presentation adapter, not a replacement for the
+canonical graph or the browser visualizer.
+
+### Acceptance driver
+
+```text
+flowatlas focus <nodeId> <path>
+```
+
+On a supported TypeScript fixture, the command must render the selected node,
+its focused architectural territory and canonical relation labels without
+requiring a browser or manual JSON file loading.
+
+### Constraints
+
+- consume `ArchitectureGraph` and graph projections only;
+- keep scanner and domain logic out of the CLI renderer;
+- use deterministic plain text when output is not a TTY;
+- add ANSI colors only as terminal presentation;
+- do not introduce a `Flow` model or new graph vocabulary;
+- keep full-graph rendering out of the initial terminal experience.
+
+### Completion criteria
+
+`flowatlas focus` is covered by a real CLI acceptance test, renders a useful
+focused projection, supports bounded depth, handles unknown nodes cleanly and
+remains compatible with pipes and CI output.
 
 ## Milestone 8 - Broader Validation
 

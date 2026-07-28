@@ -30,7 +30,7 @@ explore a supplied architecture graph.
 | Architecture graph model        | V1 core and graph projections available                   |
 | TypeScript analysis             | Focused TypeScript project scanner                        |
 | Redux Toolkit detectors         | Limited V1 patterns available                             |
-| CLI                             | MVP scan and graph exploration available                  |
+| CLI                             | MVP scan, graph exploration and Terminal Map in progress  |
 | Interactive visualizer          | M7 active: functional shell, readability work in progress |
 | Fragments acceptance tests      | Available when the corpus is present                      |
 
@@ -47,6 +47,7 @@ npx flowatlas inspect <nodeId> .
 npx flowatlas downstream <nodeId> .
 npx flowatlas upstream <nodeId> .
 npx flowatlas scan --json .
+npx flowatlas focus <nodeId> .
 ```
 
 The visualizer can be run locally with:
@@ -57,6 +58,14 @@ npm run visualizer
 
 It opens a browser shell where a serialized graph exported by
 `flowatlas scan --json .` can be loaded and explored.
+
+The terminal map is the fast, focused CLI presentation path. It renders a
+bounded territory directly in the terminal and does not require the browser
+visualizer:
+
+```sh
+npx flowatlas focus uiLikeToggleRequested .
+```
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:
