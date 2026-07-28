@@ -67,11 +67,21 @@ const relationLabel = (edge: ArchitectureGraph["edges"][number]): string =>
 
 export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
   const [query, setQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState<NodeKind | "All">("All");
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
-  const flowNodes = useMemo(() => createFlowNodes(graph.nodes), [graph.nodes]);
-  const flowEdges = useMemo(() => createFlowEdges(graph), [graph]);
-  const visibleNodes = graph.nodes.filter((node) =>
-    node.id.toLowerCase().includes(query.toLowerCase()),
+  const visibleNodes = graph.nodes.filter(
+    (node) =>
+      node.id.toLowerCase().includes(query.toLowerCase()) &&
+      (kindFilter === "All" || node.kind === kindFilter),
+  );
+  const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
+  const flowNodes = useMemo(() => createFlowNodes(visibleNodes), [visibleNodes]);
+  const flowEdges = useMemo(
+    () =>
+      createFlowEdges(graph).filter(
+        (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target),
+      ),
+    [graph, visibleNodeIds],
   );
   const selectedNode = selectedNodeId ? graph.findNode(selectedNodeId) : undefined;
   const incoming = selectedNode
@@ -91,6 +101,20 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
+        </label>
+        <label>
+          Filter by node kind
+          <select
+            aria-label="Filter by node kind"
+            value={kindFilter}
+            onChange={(event) => setKindFilter(event.target.value as NodeKind | "All")}
+          >
+            <option value="All">All</option>
+            <option value="Event">Event</option>
+            <option value="Handler">Handler</option>
+            <option value="State">State</option>
+            <option value="External">External</option>
+          </select>
         </label>
         {visibleNodes.map((node) => (
           <button
