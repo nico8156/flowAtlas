@@ -1,4 +1,5 @@
 import { formatArchitectureSummary } from "./application/architectureSummary.js";
+import { serializeArchitectureGraph } from "./application/architectureGraphJson.js";
 import { formatGraphProjection } from "./application/graphProjectionOutput.js";
 import { formatNodeInspection } from "./application/nodeInspection.js";
 import { loadTypeScriptProject } from "./cli/projectLoader.js";
@@ -13,19 +14,36 @@ export const runCli = async (
 ): Promise<void> => {
   const [command = "scan", firstArgument, secondArgument, ...unexpectedArguments] = arguments_;
 
+  const jsonExport = command === "scan" && firstArgument === "--json";
   const nodeId = command === "scan" ? undefined : firstArgument;
-  const projectPath = command === "scan" ? (firstArgument ?? ".") : (secondArgument ?? ".");
+  const projectPath =
+    command === "scan"
+      ? jsonExport
+        ? (secondArgument ?? ".")
+        : (firstArgument ?? ".")
+      : (secondArgument ?? ".");
+  const scanHasUnexpectedArguments =
+    command === "scan" &&
+    (jsonExport
+      ? unexpectedArguments.length > 0
+      : secondArgument !== undefined || unexpectedArguments.length > 0);
 
   if (
     !["scan", "inspect", "downstream", "upstream"].includes(command) ||
     (command !== "scan" && !nodeId) ||
-    unexpectedArguments.length > 0
+    scanHasUnexpectedArguments ||
+    (command !== "scan" && unexpectedArguments.length > 0)
   ) {
     throw new Error(usage);
   }
 
   const loadedProject = await loadTypeScriptProject(projectPath);
   const graph = scanTypeScriptProject(loadedProject.project);
+
+  if (jsonExport) {
+    process.stdout.write(`${serializeArchitectureGraph(graph)}\n`);
+    return;
+  }
 
   if (command === "inspect") {
     if (!nodeId) {
