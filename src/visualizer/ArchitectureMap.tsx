@@ -55,13 +55,60 @@ const nodeTypes = {
   ),
 };
 
-const createFlowNodes = (nodes: readonly ArchitectureNode[]): ArchitectureFlowNode[] =>
-  nodes.map((node, index) => ({
+export const layoutArchitectureNodes = (
+  nodes: readonly ArchitectureNode[],
+  edges: readonly ArchitectureEdge[],
+  focusNodeId?: string,
+): ArchitectureFlowNode[] => {
+  const positions = new Map<string, { x: number; y: number }>();
+  const nodeOrder = new Map(nodes.map((node, index) => [node.id, index]));
+
+  if (focusNodeId && nodes.some((node) => node.id === focusNodeId)) {
+    const distances = new Map<string, number>([[focusNodeId, 0]]);
+    const pending = [focusNodeId];
+
+    while (pending.length > 0) {
+      const current = pending.shift();
+      if (!current) continue;
+
+      for (const edge of edges) {
+        const next =
+          edge.source === current ? edge.target : edge.target === current ? edge.source : undefined;
+        if (!next || distances.has(next)) continue;
+
+        distances.set(next, (distances.get(current) ?? 0) + 1);
+        pending.push(next);
+      }
+    }
+
+    const maxDistance = Math.max(...distances.values());
+    const levels = new Map<number, string[]>();
+    for (const node of nodes) {
+      const distance = distances.get(node.id) ?? maxDistance + 1;
+      const level = levels.get(distance) ?? [];
+      level.push(node.id);
+      levels.set(distance, level);
+    }
+
+    for (const [distance, nodeIds] of levels) {
+      nodeIds.sort((first, second) => (nodeOrder.get(first) ?? 0) - (nodeOrder.get(second) ?? 0));
+      nodeIds.forEach((nodeId, index) => {
+        positions.set(nodeId, { x: distance * 280, y: index * 120 });
+      });
+    }
+  } else {
+    nodes.forEach((node, index) => {
+      positions.set(node.id, { x: (index % 3) * 280, y: Math.floor(index / 3) * 120 });
+    });
+  }
+
+  return nodes.map((node) => ({
     id: node.id,
-    position: { x: (index % 3) * 220, y: Math.floor(index / 3) * 120 },
+    position: positions.get(node.id) ?? { x: 0, y: 0 },
     data: { node },
     type: "architecture",
   }));
+};
 
 const createFlowEdges = (edges: readonly ArchitectureEdge[]): FlowEdge[] =>
   edges.map((edge, index) => ({
@@ -104,7 +151,10 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
       (kindFilter === "All" || node.kind === kindFilter),
   );
   const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
-  const flowNodes = useMemo(() => createFlowNodes(visibleNodes), [visibleNodes]);
+  const flowNodes = useMemo(
+    () => layoutArchitectureNodes(visibleNodes, displayedEdges, selectedNodeId),
+    [visibleNodes, displayedEdges, selectedNodeId],
+  );
   const flowEdges = useMemo(
     () =>
       createFlowEdges(displayedEdges).filter(

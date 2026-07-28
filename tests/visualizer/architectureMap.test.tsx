@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { createArchitectureGraph } from "../../src/domain/architectureGraph.js";
-import { ArchitectureMap } from "../../src/visualizer/ArchitectureMap.js";
+import { ArchitectureMap, layoutArchitectureNodes } from "../../src/visualizer/ArchitectureMap.js";
 
 beforeAll(() => {
   class ResizeObserverMock {
@@ -74,5 +74,29 @@ describe("ArchitectureMap", () => {
     render(<ArchitectureMap graph={graph} />);
 
     expect(screen.getAllByLabelText("listener LISTENS_TO requested")).toHaveLength(1);
+  });
+
+  it("places a selected node before its connected territory", () => {
+    const nodes = [
+      { id: "requested", kind: "Event" as const },
+      { id: "listener", kind: "Handler" as const },
+      { id: "accepted", kind: "Event" as const },
+      { id: "unrelated", kind: "Event" as const },
+    ];
+    const edges = [
+      { source: "listener", target: "requested", kind: "LISTENS_TO" as const },
+      { source: "listener", target: "accepted", kind: "DISPATCHES" as const },
+    ];
+
+    const layout = layoutArchitectureNodes(nodes, edges, "requested");
+
+    expect(layout.find(({ id }) => id === "requested")?.position).toEqual({ x: 0, y: 0 });
+    expect(layout.find(({ id }) => id === "listener")?.position.x).toBeGreaterThan(0);
+    expect(layout.find(({ id }) => id === "accepted")?.position.x).toBeGreaterThan(
+      layout.find(({ id }) => id === "listener")?.position.x ?? 0,
+    );
+    expect(layout.find(({ id }) => id === "unrelated")?.position.x).toBeGreaterThan(
+      layout.find(({ id }) => id === "accepted")?.position.x ?? 0,
+    );
   });
 });
