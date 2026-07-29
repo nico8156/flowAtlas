@@ -319,6 +319,10 @@ Delivered so far:
 - `Esc` restores presentation-only projection history;
 - NodeKind filters operate after projection and remove incident edges without
   reconnecting hidden nodes.
+- the TUI renders an `ANALYZING PROJECT` shell before the graph loader starts;
+- the real graph transitions the TUI to `READY`, preserving the requested
+  initial node and all existing interactions;
+- controlled loading failure renders a readable TUI error state.
 
 ### Known gaps
 
@@ -327,9 +331,12 @@ The browser implementation is not the M7 product target. The TUI still needs:
 - Explorer, Map and Inspector panes with responsive terminal sizing;
 - more expressive edge routing when branches become dense;
 - a visual review on a full-size real Fragments terminal session;
-- a prompt first frame on the full Fragments project. The latest PTY
-  observation produced no visible frame before the process was stopped, so the
-  startup loading strategy remains an open performance gap.
+- the scanner remains CPU-bound on the main thread after the first frame. TTFG
+  on the full Fragments project is still long and input cannot be processed
+  during that synchronous phase; worker isolation is a separate performance
+  decision, not part of the current TTFF fix.
+- a visual review on a full-size real Fragments terminal session after the
+  graph becomes ready.
 
 ### Before-layout evidence
 

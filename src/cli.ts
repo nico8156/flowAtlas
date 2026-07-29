@@ -10,7 +10,11 @@ import { formatTerminalMap } from "./application/terminalMapOutput.js";
 import { loadTypeScriptProject } from "./cli/projectLoader.js";
 import { projectDownstream, projectUpstream } from "./domain/graphProjection.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
-import { TerminalTui, type ProjectionChange } from "./tui/TerminalTui.js";
+import {
+  TerminalTuiLoader,
+  type ProjectionChange,
+  type TerminalTuiLoadResult,
+} from "./tui/TerminalTui.js";
 
 const usage =
   "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas tui <nodeId> [path]";
@@ -41,6 +45,60 @@ export const runCli = async (
     (command !== "scan" && unexpectedArguments.length > 0)
   ) {
     throw new Error(usage);
+  }
+
+  if (command === "tui" && process.stdin.isTTY && process.stdout.isTTY) {
+    if (!nodeId) {
+      throw new Error(usage);
+    }
+
+    const instance = render(
+      createElement(TerminalTuiLoader, {
+        projectLabel: projectPath,
+        load: async (): Promise<TerminalTuiLoadResult> => {
+          const loadedProject = await loadTypeScriptProject(projectPath);
+          const graph = await new Promise<ReturnType<typeof scanTypeScriptProject>>(
+            (resolve, reject) => {
+              setImmediate(() => {
+                try {
+                  resolve(scanTypeScriptProject(loadedProject.project));
+                } catch (error: unknown) {
+                  reject(error);
+                }
+              });
+            },
+          );
+
+          if (!graph.findNode(nodeId)) {
+            throw new Error(`Node not found: ${nodeId}`);
+          }
+
+          const fullProjection = { nodes: graph.nodes, edges: graph.edges };
+          const projectionChange = (
+            mode: ProjectionChange["mode"],
+            createProjection: (selectedNodeId: string) => ProjectionChange["projection"],
+            selectedNodeId: string,
+          ): ProjectionChange => ({
+            mode,
+            projection: createProjection(selectedNodeId),
+            rootNodeId: selectedNodeId,
+          });
+
+          return {
+            initialSelectedNodeId: nodeId,
+            projection: fullProjection,
+            projectFocus: (selectedNodeId) =>
+              projectionChange("focus", (id) => projectFocusedTerritory(graph, id), selectedNodeId),
+            projectDownstream: (selectedNodeId) =>
+              projectionChange("downstream", (id) => projectDownstream(graph, id), selectedNodeId),
+            projectUpstream: (selectedNodeId) =>
+              projectionChange("upstream", (id) => projectUpstream(graph, id), selectedNodeId),
+          };
+        },
+      }),
+    );
+    await instance.waitUntilExit();
+    return;
   }
 
   const loadedProject = await loadTypeScriptProject(projectPath);
@@ -101,30 +159,6 @@ export const runCli = async (
       return;
     }
 
-    const fullProjection = { nodes: graph.nodes, edges: graph.edges };
-    const projectionChange = (
-      mode: ProjectionChange["mode"],
-      createProjection: (selectedNodeId: string) => ProjectionChange["projection"],
-      selectedNodeId: string,
-    ): ProjectionChange => ({
-      mode,
-      projection: createProjection(selectedNodeId),
-      rootNodeId: selectedNodeId,
-    });
-
-    const instance = render(
-      createElement(TerminalTui, {
-        initialSelectedNodeId: nodeId,
-        projection: fullProjection,
-        projectFocus: (selectedNodeId) =>
-          projectionChange("focus", (id) => projectFocusedTerritory(graph, id), selectedNodeId),
-        projectDownstream: (selectedNodeId) =>
-          projectionChange("downstream", (id) => projectDownstream(graph, id), selectedNodeId),
-        projectUpstream: (selectedNodeId) =>
-          projectionChange("upstream", (id) => projectUpstream(graph, id), selectedNodeId),
-      }),
-    );
-    await instance.waitUntilExit();
     return;
   }
 

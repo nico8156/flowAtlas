@@ -82,6 +82,12 @@ and `f/u/d` request focus, upstream and downstream projections through the CLI
 application boundary. It does not add traversal or analysis logic to the
 terminal adapter.
 
+The TUI shell appears in an `ANALYZING PROJECT` state before the TypeScript
+project and graph are available, then switches to `READY` when the real graph
+has been built. No placeholder graph is displayed. The current scanner remains
+CPU-bound during graph construction, so the first frame is available quickly
+but the full project may take longer to become interactive.
+
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:
 

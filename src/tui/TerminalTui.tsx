@@ -31,6 +31,19 @@ type TerminalTuiProps = {
   readonly projectDownstream?: (nodeId: string) => ProjectionChange;
 };
 
+export type TerminalTuiLoadResult = {
+  readonly projection: GraphProjection;
+  readonly initialSelectedNodeId: string;
+  readonly projectFocus?: (nodeId: string) => ProjectionChange;
+  readonly projectUpstream?: (nodeId: string) => ProjectionChange;
+  readonly projectDownstream?: (nodeId: string) => ProjectionChange;
+};
+
+type TerminalTuiLoaderProps = {
+  readonly projectLabel: string;
+  readonly load: () => Promise<TerminalTuiLoadResult>;
+};
+
 type ViewState = ProjectionChange & {
   readonly selectedNodeId: string | undefined;
   readonly nodeKinds: readonly NodeKind[];
@@ -55,6 +68,122 @@ const paneTitle = (name: string, active: boolean): string => (active ? `${name} 
 
 const modeTitle = (mode: ProjectionMode, rootNodeId: string): string =>
   mode === "full" ? "FULL" : `${mode.toUpperCase()} · ${rootNodeId}`;
+
+const LoaderShell = ({
+  projectLabel,
+  phase,
+  message,
+}: {
+  readonly projectLabel: string;
+  readonly phase: "loading" | "error";
+  readonly message?: string | undefined;
+}) => (
+  <Box flexDirection="column" height="100%" width="100%" padding={1}>
+    <Text color={theme.selection} bold>
+      FlowAtlas · {phase === "loading" ? "ANALYZING PROJECT" : "ERROR"}
+    </Text>
+    <Text color={theme.muted}>{projectLabel}</Text>
+    <Box flexDirection="row" flexGrow={1}>
+      <Box
+        borderColor={theme.muted}
+        borderStyle="single"
+        flexDirection="column"
+        paddingX={1}
+        width="25%"
+      >
+        <Text color={theme.foreground} bold>
+          Explorer
+        </Text>
+        <Text color={theme.muted}>
+          {phase === "loading" ? "Waiting for graph…" : "Unavailable"}
+        </Text>
+      </Box>
+      <Box
+        borderColor={theme.selection}
+        borderStyle="single"
+        flexDirection="column"
+        paddingX={1}
+        width="50%"
+      >
+        <Text color={theme.foreground} bold>
+          Map
+        </Text>
+        <Text color={phase === "loading" ? theme.selection : theme.Event}>
+          {phase === "loading" ? "Analyzing project…" : message}
+        </Text>
+      </Box>
+      <Box
+        borderColor={theme.muted}
+        borderStyle="single"
+        flexDirection="column"
+        paddingX={1}
+        width="25%"
+      >
+        <Text color={theme.foreground} bold>
+          Inspector
+        </Text>
+        <Text color={theme.muted}>
+          {phase === "loading" ? "Waiting for graph…" : "No node selected"}
+        </Text>
+      </Box>
+    </Box>
+    <Box borderColor={theme.muted} borderStyle="single" paddingX={1}>
+      <Text color={theme.muted}>{phase === "loading" ? "q quit" : "q quit"}</Text>
+    </Box>
+  </Box>
+);
+
+export const TerminalTuiLoader = ({ projectLabel, load }: TerminalTuiLoaderProps) => {
+  const { exit } = useApp();
+  const [state, setState] = useState<
+    | { readonly phase: "loading" }
+    | { readonly phase: "ready"; readonly result: TerminalTuiLoadResult }
+    | { readonly phase: "error"; readonly message: string }
+  >({ phase: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAfterFirstFrame = setImmediate(() => {
+      void load().then(
+        (result) => {
+          if (!cancelled) setState({ phase: "ready", result });
+        },
+        (error: unknown) => {
+          if (!cancelled) {
+            setState({
+              phase: "error",
+              message: error instanceof Error ? error.message : String(error),
+            });
+          }
+        },
+      );
+    });
+
+    return () => {
+      cancelled = true;
+      clearImmediate(loadAfterFirstFrame);
+    };
+  }, [load]);
+
+  useInput(
+    (input) => {
+      if (state.phase !== "ready" && input === "q") exit();
+    },
+    { isActive: state.phase !== "ready" },
+  );
+
+  if (state.phase === "ready") {
+    return <TerminalTui {...state.result} initialMode="full" />;
+  }
+
+  return (
+    <LoaderShell
+      projectLabel={projectLabel}
+      phase={state.phase}
+      message={state.phase === "error" ? state.message : undefined}
+    />
+  );
+};
 
 const nextVisibleSelection = (
   projection: GraphProjection,
@@ -244,7 +373,7 @@ export const TerminalTui = ({
   return (
     <Box flexDirection="column" height="100%" width="100%" padding={1}>
       <Text color={theme.selection} bold>
-        FlowAtlas · {modeTitle(viewState.mode, viewState.rootNodeId)}
+        FlowAtlas · READY · {modeTitle(viewState.mode, viewState.rootNodeId)}
       </Text>
       <Box flexDirection="row" flexGrow={1}>
         <Box
