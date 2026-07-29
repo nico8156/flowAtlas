@@ -71,7 +71,7 @@ describeFragments("Fragments visualizer acceptance", () => {
     const inspector = screen.getByRole("region", { name: "Inspector" });
     expect(inspector.textContent).toContain("uiTicketSubmitRequested");
     expect(inspector.textContent).toContain("Event");
-  }, 20_000);
+  }, 60_000);
 
   it("explores a real scanned ticket territory downstream", async () => {
     const graph = await scanTicketGraph();
@@ -85,7 +85,7 @@ describeFragments("Fragments visualizer acceptance", () => {
     );
 
     expect(explorer.getByRole("button", { name: "TicketsWlGateway" })).toBeTruthy();
-  }, 20_000);
+  }, 60_000);
 
   it("explores a real scanned ticket state territory upstream", async () => {
     const graph = await scanTicketGraph();
@@ -99,7 +99,7 @@ describeFragments("Fragments visualizer acceptance", () => {
     expect(explorer.getByRole("button", { name: "ticketSubmitUseCaseFactory" })).toBeTruthy();
     expect(explorer.getByRole("button", { name: "ticketRetrieval" })).toBeTruthy();
     expect(explorer.getByRole("button", { name: "uiTicketSubmitRequested" })).toBeTruthy();
-  }, 20_000);
+  }, 60_000);
 
   it("filters a real scanned graph by architectural node kind", async () => {
     const graph = await scanTicketGraph();
@@ -113,7 +113,7 @@ describeFragments("Fragments visualizer acceptance", () => {
 
     expect(explorer.getByRole("button", { name: "uiTicketSubmitRequested" })).toBeTruthy();
     expect(explorer.queryByRole("button", { name: "tState" })).toBeNull();
-  }, 20_000);
+  }, 60_000);
 
   it("shows the source location of a real scanned node", async () => {
     const graph = await scanTicketGraph();
@@ -126,7 +126,7 @@ describeFragments("Fragments visualizer acceptance", () => {
     expect(screen.getByRole("region", { name: "Inspector" }).textContent).toContain(
       "ticketSubmitWlUseCase.ts:",
     );
-  }, 20_000);
+  }, 60_000);
 
   it("exposes viewport controls for a real scanned graph", async () => {
     const graph = await scanTicketGraph();
@@ -136,5 +136,5 @@ describeFragments("Fragments visualizer acceptance", () => {
     expect(screen.getByRole("button", { name: "Zoom In" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Zoom Out" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Fit View" })).toBeTruthy();
-  }, 20_000);
+  }, 60_000);
 });

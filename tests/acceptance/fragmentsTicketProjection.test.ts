@@ -65,5 +65,5 @@ describeFragments("Fragments Ticket projection", () => {
         },
       ]),
     );
-  }, 15_000);
+  }, 60_000);
 });

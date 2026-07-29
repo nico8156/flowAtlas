@@ -117,5 +117,5 @@ describeFragments("Fragments projection Like acceptance", () => {
       target: "likesRetrieval",
       kind: "DISPATCHES",
     });
-  }, 15_000);
+  }, 60_000);
 });

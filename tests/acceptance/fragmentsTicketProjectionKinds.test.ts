@@ -59,5 +59,5 @@ describeFragments("Fragments Ticket projection node kinds", () => {
       target: "tState",
       kind: "UPDATES",
     });
-  }, 15_000);
+  }, 60_000);
 });

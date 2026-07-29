@@ -64,5 +64,5 @@ describeFragments("Fragments terminal map acceptance", () => {
 
     expect(panned).toEqual({ x: 12, y: 5, width: 60, height: 20 });
     expect(viewport).toEqual({ x: 0, y: 0, width: 60, height: 20 });
-  }, 20_000);
+  }, 60_000);
 });

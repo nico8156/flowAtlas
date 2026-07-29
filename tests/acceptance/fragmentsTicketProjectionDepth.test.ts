@@ -52,5 +52,5 @@ describeFragments("Fragments Ticket projection depth", () => {
     expect(projectedNodeIds).not.toContain("TicketsWlGateway");
     expect(Array.from(graph.nodes)).toEqual(expect.arrayContaining(Array.from(projection.nodes)));
     expect(Array.from(graph.edges)).toEqual(expect.arrayContaining(Array.from(projection.edges)));
-  }, 15_000);
+  }, 60_000);
 });

@@ -102,6 +102,8 @@ RED 49.
 - relative imports, renamed imports and configured aliases;
 - order-independent multi-file analysis;
 - function-like resolution and shared semantic indexing;
+- shared TypeScript import-path indexing, avoiding a full project path-set
+  rebuild for every import resolution;
 - External discovery and bounded propagation through internal helpers;
 - tolerant omission of unresolved relations;
 - distinction between project TypeScript context and architectural scan scope.
@@ -333,9 +335,10 @@ The browser implementation is not the M7 product target. The TUI still needs:
 - Explorer, Map and Inspector panes with responsive terminal sizing;
 - more expressive edge routing when branches become dense;
 - a visual review on a full-size real Fragments terminal session;
-- TTFG on the full Fragments project is still long because the complete static
-  analysis remains substantial. TTFF and TTFG are intentionally separate
-  metrics; the worker keeps the TUI responsive while TTFG is in progress.
+- TTFG on the full Fragments project remains measurable: the direct scan is
+  currently about 22 seconds and the worker round trip about 29 seconds on the
+  development machine. TTFF and TTFG are intentionally separate metrics; the
+  worker keeps the TUI responsive while TTFG is in progress.
 - a visual review on a full-size real Fragments terminal session after the
   graph becomes ready.
 

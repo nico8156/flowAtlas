@@ -84,30 +84,30 @@ const resolveFile = (candidate: string, files: ReadonlySet<string>): string | un
   return candidates.find((file) => files.has(file));
 };
 
-const resolveImportFile = (
-  importer: string,
-  moduleSpecifier: string,
-  project: TypeScriptProject,
-): string | undefined => {
+type ImportFileResolver = (importer: string, moduleSpecifier: string) => string | undefined;
+
+const createImportFileResolver = (project: TypeScriptProject): ImportFileResolver => {
   const files = new Set(getProjectFiles(project).map((file) => normalizePath(file.file)));
   const paths = project.tsconfig?.compilerOptions?.paths ?? {};
   const baseUrl = project.tsconfig?.compilerOptions?.baseUrl ?? ".";
 
-  for (const [pattern, replacements] of Object.entries(paths)) {
-    const wildcard = pattern.indexOf("*");
-    const prefix = wildcard === -1 ? pattern : pattern.slice(0, wildcard);
-    const replacement = replacements[0];
-    if (!moduleSpecifier.startsWith(prefix) || !replacement) continue;
+  return (importer, moduleSpecifier) => {
+    for (const [pattern, replacements] of Object.entries(paths)) {
+      const wildcard = pattern.indexOf("*");
+      const prefix = wildcard === -1 ? pattern : pattern.slice(0, wildcard);
+      const replacement = replacements[0];
+      if (!moduleSpecifier.startsWith(prefix) || !replacement) continue;
 
-    const suffix = wildcard === -1 ? "" : moduleSpecifier.slice(wildcard);
-    return resolveFile(`${baseUrl}/${replacement.replace("*", suffix)}`, files);
-  }
+      const suffix = wildcard === -1 ? "" : moduleSpecifier.slice(wildcard);
+      return resolveFile(`${baseUrl}/${replacement.replace("*", suffix)}`, files);
+    }
 
-  if (moduleSpecifier.startsWith(".")) {
-    return resolveFile(`${dirname(importer)}/${moduleSpecifier}`, files);
-  }
+    if (moduleSpecifier.startsWith(".")) {
+      return resolveFile(`${dirname(importer)}/${moduleSpecifier}`, files);
+    }
 
-  return undefined;
+    return undefined;
+  };
 };
 
 const getProjectEventIds = (files: readonly ProjectSourceFile[]): Map<string, string> => {
@@ -141,7 +141,7 @@ const getProjectEventIds = (files: readonly ProjectSourceFile[]): Map<string, st
 const getSymbolBindings = (
   file: TypeScriptSource,
   sourceFile: ts.SourceFile,
-  project: TypeScriptProject,
+  resolveImportFile: ImportFileResolver,
   eventIds: EventIds,
 ): Map<string, string> => {
   const bindings = new Map<string, string>();
@@ -157,7 +157,7 @@ const getSymbolBindings = (
       continue;
     }
 
-    const importedFile = resolveImportFile(file.file, statement.moduleSpecifier.text, project);
+    const importedFile = resolveImportFile(file.file, statement.moduleSpecifier.text);
     for (const element of statement.importClause.namedBindings.elements) {
       const importedName = element.propertyName?.text ?? element.name.text;
       const importedId = importedFile
@@ -183,11 +183,12 @@ export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbol
     sourceFiles.map((source) => [normalizePath(source.file), source]),
   );
   const bindingsByFile = new Map<string, SymbolBindings>();
+  const resolveImportFile = createImportFileResolver(project);
 
   for (const file of project.files) {
     const sourceFile = sourceFilesByPath.get(normalizePath(file.file))?.sourceFile;
     if (!sourceFile) continue;
-    bindingsByFile.set(file.file, getSymbolBindings(file, sourceFile, project, eventIds));
+    bindingsByFile.set(file.file, getSymbolBindings(file, sourceFile, resolveImportFile, eventIds));
   }
 
   return { eventIds, bindingsByFile, sourceFiles, semanticIndex };
