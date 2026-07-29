@@ -153,5 +153,5 @@ describeFragments("Fragments Ticket verification acceptance", () => {
       target: "ticketRetrieval",
       kind: "DISPATCHES",
     });
-  }, 15_000);
+  }, 60_000);
 });

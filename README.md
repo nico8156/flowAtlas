@@ -84,9 +84,9 @@ terminal adapter.
 
 The TUI shell appears in an `ANALYZING PROJECT` state before the TypeScript
 project and graph are available, then switches to `READY` when the real graph
-has been built. No placeholder graph is displayed. The current scanner remains
-CPU-bound during graph construction, so the first frame is available quickly
-but the full project may take longer to become interactive.
+has been built. No placeholder graph is displayed. The scan runs in a worker,
+so the terminal remains responsive and `q` can cancel an in-progress scan. The
+full project may still take time to become interactive while its graph is built.
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:

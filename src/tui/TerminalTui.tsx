@@ -42,6 +42,7 @@ export type TerminalTuiLoadResult = {
 type TerminalTuiLoaderProps = {
   readonly projectLabel: string;
   readonly load: () => Promise<TerminalTuiLoadResult>;
+  readonly cancel?: () => void;
 };
 
 type ViewState = ProjectionChange & {
@@ -133,7 +134,7 @@ const LoaderShell = ({
   </Box>
 );
 
-export const TerminalTuiLoader = ({ projectLabel, load }: TerminalTuiLoaderProps) => {
+export const TerminalTuiLoader = ({ projectLabel, load, cancel }: TerminalTuiLoaderProps) => {
   const { exit } = useApp();
   const [state, setState] = useState<
     | { readonly phase: "loading" }
@@ -161,9 +162,10 @@ export const TerminalTuiLoader = ({ projectLabel, load }: TerminalTuiLoaderProps
 
     return () => {
       cancelled = true;
+      cancel?.();
       clearImmediate(loadAfterFirstFrame);
     };
-  }, [load]);
+  }, [cancel, load]);
 
   useInput(
     (input) => {

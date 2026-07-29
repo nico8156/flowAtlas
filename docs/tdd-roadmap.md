@@ -323,6 +323,8 @@ Delivered so far:
 - the real graph transitions the TUI to `READY`, preserving the requested
   initial node and all existing interactions;
 - controlled loading failure renders a readable TUI error state.
+- the project scan runs in a dedicated Node worker and can be cancelled when
+  the TUI exits during analysis.
 
 ### Known gaps
 
@@ -331,10 +333,9 @@ The browser implementation is not the M7 product target. The TUI still needs:
 - Explorer, Map and Inspector panes with responsive terminal sizing;
 - more expressive edge routing when branches become dense;
 - a visual review on a full-size real Fragments terminal session;
-- the scanner remains CPU-bound on the main thread after the first frame. TTFG
-  on the full Fragments project is still long and input cannot be processed
-  during that synchronous phase; worker isolation is a separate performance
-  decision, not part of the current TTFF fix.
+- TTFG on the full Fragments project is still long because the complete static
+  analysis remains substantial. TTFF and TTFG are intentionally separate
+  metrics; the worker keeps the TUI responsive while TTFG is in progress.
 - a visual review on a full-size real Fragments terminal session after the
   graph becomes ready.
 

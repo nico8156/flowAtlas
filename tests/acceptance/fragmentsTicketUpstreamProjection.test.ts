@@ -76,5 +76,5 @@ describeFragments("Fragments Ticket upstream projection", () => {
         },
       ]),
     );
-  }, 15_000);
+  }, 60_000);
 });

@@ -8,6 +8,7 @@ import { projectFocusedTerritory } from "./application/focusedGraphProjection.js
 import { formatNodeInspection } from "./application/nodeInspection.js";
 import { formatTerminalMap } from "./application/terminalMapOutput.js";
 import { loadTypeScriptProject } from "./cli/projectLoader.js";
+import { startScanProjectInWorker } from "./cli/scanInWorker.js";
 import { projectDownstream, projectUpstream } from "./domain/graphProjection.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
 import {
@@ -52,22 +53,14 @@ export const runCli = async (
       throw new Error(usage);
     }
 
+    let activeScanCancel = (): void => undefined;
     const instance = render(
       createElement(TerminalTuiLoader, {
         projectLabel: projectPath,
         load: async (): Promise<TerminalTuiLoadResult> => {
-          const loadedProject = await loadTypeScriptProject(projectPath);
-          const graph = await new Promise<ReturnType<typeof scanTypeScriptProject>>(
-            (resolve, reject) => {
-              setImmediate(() => {
-                try {
-                  resolve(scanTypeScriptProject(loadedProject.project));
-                } catch (error: unknown) {
-                  reject(error);
-                }
-              });
-            },
-          );
+          const task = startScanProjectInWorker(projectPath);
+          activeScanCancel = task.cancel;
+          const graph = await task.promise;
 
           if (!graph.findNode(nodeId)) {
             throw new Error(`Node not found: ${nodeId}`);
@@ -95,6 +88,7 @@ export const runCli = async (
               projectionChange("upstream", (id) => projectUpstream(graph, id), selectedNodeId),
           };
         },
+        cancel: () => activeScanCancel(),
       }),
     );
     await instance.waitUntilExit();
