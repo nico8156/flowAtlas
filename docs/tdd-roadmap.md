@@ -327,6 +327,9 @@ Delivered so far:
 - controlled loading failure renders a readable TUI error state.
 - the project scan runs in a dedicated Node worker and can be cancelled when
   the TUI exits during analysis.
+- cyclic real-project projections are layout-safe; terminal Map edges expose
+  their canonical relation kind so `LISTENS_TO`, `DISPATCHES`, `UPDATES` and
+  `CALLS_EXTERNAL` remain distinguishable.
 
 ### Known gaps
 

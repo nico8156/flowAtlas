@@ -32,9 +32,9 @@ type Point = {
 };
 
 const densityMetrics: Record<Density, { nodeWidth: number; columnGap: number; rowGap: number }> = {
-  compact: { nodeWidth: 18, columnGap: 8, rowGap: 2 },
-  normal: { nodeWidth: 26, columnGap: 12, rowGap: 4 },
-  detailed: { nodeWidth: 36, columnGap: 16, rowGap: 6 },
+  compact: { nodeWidth: 18, columnGap: 18, rowGap: 2 },
+  normal: { nodeWidth: 26, columnGap: 18, rowGap: 4 },
+  detailed: { nodeWidth: 36, columnGap: 22, rowGap: 6 },
 };
 
 const visualEdge = (edge: ArchitectureEdge): { source: string; target: string } =>
@@ -188,6 +188,16 @@ const put = (canvas: string[][], x: number, y: number, value: string): void => {
   }
 };
 
+const putLabel = (canvas: string[][], x: number, y: number, value: string): void => {
+  if (y < 0 || y >= canvas.length) return;
+  const row = canvas[y];
+  if (!row) return;
+  for (const [offset, character] of [...value].entries()) {
+    const position = x + offset;
+    if (position >= 0 && position < row.length) row[position] = character;
+  }
+};
+
 export const ensureNodeVisible = (
   layout: LayoutGraph,
   viewport: Viewport,
@@ -238,6 +248,9 @@ export const renderTerminalMap = (
     const y = source.y - viewport.y;
     if (x2 <= x1 || y < 0 || y >= viewport.height) continue;
     for (let x = x1; x < x2; x += 1) put(canvas, x, y, "─");
+    const label = edge.kind;
+    const labelX = x1 + Math.max(0, Math.floor((x2 - x1 - label.length) / 2));
+    putLabel(canvas, labelX, y, label);
     put(canvas, x2 - 1, target.y - viewport.y, target.y >= source.y ? "▼" : "▲");
   }
 
