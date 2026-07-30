@@ -80,7 +80,7 @@ const assignLevels = (projection: GraphProjection): ReadonlyMap<string, number> 
 
     for (const target of outgoing.get(current) ?? []) {
       const nextLevel = currentLevel + 1;
-      if ((levels.get(target) ?? -1) >= nextLevel) continue;
+      if (levels.has(target)) continue;
       levels.set(target, nextLevel);
       queue.push(target);
     }
