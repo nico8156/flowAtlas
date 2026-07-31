@@ -179,3 +179,13 @@ retains AST member collection as a fallback. This changes the source of
 semantic information, not the `CALLS_EXTERNAL` interpretation. The full suite
 remains green at 113 tests and the latest direct scan measured approximately
 **8.65 seconds**, with no meaningful CPU conclusion yet.
+
+The next bounded type-alias lookup now consults the shared semantic index
+before falling back to an AST search. A direct Fragments scan then measured
+approximately **6.02 seconds**. This is a promising signal, but still not a
+controlled phase benchmark because the scanner has no per-stage timing yet.
+
+One full-suite run also exposed an existing test orchestration race: multiple
+CLI acceptance tests build concurrently while `tsup` cleans `dist`. The
+affected `cliScan` test passes when run after a completed build; this race is
+tracked separately and is not attributed to the resolver change.

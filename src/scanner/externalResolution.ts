@@ -137,17 +137,20 @@ const getExternalTypeNames = (
   if (visitedAliases.has(typeName)) return [];
   visitedAliases.add(typeName);
 
-  let aliasedType: ts.TypeNode | undefined;
-  const findAlias = (node: ts.Node): void => {
-    if (ts.isTypeAliasDeclaration(node) && node.name.text === typeName) {
-      aliasedType = node.type;
-      return;
+  const indexedAlias = semanticIndex?.findTypeAliases(typeName)[0];
+  let aliasedType = indexedAlias?.type;
+  if (!aliasedType) {
+    const findAlias = (node: ts.Node): void => {
+      if (ts.isTypeAliasDeclaration(node) && node.name.text === typeName) {
+        aliasedType = node.type;
+        return;
+      }
+      ts.forEachChild(node, findAlias);
+    };
+    for (const candidate of sourceFiles) {
+      findAlias(candidate);
+      if (aliasedType) break;
     }
-    ts.forEachChild(node, findAlias);
-  };
-  for (const candidate of sourceFiles) {
-    findAlias(candidate);
-    if (aliasedType) break;
   }
   return getExternalTypeNames(
     aliasedType,

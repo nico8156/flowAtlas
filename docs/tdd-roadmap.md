@@ -96,6 +96,13 @@ and retains AST member collection as fallback. The full suite remains green at
 113 tests; the latest direct scan measured approximately 8.65 seconds, which
 does not establish a meaningful performance change.
 
+Bounded External type-alias lookup now consults the shared semantic index
+before its AST fallback. The latest direct Fragments scan measured
+approximately 6.02 seconds. A full-suite run exposed an existing race between
+parallel CLI acceptance tests and `tsup` cleaning `dist`; `cliScan` passes when
+run after a completed build. This tooling issue remains separate from the
+checker migration.
+
 ## Delivered History
 
 ### Milestone 1: Core graph
