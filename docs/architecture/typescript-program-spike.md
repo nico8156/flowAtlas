@@ -162,3 +162,13 @@ The next safe migration target is one resolver responsibility at a time,
 starting with renamed import/symbol identity. Each migration must preserve the
 existing graph and compare the TypeChecker path against the current resolver
 before the manual path is removed.
+
+The first selective migration is now in place: imported Event bindings consult
+the checker to unwrap aliases and identify the original declaration. The
+existing path-based resolver remains as a fallback for unresolved symbols, so
+the scanner stays tolerant and no graph invariant is relaxed.
+
+The full suite remains green at 113 tests. A subsequent direct scan measured
+approximately **8.73 seconds**; this is within the expected run-to-run noise
+of the previous 8.51-second measurement and should not be treated as a
+meaningful regression or improvement.

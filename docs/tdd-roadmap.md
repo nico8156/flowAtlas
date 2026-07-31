@@ -83,6 +83,13 @@ checker, with a focused regression fixture and identical graph comparison.
 Do not remove the existing fallback until that comparison is green and the
 performance impact is measured.
 
+The first such migration is now delivered for imported Event bindings:
+`TypeChecker` unwraps renamed imports to their original declaration, while the
+existing path resolver remains a tolerant fallback. The complete suite remains
+green at 113 tests. A subsequent direct Fragments scan measured approximately
+8.73 seconds; this is considered run-to-run noise relative to the previous
+8.51-second measurement.
+
 ## Delivered History
 
 ### Milestone 1: Core graph

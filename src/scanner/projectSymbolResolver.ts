@@ -212,6 +212,8 @@ const getSymbolBindings = (
   sourceFile: ts.SourceFile,
   resolveImportFile: ImportFileResolver,
   eventIds: EventIds,
+  checker: ts.TypeChecker,
+  sourceFilePaths: ReadonlyMap<ts.SourceFile, string>,
 ): Map<string, string> => {
   const bindings = new Map<string, string>();
 
@@ -229,10 +231,29 @@ const getSymbolBindings = (
     const importedFile = resolveImportFile(file.file, statement.moduleSpecifier.text);
     for (const element of statement.importClause.namedBindings.elements) {
       const importedName = element.propertyName?.text ?? element.name.text;
+      const importedSymbol = checker.getSymbolAtLocation(element.name);
+      const originalSymbol =
+        importedSymbol && (importedSymbol.flags & ts.SymbolFlags.Alias) !== 0
+          ? checker.getAliasedSymbol(importedSymbol)
+          : importedSymbol;
+      const declaration = originalSymbol?.declarations?.find(
+        (candidate) =>
+          ts.isVariableDeclaration(candidate) &&
+          ts.isIdentifier(candidate.name) &&
+          eventIds.has(
+            `${normalizePath(sourceFilePaths.get(candidate.getSourceFile()) ?? candidate.getSourceFile().fileName)}#${candidate.name.text}`,
+          ),
+      );
+      const checkerImportedId =
+        declaration && ts.isVariableDeclaration(declaration) && ts.isIdentifier(declaration.name)
+          ? eventIds.get(
+              `${normalizePath(sourceFilePaths.get(declaration.getSourceFile()) ?? declaration.getSourceFile().fileName)}#${declaration.name.text}`,
+            )
+          : undefined;
       const importedId = importedFile
         ? eventIds.get(`${normalizePath(importedFile)}#${importedName}`)
         : undefined;
-      bindings.set(element.name.text, importedId ?? importedName);
+      bindings.set(element.name.text, checkerImportedId ?? importedId ?? importedName);
     }
   }
 
@@ -248,13 +269,26 @@ export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbol
   const sourceFilesByPath = new Map(
     sourceFiles.map((source) => [normalizePath(source.file), source]),
   );
+  const sourceFilePaths = new Map(
+    sourceFiles.map((source) => [source.sourceFile, normalizePath(source.file)]),
+  );
   const bindingsByFile = new Map<string, SymbolBindings>();
   const resolveImportFile = createImportFileResolver(project);
 
   for (const file of project.files) {
     const sourceFile = sourceFilesByPath.get(normalizePath(file.file))?.sourceFile;
     if (!sourceFile) continue;
-    bindingsByFile.set(file.file, getSymbolBindings(file, sourceFile, resolveImportFile, eventIds));
+    bindingsByFile.set(
+      file.file,
+      getSymbolBindings(
+        file,
+        sourceFile,
+        resolveImportFile,
+        eventIds,
+        compilerContext.checker,
+        sourceFilePaths,
+      ),
+    );
   }
 
   return {
