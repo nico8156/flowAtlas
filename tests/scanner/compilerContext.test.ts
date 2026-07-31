@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { scanTypeScriptProject } from "../../src/scanner/typeScriptScanner.js";
 import { resolveProjectSymbols } from "../../src/scanner/projectSymbolResolver.js";
 
 describe("compiler context", () => {
@@ -20,5 +21,33 @@ describe("compiler context", () => {
     expect(resolution.program).toBeDefined();
     expect(resolution.checker).toBeDefined();
     expect(compiledSource).toBe(source.sourceFile);
+  });
+
+  it("reports scan phases without changing the produced graph", () => {
+    const phases: string[] = [];
+
+    const graph = scanTypeScriptProject({
+      files: [
+        {
+          file: "src/actions.ts",
+          source: `export const requested = createAction("REQUESTED");`,
+        },
+      ],
+      onScanPhase: ({ phase, durationMs }) => {
+        phases.push(phase);
+        expect(durationMs).toBeGreaterThanOrEqual(0);
+      },
+    });
+
+    expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "requested", kind: "Event" }));
+    expect(phases).toEqual([
+      "compiler-context",
+      "event-identities",
+      "semantic-index",
+      "import-bindings",
+      "state-discovery",
+      "discovery-pass",
+      "relationship-pass",
+    ]);
   });
 });

@@ -103,6 +103,13 @@ parallel CLI acceptance tests and `tsup` cleaning `dist`; `cliScan` passes when
 run after a completed build. This tooling issue remains separate from the
 checker migration.
 
+Optional phase instrumentation is now available with
+`FLOWATLAS_PROFILE=1`. A Fragments run measured approximately 2.01 seconds for
+compiler-context construction and 2.41 seconds for the relationship pass; the
+remaining measured phases were below 0.21 seconds each, with a total scan of
+approximately 6.08 seconds. The next performance decision must focus on those
+dominant phases rather than add isolated resolver caches.
+
 ## Delivered History
 
 ### Milestone 1: Core graph

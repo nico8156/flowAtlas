@@ -189,3 +189,26 @@ One full-suite run also exposed an existing test orchestration race: multiple
 CLI acceptance tests build concurrently while `tsup` cleans `dist`. The
 affected `cliScan` test passes when run after a completed build; this race is
 tracked separately and is not attributed to the resolver change.
+
+## Phase instrumentation
+
+`FLOWATLAS_PROFILE=1` now enables optional scan-phase timings on stderr. The
+default CLI output and graph are unchanged. A Fragments run reported:
+
+| Phase              | Observed |
+| ------------------ | -------: |
+| compiler context   |  ~2.01 s |
+| Event identities   |   ~18 ms |
+| semantic index     |   ~37 ms |
+| import bindings    |   ~52 ms |
+| State discovery    |  ~204 ms |
+| discovery pass     |  ~201 ms |
+| relationship pass  |  ~2.41 s |
+| total process scan |  ~6.08 s |
+
+The two dominant measured phases are compiler-context construction and the
+relationship pass. This argues against further micro-optimizing alias lookup
+in isolation. The next investigation should determine whether the
+relationship pass repeatedly traverses the same declarations, then decide
+whether selective checker use there is justified. No facts/IR model should be
+introduced from this measurement alone.

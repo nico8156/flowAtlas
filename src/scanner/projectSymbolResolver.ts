@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { performance } from "node:perf_hooks";
 
 import { buildSemanticIndex, type SemanticIndex } from "./semanticIndex.js";
 
@@ -7,10 +8,25 @@ export type TypeScriptSource = {
   source: string;
 };
 
+export type ScanPhase =
+  | "compiler-context"
+  | "event-identities"
+  | "semantic-index"
+  | "import-bindings"
+  | "state-discovery"
+  | "discovery-pass"
+  | "relationship-pass";
+
+export type ScanPhaseMeasurement = {
+  phase: ScanPhase;
+  durationMs: number;
+};
+
 export type TypeScriptProject = {
   files: TypeScriptSource[];
   projectFiles?: TypeScriptSource[];
   onSemanticIndexBuilt?: (index: SemanticIndex) => void;
+  onScanPhase?: (measurement: ScanPhaseMeasurement) => void;
   tsconfig?: {
     compilerOptions?: {
       baseUrl?: string;
@@ -21,6 +37,15 @@ export type TypeScriptProject = {
 
 const getProjectFiles = (project: TypeScriptProject): TypeScriptSource[] =>
   project.projectFiles ?? project.files;
+
+const measurePhase = <T>(project: TypeScriptProject, phase: ScanPhase, operation: () => T): T => {
+  const startedAt = performance.now();
+  try {
+    return operation();
+  } finally {
+    project.onScanPhase?.({ phase, durationMs: performance.now() - startedAt });
+  }
+};
 
 export type SymbolBindings = ReadonlyMap<string, string>;
 export type EventIds = ReadonlyMap<string, string>;
@@ -261,10 +286,14 @@ const getSymbolBindings = (
 };
 
 export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbolResolution => {
-  const compilerContext = createCompilerContext(project);
+  const compilerContext = measurePhase(project, "compiler-context", () =>
+    createCompilerContext(project),
+  );
   const sourceFiles = compilerContext.sourceFiles;
-  const eventIds = getProjectEventIds(sourceFiles);
-  const semanticIndex = buildSemanticIndex(sourceFiles, compilerContext.checker);
+  const eventIds = measurePhase(project, "event-identities", () => getProjectEventIds(sourceFiles));
+  const semanticIndex = measurePhase(project, "semantic-index", () =>
+    buildSemanticIndex(sourceFiles, compilerContext.checker),
+  );
   project.onSemanticIndexBuilt?.(semanticIndex);
   const sourceFilesByPath = new Map(
     sourceFiles.map((source) => [normalizePath(source.file), source]),
@@ -275,21 +304,23 @@ export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbol
   const bindingsByFile = new Map<string, SymbolBindings>();
   const resolveImportFile = createImportFileResolver(project);
 
-  for (const file of project.files) {
-    const sourceFile = sourceFilesByPath.get(normalizePath(file.file))?.sourceFile;
-    if (!sourceFile) continue;
-    bindingsByFile.set(
-      file.file,
-      getSymbolBindings(
-        file,
-        sourceFile,
-        resolveImportFile,
-        eventIds,
-        compilerContext.checker,
-        sourceFilePaths,
-      ),
-    );
-  }
+  measurePhase(project, "import-bindings", () => {
+    for (const file of project.files) {
+      const sourceFile = sourceFilesByPath.get(normalizePath(file.file))?.sourceFile;
+      if (!sourceFile) continue;
+      bindingsByFile.set(
+        file.file,
+        getSymbolBindings(
+          file,
+          sourceFile,
+          resolveImportFile,
+          eventIds,
+          compilerContext.checker,
+          sourceFilePaths,
+        ),
+      );
+    }
+  });
 
   return {
     eventIds,

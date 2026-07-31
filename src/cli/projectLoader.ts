@@ -49,6 +49,13 @@ export const loadTypeScriptProject = async (
     project: {
       files: sources,
       projectFiles: sources,
+      ...(process.env.FLOWATLAS_PROFILE === "1"
+        ? {
+            onScanPhase: ({ phase, durationMs }: { phase: string; durationMs: number }) => {
+              process.stderr.write(`[FlowAtlas profile] ${phase}: ${durationMs.toFixed(2)}ms\n`);
+            },
+          }
+        : {}),
       ...(tsconfig ? { tsconfig } : {}),
     },
   };
