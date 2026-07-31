@@ -264,7 +264,7 @@ export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbol
   const compilerContext = createCompilerContext(project);
   const sourceFiles = compilerContext.sourceFiles;
   const eventIds = getProjectEventIds(sourceFiles);
-  const semanticIndex = buildSemanticIndex(sourceFiles);
+  const semanticIndex = buildSemanticIndex(sourceFiles, compilerContext.checker);
   project.onSemanticIndexBuilt?.(semanticIndex);
   const sourceFilesByPath = new Map(
     sourceFiles.map((source) => [normalizePath(source.file), source]),
