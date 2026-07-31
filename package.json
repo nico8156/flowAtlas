@@ -25,6 +25,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
+    "spike:typescript": "node scripts/typeScriptProgramSpike.mjs",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write ."

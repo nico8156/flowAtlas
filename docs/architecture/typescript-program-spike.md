@@ -1,0 +1,141 @@
+# TypeScript Program / TypeChecker Spike
+
+## Status
+
+Active investigation. This document records an isolated experiment; it does
+not authorize a production scanner migration.
+
+## Question
+
+Can FlowAtlas delegate TypeScript semantics to a shared `Program` and
+`TypeChecker`, so that FlowAtlas spends less code and CPU rebuilding imports,
+aliases, symbols and interface declarations while keeping architectural
+interpretation in its own detectors?
+
+## Current pipeline
+
+The current adapter:
+
+1. loads the project files and tsconfig;
+2. creates `SourceFile` instances with `ts.createSourceFile`;
+3. resolves import paths and aliases itself;
+4. builds a FlowAtlas semantic index for function-like declarations, aliases
+   and interfaces;
+5. runs discovery and relationship passes over the architectural scan scope;
+6. performs bounded propagation for external boundaries;
+7. mutates the strict `ArchitectureGraph` only for justified relationships.
+
+The main known duplication is that resolution creates source files and the
+source scanner can recreate them. The current scanner also retains name-based
+fallbacks because its indexes are built from source text rather than compiler
+symbols.
+
+## Spike
+
+Run the isolated experiment with:
+
+```bash
+npm run spike:typescript -- ../fragmentsCleanFront
+```
+
+The script builds a TypeScript `Program` from the Fragments tsconfig, obtains
+one `TypeChecker`, and checks:
+
+- a real renamed import (`cState` -> `commentWlReducer`);
+- a controlled homonymous-module fixture, because the real project did not
+  contain duplicate function declarations suitable for this case;
+- the real `likesRetrieval` expression `likeGateway.get`, including its
+  `LikeWlGateway` interface and `get` method declaration.
+
+It also measures Program creation, checker access, selected lookups and a
+large repeated identifier-query pass. The latter is a stress signal, not a
+direct comparison with the FlowAtlas scan.
+
+## Observed run
+
+Environment: repository TypeScript 5.8.3, Fragments project with 342 config
+files and 341 non-declaration source files.
+
+| Measurement                              | Observed |
+| ---------------------------------------- | -------: |
+| Read/parse tsconfig                      |   ~85 ms |
+| `ts.createProgram`                       |  ~2.76 s |
+| `program.getTypeChecker()`               |  ~0.77 s |
+| Renamed import lookup                    |   ~10 ms |
+| `LikeWlGateway` type/method lookup       |  ~0.39 s |
+| 47,052 identifier symbol queries         |  ~2.40 s |
+| Current FlowAtlas CLI scan, same project |  ~9.74 s |
+
+The current scan timing was measured separately with:
+
+```bash
+npm run build
+/usr/bin/time -p node dist/index.js scan ../fragmentsCleanFront
+```
+
+These numbers do not yet establish a speedup. The spike performs semantic
+queries but does not build an ArchitectureGraph, and the current scanner has
+not been instrumented by phase. The next valid performance comparison must
+run equivalent graph production through both paths and report loading,
+discovery, relationship analysis, external resolution and graph construction
+separately.
+
+## What TypeScript can replace
+
+`Program` and `TypeChecker` can provide:
+
+- stable symbol identity across renamed imports and modules;
+- alias unwrapping from local symbol to original declaration;
+- declaration/source-file locations;
+- type identity for variables and parameters;
+- interface and method declarations;
+- homonym disambiguation without a global name-only fallback.
+
+For the real `likesRetrieval` code, the checker resolves:
+
+```text
+likeGateway
+  -> LikeWlGateway
+  -> gateway.get MethodSignature
+```
+
+## What remains FlowAtlas-owned
+
+TypeScript does not decide that a declaration is an Event, Handler, State or
+External. It also does not decide which source files belong to the
+architectural scan scope, whether a helper crosses a meaningful external
+boundary, or which bounded propagation is useful for the architecture map.
+
+In particular, the outbox path remains architectural analysis:
+
+```text
+processOutboxFactory
+  -> getOutboxCommandGateway
+  -> local `gw`
+  -> sendOutboxCommand({ gateway: gw })
+  -> gateway.add/remove
+```
+
+The checker can resolve the types and declarations involved, but FlowAtlas
+still has to follow this limited orchestration and emit one
+`CALLS_EXTERNAL` edge without promoting helpers into graph nodes.
+
+## Recommendation
+
+Adopt `Program + TypeChecker` selectively, after a second spike that routes a
+small detector through the shared compiler context and compares identical
+graph output. Do not replace the entire scanner, introduce an intermediate
+facts model, or build a generic call graph.
+
+The smallest credible migration target is:
+
+1. create one shared compiler context per scan;
+2. reuse its `SourceFile` instances;
+3. use checker identity for imports, aliases, declarations and external
+   interface/method lookup;
+4. retain FlowAtlas detectors and bounded external propagation;
+5. remove a manual resolver only when a regression test and measurements show
+   that the checker path covers its responsibility.
+
+The spike is therefore positive for correctness and architectural simplicity,
+but inconclusive for CPU until equivalent end-to-end measurements exist.

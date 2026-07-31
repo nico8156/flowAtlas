@@ -22,6 +22,52 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
 
+## Active Investigation: TypeScript Program / TypeChecker
+
+**Status: ACTIVE SPIKE — no production scanner migration yet**
+
+The current scanner owns AST creation, import/path resolution, semantic indexes
+and bounded architectural propagation. The observed Fragments baseline is
+approximately 342 TypeScript files. Historical direct-scan measurements were
+approximately 22 seconds after the import-path index optimization; the latest
+CLI baseline measured approximately 9.74 seconds on the same local setup.
+Worker execution was previously approximately 26–29 seconds. These numbers
+must be treated as machine/run dependent; the acceptance suite is slower
+because it rescans the same project several times.
+
+The current investigation compares that approach with a TypeScript compiler
+context:
+
+```text
+tsconfig -> Program -> SourceFiles + TypeChecker
+                         -> FlowAtlas detectors
+```
+
+The first spike is intentionally isolated in
+`scripts/typeScriptProgramSpike.mjs`. It measures Program creation and
+selected semantic queries against the real Fragments project. It does not
+change `ArchitectureGraph`, detectors or scanner semantics.
+
+The comparison covers:
+
+- renamed import identity: local alias -> original symbol -> declaration;
+- homonymous declarations: symbol identity versus name-based fallback;
+- `LikeWlGateway` type and `get` method resolution in `likesRetrieval`;
+- the outbox path, where TypeScript can resolve declared types but FlowAtlas
+  still owns bounded propagation through gateway selection and helper calls.
+
+The working hypothesis is **selective adoption of `Program + TypeChecker`**,
+not a generic TypeScript analyzer. TypeScript may replace manual symbol,
+alias, declaration and interface lookup. FlowAtlas must retain architectural
+interpretation, scan-scope decisions, bounded external propagation and the
+strict/tolerant graph boundary. No intermediate facts model, generic call
+graph, persistent cache or incremental program is introduced by this spike.
+
+The recommendation remains pending measured before/after results. The spike
+must report loading, Program creation, semantic lookup, current scanner total,
+correctness changes and any FlowAtlas-owned mechanism that can actually be
+removed before a migration is considered.
+
 ## Delivered History
 
 ### Milestone 1: Core graph
