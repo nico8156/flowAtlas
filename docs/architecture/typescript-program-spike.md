@@ -172,3 +172,10 @@ The full suite remains green at 113 tests. A subsequent direct scan measured
 approximately **8.73 seconds**; this is within the expected run-to-run noise
 of the previous 8.51-second measurement and should not be treated as a
 meaningful regression or improvement.
+
+External interface method support is now checker-backed when available: the
+semantic index obtains declared interface properties from TypeScript and
+retains AST member collection as a fallback. This changes the source of
+semantic information, not the `CALLS_EXTERNAL` interpretation. The full suite
+remains green at 113 tests and the latest direct scan measured approximately
+**8.65 seconds**, with no meaningful CPU conclusion yet.

@@ -90,6 +90,12 @@ green at 113 tests. A subsequent direct Fragments scan measured approximately
 8.73 seconds; this is considered run-to-run noise relative to the previous
 8.51-second measurement.
 
+External interface method support is now checker-backed when available. The
+semantic index reads interface properties from the declared TypeScript type
+and retains AST member collection as fallback. The full suite remains green at
+113 tests; the latest direct scan measured approximately 8.65 seconds, which
+does not establish a meaningful performance change.
+
 ## Delivered History
 
 ### Milestone 1: Core graph

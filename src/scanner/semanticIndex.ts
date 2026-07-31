@@ -10,7 +10,10 @@ export type SemanticIndex = {
   externalSupportsMethod(interfaceName: string, methodName: string): boolean;
 };
 
-export const buildSemanticIndex = (sourceFiles: readonly ProjectSourceFile[]): SemanticIndex => {
+export const buildSemanticIndex = (
+  sourceFiles: readonly ProjectSourceFile[],
+  checker?: ts.TypeChecker,
+): SemanticIndex => {
   const functions = new Map<string, FunctionLike>();
   const functionsByName = new Map<string, FunctionLike[]>();
   const typeAliases = new Map<string, ts.TypeAliasDeclaration[]>();
@@ -58,9 +61,19 @@ export const buildSemanticIndex = (sourceFiles: readonly ProjectSourceFile[]): S
 
       if (ts.isInterfaceDeclaration(node)) {
         interfaces.set(node.name.text, node);
-        for (const member of node.members) {
-          if (member.name && ts.isIdentifier(member.name)) {
-            interfaceMethods.add(`${node.name.text}#${member.name.text}`);
+        const interfaceSymbol = checker?.getSymbolAtLocation(node.name);
+        const interfaceType = interfaceSymbol
+          ? checker?.getDeclaredTypeOfSymbol(interfaceSymbol)
+          : undefined;
+        if (interfaceType) {
+          for (const member of interfaceType.getProperties()) {
+            interfaceMethods.add(`${node.name.text}#${member.name}`);
+          }
+        } else {
+          for (const member of node.members) {
+            if (member.name && ts.isIdentifier(member.name)) {
+              interfaceMethods.add(`${node.name.text}#${member.name.text}`);
+            }
           }
         }
       }
