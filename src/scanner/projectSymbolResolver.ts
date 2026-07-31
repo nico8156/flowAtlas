@@ -30,6 +30,8 @@ export type ProjectSymbolResolution = {
   bindingsByFile: ReadonlyMap<string, SymbolBindings>;
   sourceFiles: readonly ProjectSourceFile[];
   semanticIndex: SemanticIndex;
+  program: ts.Program;
+  checker: ts.TypeChecker;
 };
 
 export type ProjectSourceFile = {
@@ -42,8 +44,11 @@ type VariableCall = {
   call: ts.CallExpression;
 };
 
-const createSourceFile = (fileName: string, source: string): ts.SourceFile =>
-  ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+type CompilerContext = {
+  program: ts.Program;
+  checker: ts.TypeChecker;
+  sourceFiles: readonly ProjectSourceFile[];
+};
 
 const getVariableCall = (node: ts.Node): VariableCall | undefined => {
   if (
@@ -110,6 +115,70 @@ const createImportFileResolver = (project: TypeScriptProject): ImportFileResolve
   };
 };
 
+const createCompilerContext = (project: TypeScriptProject): CompilerContext => {
+  const projectFiles = getProjectFiles(project);
+  const sourcesByPath = new Map(
+    projectFiles.map(({ file, source }) => [normalizePath(file), source]),
+  );
+  const options: ts.CompilerOptions = {
+    target: ts.ScriptTarget.Latest,
+    module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.NodeJs,
+    ...(project.tsconfig?.compilerOptions?.baseUrl
+      ? { baseUrl: project.tsconfig.compilerOptions.baseUrl }
+      : {}),
+    ...(project.tsconfig?.compilerOptions?.paths
+      ? { paths: project.tsconfig.compilerOptions.paths }
+      : {}),
+  };
+  const defaultHost = ts.createCompilerHost(options, true);
+  const resolveSourcePath = (fileName: string): string | undefined => {
+    const normalized = normalizePath(fileName);
+    return sourcesByPath.has(normalized) ? normalized : undefined;
+  };
+
+  const host: ts.CompilerHost = {
+    ...defaultHost,
+    fileExists: (fileName) =>
+      resolveSourcePath(fileName) !== undefined || defaultHost.fileExists(fileName),
+    readFile: (fileName) => {
+      const sourcePath = resolveSourcePath(fileName);
+      return sourcePath ? sourcesByPath.get(sourcePath) : defaultHost.readFile(fileName);
+    },
+    getSourceFile: (fileName, languageVersion) => {
+      const sourcePath = resolveSourcePath(fileName);
+      const source = sourcePath ? sourcesByPath.get(sourcePath) : undefined;
+      if (source !== undefined) {
+        return ts.createSourceFile(fileName, source, languageVersion, true, ts.ScriptKind.TS);
+      }
+      return defaultHost.getSourceFile(fileName, languageVersion);
+    },
+    resolveModuleNames: (moduleNames, containingFile) =>
+      moduleNames.map((moduleName) => {
+        const result = ts.resolveModuleName(
+          moduleName,
+          containingFile,
+          options,
+          host,
+        ).resolvedModule;
+        return result;
+      }),
+  };
+  const program = ts.createProgram({
+    rootNames: projectFiles.map(({ file }) => file),
+    options,
+    host,
+  });
+  const sourceFiles = projectFiles
+    .map(({ file }) => ({
+      file,
+      sourceFile: program.getSourceFile(file) ?? host.getSourceFile(file, ts.ScriptTarget.Latest),
+    }))
+    .filter((entry): entry is ProjectSourceFile => entry.sourceFile !== undefined);
+
+  return { program, checker: program.getTypeChecker(), sourceFiles };
+};
+
 const getProjectEventIds = (files: readonly ProjectSourceFile[]): Map<string, string> => {
   const occurrences = new Map<string, number>();
   const declarations: Array<{ file: string; name: string }> = [];
@@ -171,11 +240,8 @@ const getSymbolBindings = (
 };
 
 export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbolResolution => {
-  const projectFiles = getProjectFiles(project);
-  const sourceFiles = projectFiles.map(({ file, source }) => ({
-    file,
-    sourceFile: createSourceFile(file, source),
-  }));
+  const compilerContext = createCompilerContext(project);
+  const sourceFiles = compilerContext.sourceFiles;
   const eventIds = getProjectEventIds(sourceFiles);
   const semanticIndex = buildSemanticIndex(sourceFiles);
   project.onSemanticIndexBuilt?.(semanticIndex);
@@ -191,5 +257,12 @@ export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbol
     bindingsByFile.set(file.file, getSymbolBindings(file, sourceFile, resolveImportFile, eventIds));
   }
 
-  return { eventIds, bindingsByFile, sourceFiles, semanticIndex };
+  return {
+    eventIds,
+    bindingsByFile,
+    sourceFiles,
+    semanticIndex,
+    program: compilerContext.program,
+    checker: compilerContext.checker,
+  };
 };

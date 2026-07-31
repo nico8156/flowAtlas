@@ -68,6 +68,21 @@ must report loading, Program creation, semantic lookup, current scanner total,
 correctness changes and any FlowAtlas-owned mechanism that can actually be
 removed before a migration is considered.
 
+### Phase 2 progress
+
+The first production slice is delivered: an in-memory compiler host now builds
+one `Program` per scan, and the resolver/project scanner reuse its `SourceFile`
+instances. The `TypeChecker` is created and retained internally, but detectors
+have not yet been migrated to it. Fragments acceptance remains green (113
+tests); the latest direct scan measured approximately 8.51 seconds versus
+9.74 seconds before this slice on the same local setup. Treat this as an
+initial signal, not a controlled benchmark.
+
+Next proposed slice: migrate one symbol/alias resolution responsibility to the
+checker, with a focused regression fixture and identical graph comparison.
+Do not remove the existing fallback until that comparison is green and the
+performance impact is measured.
+
 ## Delivered History
 
 ### Milestone 1: Core graph

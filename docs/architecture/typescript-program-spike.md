@@ -139,3 +139,26 @@ The smallest credible migration target is:
 
 The spike is therefore positive for correctness and architectural simplicity,
 but inconclusive for CPU until equivalent end-to-end measurements exist.
+
+## Phase 2 — Shared Compiler Context
+
+The first production slice is now implemented behind the scanner adapter:
+
+- one in-memory compiler host builds a `Program` per project scan;
+- the returned `SourceFile` instances are shared by symbol resolution and the
+  project scanner passes;
+- a `TypeChecker` is created once and retained for the next selective resolver
+  migration;
+- the domain, graph vocabulary, detectors' architectural semantics and scan
+  scope remain unchanged.
+
+The same Fragments CLI scan measured approximately **8.51 seconds** after
+this slice, versus **9.74 seconds** before it on the same local setup. This is
+an encouraging but not yet causal performance result: the current scanner
+still performs its existing AST-based lookups, and phase-level instrumentation
+is not yet available.
+
+The next safe migration target is one resolver responsibility at a time,
+starting with renamed import/symbol identity. Each migration must preserve the
+existing graph and compare the TypeChecker path against the current resolver
+before the manual path is removed.

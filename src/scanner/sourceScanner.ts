@@ -24,8 +24,9 @@ export const scanSourceIntoGraph = (
     createTypeScriptSourceFile("flowatlas-input.ts", source),
   ],
   semanticIndex?: ProjectSymbolResolution["semanticIndex"],
+  compiledSourceFile?: ts.SourceFile,
 ): void => {
-  const sourceFile = createTypeScriptSourceFile(file, source);
+  const sourceFile = compiledSourceFile ?? createTypeScriptSourceFile(file, source);
 
   detectExternalNodes(sourceFile, graph);
   detectEvents(sourceFile, file, graph, eventIds);

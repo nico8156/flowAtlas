@@ -18,6 +18,7 @@ export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureG
         collectRelationships,
         resolution.sourceFiles.map(({ sourceFile }) => sourceFile),
         resolution.semanticIndex,
+        resolution.sourceFiles.find((source) => source.file === file.file)?.sourceFile,
       );
     }
   }
