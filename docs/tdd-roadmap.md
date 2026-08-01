@@ -22,12 +22,13 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
 
-## Active Investigation: TypeScript Program / TypeChecker
+## Completed Investigation: TypeScript Program / TypeChecker
 
-**Status: ACTIVE SPIKE — no production scanner migration yet**
+**Status: DELIVERED — selective production adoption**
 
-The current scanner owns AST creation, import/path resolution, semantic indexes
-and bounded architectural propagation. The observed Fragments baseline is
+The TypeScript adapter now shares compiler AST creation, while FlowAtlas still
+owns fallback import/path resolution, semantic indexes and bounded
+architectural propagation. The observed Fragments baseline is
 approximately 342 TypeScript files. Historical direct-scan measurements were
 approximately 22 seconds after the import-path index optimization; the latest
 CLI baseline measured approximately 9.74 seconds on the same local setup.
@@ -63,12 +64,12 @@ interpretation, scan-scope decisions, bounded external propagation and the
 strict/tolerant graph boundary. No intermediate facts model, generic call
 graph, persistent cache or incremental program is introduced by this spike.
 
-The recommendation remains pending measured before/after results. The spike
-must report loading, Program creation, semantic lookup, current scanner total,
-correctness changes and any FlowAtlas-owned mechanism that can actually be
-removed before a migration is considered.
+The investigation is complete. TypeScript owns program, symbol, alias,
+declaration and interface semantics where its identity is reliable. FlowAtlas
+retains architectural interpretation, scan scope, bounded External propagation
+and the strict/tolerant graph boundary.
 
-### Phase 2 progress
+### Delivered implementation
 
 The first production slice is delivered: an in-memory compiler host now builds
 one `Program` per scan, and the resolver/project scanner reuse its `SourceFile`
@@ -77,11 +78,6 @@ have not yet been migrated to it. Fragments acceptance remains green (113
 tests); the latest direct scan measured approximately 8.51 seconds versus
 9.74 seconds before this slice on the same local setup. Treat this as an
 initial signal, not a controlled benchmark.
-
-Next proposed slice: migrate one symbol/alias resolution responsibility to the
-checker, with a focused regression fixture and identical graph comparison.
-Do not remove the existing fallback until that comparison is green and the
-performance impact is measured.
 
 The first such migration is now delivered for imported Event bindings:
 `TypeChecker` unwraps renamed imports to their original declaration, while the
@@ -124,6 +120,18 @@ profile measured approximately 0.81 seconds for listener External resolution
 and 6.5 seconds for the total scan. The cache is private to one scan, does not
 persist facts and does not alter graph semantics. Nested propagation remains
 architectural analysis, not a generic data-flow cache or facts model.
+
+### Decision and limits
+
+The selective migration is accepted. It improves symbol correctness and
+reduces repeated listener External resolution without adding a generic
+analyzer. The remaining dominant cost is compiler-context construction, whose
+measurement varies between runs. No persistent cache, incremental/watch
+program, intermediate facts model or generic call graph is justified.
+
+Further work in this area requires a new real acceptance gap or a measured
+regression. The next product work should not be blocked on completing a
+hypothetical full TypeChecker rewrite.
 
 ## Delivered History
 

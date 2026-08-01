@@ -2,8 +2,9 @@
 
 ## Status
 
-Active investigation. This document records an isolated experiment; it does
-not authorize a production scanner migration.
+Investigation completed. FlowAtlas adopts `Program + TypeChecker` selectively
+inside the TypeScript adapter. This is not a generic TypeScript analyzer
+migration.
 
 ## Question
 
@@ -14,7 +15,7 @@ interpretation in its own detectors?
 
 ## Current pipeline
 
-The current adapter:
+The adapter before this investigation:
 
 1. loads the project files and tsconfig;
 2. creates `SourceFile` instances with `ts.createSourceFile`;
@@ -25,10 +26,9 @@ The current adapter:
 6. performs bounded propagation for external boundaries;
 7. mutates the strict `ArchitectureGraph` only for justified relationships.
 
-The main known duplication is that resolution creates source files and the
-source scanner can recreate them. The current scanner also retains name-based
-fallbacks because its indexes are built from source text rather than compiler
-symbols.
+The migration removes the main source-file duplication by sharing compiler
+`SourceFile` instances. Some name/path fallbacks remain deliberately because
+the scanner must tolerate unresolved or unsupported source patterns.
 
 ## Spike
 
@@ -120,11 +120,12 @@ The checker can resolve the types and declarations involved, but FlowAtlas
 still has to follow this limited orchestration and emit one
 `CALLS_EXTERNAL` edge without promoting helpers into graph nodes.
 
-## Recommendation
+## Decision
 
-Adopt `Program + TypeChecker` selectively, after a second spike that routes a
-small detector through the shared compiler context and compares identical
-graph output. Do not replace the entire scanner, introduce an intermediate
+Adopt `Program + TypeChecker` selectively. The production path now shares one
+compiler context per scan and uses checker identity where it replaces manual
+symbol, alias, declaration or interface lookup without changing architectural
+interpretation. Do not replace the entire scanner, introduce an intermediate
 facts model, or build a generic call graph.
 
 The smallest credible migration target is:
@@ -137,10 +138,13 @@ The smallest credible migration target is:
 5. remove a manual resolver only when a regression test and measurements show
    that the checker path covers its responsibility.
 
-The spike is therefore positive for correctness and architectural simplicity,
-but inconclusive for CPU until equivalent end-to-end measurements exist.
+The result is positive for correctness and architectural simplicity. The
+measured CPU improvement is meaningful on the listener External hot path, but
+the total scan remains dominated by compiler-context construction and varies
+between runs. This is not a reason to introduce persistent caching or a more
+general analysis engine.
 
-## Phase 2 — Shared Compiler Context
+## Delivered implementation
 
 The first production slice is now implemented behind the scanner adapter:
 
@@ -248,3 +252,18 @@ one scan and does not persist facts or change graph semantics.
 This does not justify a generic data-flow cache or an intermediate facts model.
 Nested propagation remains FlowAtlas-owned architectural analysis and will be
 revisited only if it becomes the next measured bottleneck.
+
+## Remaining limits
+
+- bounded External propagation remains FlowAtlas-owned because the checker
+  does not define architectural boundaries;
+- AST fallbacks remain for unresolved or unsupported source patterns;
+- compiler-context construction is still the largest measured cost;
+- the existing parallel CLI acceptance-test build race is unrelated to this
+  migration and remains a tooling concern;
+- no persistent cache, watch/incremental program, facts model or generic call
+  graph is justified by the current evidence.
+
+Future scanner changes should start from a real acceptance gap or a new
+measurement. Do not continue this investigation by adding speculative semantic
+indexes.
