@@ -116,11 +116,14 @@ detectors are each below 20 ms. The next performance investigation should
 trace repeated resolution work from listeners before changing the compiler
 context again.
 
-Listener sub-phase profiling now isolates External resolution inside listener
+Listener sub-phase profiling isolated External resolution inside listener
 effects at approximately 1.64 seconds; discovery, dispatch, infrastructure
-and thunk handling are each around 1–6 ms. The next implementation should
-measure and reduce repeated bounded External resolution within a scan, without
-introducing a generic data-flow or facts model.
+and thunk handling were each around 1–6 ms. A scan-scoped cache now reuses
+repeated bounded return-value and helper-call resolutions. The same Fragments
+profile measured approximately 0.81 seconds for listener External resolution
+and 6.5 seconds for the total scan. The cache is private to one scan, does not
+persist facts and does not alter graph semantics. Nested propagation remains
+architectural analysis, not a generic data-flow cache or facts model.
 
 ## Delivered History
 

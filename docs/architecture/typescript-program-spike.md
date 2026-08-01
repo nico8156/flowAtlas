@@ -238,6 +238,13 @@ The listener sub-phases now isolate the cost further:
 | External resolution      |  ~1.64 s |
 
 External resolution inside listener effects is the next concrete hot path. A
-future optimization should first prove which function/type results are
-recomputed, then introduce only a scan-scoped cache with regression coverage.
+scan-scoped cache now reuses the bounded results of repeated return-value and
+helper-call resolutions. On the same Fragments project, the next profile
+measured approximately 0.81 seconds for this sub-phase and 6.5 seconds for
+the total process scan. The result varies with compiler-context construction,
+but the hot path reduction is material. The cache is deliberately private to
+one scan and does not persist facts or change graph semantics.
+
 This does not justify a generic data-flow cache or an intermediate facts model.
+Nested propagation remains FlowAtlas-owned architectural analysis and will be
+revisited only if it becomes the next measured bottleneck.

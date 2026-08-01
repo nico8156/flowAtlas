@@ -12,6 +12,7 @@ import { scanSourceIntoGraph } from "./sourceScanner.js";
 export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureGraph => {
   const graph = createArchitectureGraph();
   const resolution = resolveProjectSymbols(project);
+  const externalResolutionCache = new Map<string, readonly string[]>();
   const startedStateDiscovery = performance.now();
   const stateIds = getStoreStateIds(project, resolution.bindingsByFile);
   project.onScanPhase?.({
@@ -42,6 +43,7 @@ export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureG
                 );
               }
             : undefined,
+          externalResolutionCache,
         );
       }
     } finally {

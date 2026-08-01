@@ -23,6 +23,7 @@ type ListenerContext = {
   sourceFiles: readonly ts.SourceFile[];
   semanticIndex?: SemanticIndex | undefined;
   onListenerPhase?: (phase: ScanPhase, durationMs: number) => void;
+  externalResolutionCache?: Map<string, readonly string[]>;
 };
 
 const isNestedFunctionLike = (node: ts.Node): boolean => {
@@ -182,6 +183,7 @@ const addExternalRelationships = ({
   collectRelationships,
   sourceFiles,
   semanticIndex,
+  externalResolutionCache,
 }: ListenerContext & {
   handlerId: string;
   configuration: ts.ObjectLiteralExpression;
@@ -212,8 +214,10 @@ const addExternalRelationships = ({
         semanticIndex,
       );
       if (declaration) {
-        localExternalIds.set(
-          effectNode.name.text,
+        const cacheKey = `returned:${sourceFile.fileName}:${declaration.body.pos}`;
+        const cachedExternalIds = externalResolutionCache?.get(cacheKey);
+        const externalIds =
+          cachedExternalIds ??
           getExternalIdsReturnedByFunction(
             declaration,
             graph,
@@ -221,8 +225,9 @@ const addExternalRelationships = ({
             new Set(),
             sourceFiles,
             semanticIndex,
-          ),
-        );
+          );
+        if (!cachedExternalIds) externalResolutionCache?.set(cacheKey, externalIds);
+        localExternalIds.set(effectNode.name.text, [...externalIds]);
       }
     }
 
@@ -244,15 +249,25 @@ const addExternalRelationships = ({
         sourceFiles,
         semanticIndex,
       );
-      for (const externalId of getExternalIdsCalledByFunction(
-        sourceFile,
-        graph,
-        effectNode.expression.text,
-        new Set(),
-        passedExternalParameters,
-        sourceFiles,
-        semanticIndex,
-      )) {
+      const cacheKey = `called:${sourceFile.fileName}:${effectNode.expression.text}:${JSON.stringify(
+        [...passedExternalParameters.entries()].sort(([left], [right]) =>
+          left.localeCompare(right),
+        ),
+      )}`;
+      const cachedExternalIds = externalResolutionCache?.get(cacheKey);
+      const externalIds =
+        cachedExternalIds ??
+        getExternalIdsCalledByFunction(
+          sourceFile,
+          graph,
+          effectNode.expression.text,
+          new Set(),
+          passedExternalParameters,
+          sourceFiles,
+          semanticIndex,
+        );
+      if (!cachedExternalIds) externalResolutionCache?.set(cacheKey, externalIds);
+      for (const externalId of externalIds) {
         graph.addEdge({ source: handlerId, target: externalId, kind: "CALLS_EXTERNAL" });
       }
     }
@@ -271,6 +286,7 @@ export const detectListeners = ({
   sourceFiles,
   semanticIndex,
   onListenerPhase,
+  externalResolutionCache,
 }: ListenerContext): void => {
   const measureListenerPhase = (phase: ScanPhase, operation: () => void): void => {
     if (!onListenerPhase) {
@@ -394,6 +410,7 @@ export const detectListeners = ({
             collectRelationships,
             sourceFiles,
             semanticIndex,
+            ...(externalResolutionCache ? { externalResolutionCache } : {}),
             handlerId: architecturalFunctionId,
             configuration,
           }),
@@ -426,6 +443,7 @@ export const detectListeners = ({
             collectRelationships,
             sourceFiles,
             semanticIndex,
+            ...(externalResolutionCache ? { externalResolutionCache } : {}),
             handlerId,
             configuration,
           }),
