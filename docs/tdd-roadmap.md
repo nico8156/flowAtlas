@@ -116,6 +116,12 @@ detectors are each below 20 ms. The next performance investigation should
 trace repeated resolution work from listeners before changing the compiler
 context again.
 
+Listener sub-phase profiling now isolates External resolution inside listener
+effects at approximately 1.64 seconds; discovery, dispatch, infrastructure
+and thunk handling are each around 1–6 ms. The next implementation should
+measure and reduce repeated bounded External resolution within a scan, without
+introducing a generic data-flow or facts model.
+
 ## Delivered History
 
 ### Milestone 1: Core graph

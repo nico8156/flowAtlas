@@ -51,6 +51,11 @@ export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureG
           "relationship-event-detection",
           "relationship-listener-detection",
           "relationship-state-detection",
+          "listener-discovery",
+          "listener-infrastructure",
+          "listener-dispatch",
+          "listener-external",
+          "listener-thunk",
         ] as const) {
           project.onScanPhase?.({
             phase: detectorPhase,

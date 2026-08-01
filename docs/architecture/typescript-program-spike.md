@@ -226,3 +226,18 @@ Listener detection is therefore the current hot path by a wide margin. The
 next investigation should inspect repeated function/external resolution from
 `listenerDetector` before changing the compiler architecture. No optimization
 is justified from the aggregate relationship timing alone.
+
+The listener sub-phases now isolate the cost further:
+
+| Listener sub-phase       | Observed |
+| ------------------------ | -------: |
+| discovery                |    ~6 ms |
+| infrastructure callbacks |    ~1 ms |
+| dispatch detection       |    ~1 ms |
+| thunk resolution         |    ~1 ms |
+| External resolution      |  ~1.64 s |
+
+External resolution inside listener effects is the next concrete hot path. A
+future optimization should first prove which function/type results are
+recomputed, then introduce only a scan-scoped cache with regression coverage.
+This does not justify a generic data-flow cache or an intermediate facts model.

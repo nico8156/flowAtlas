@@ -56,6 +56,7 @@ export const scanSourceIntoGraph = (
       collectRelationships,
       sourceFiles,
       semanticIndex,
+      ...(onDetectorPhase ? { onListenerPhase: onDetectorPhase } : {}),
     }),
   );
   measureDetector("relationship-state-detection", () =>

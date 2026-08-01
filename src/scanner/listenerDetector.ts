@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { performance } from "node:perf_hooks";
 
 import { type ArchitectureGraph } from "../domain/architectureGraph.js";
 import {
@@ -11,6 +12,7 @@ import {
 import { findFunctionLike, findReturnedFunctionLike } from "./functionResolver.js";
 import { getResolvedEventId } from "./eventDetector.js";
 import { getExternalProtocolEventId } from "./externalProtocolEvent.js";
+import { type ScanPhase } from "./projectSymbolResolver.js";
 import { type SemanticIndex } from "./semanticIndex.js";
 
 type ListenerContext = {
@@ -20,6 +22,7 @@ type ListenerContext = {
   collectRelationships: boolean;
   sourceFiles: readonly ts.SourceFile[];
   semanticIndex?: SemanticIndex | undefined;
+  onListenerPhase?: (phase: ScanPhase, durationMs: number) => void;
 };
 
 const isNestedFunctionLike = (node: ts.Node): boolean => {
@@ -267,7 +270,21 @@ export const detectListeners = ({
   collectRelationships,
   sourceFiles,
   semanticIndex,
+  onListenerPhase,
 }: ListenerContext): void => {
+  const measureListenerPhase = (phase: ScanPhase, operation: () => void): void => {
+    if (!onListenerPhase) {
+      operation();
+      return;
+    }
+    const startedAt = performance.now();
+    try {
+      operation();
+    } finally {
+      onListenerPhase(phase, performance.now() - startedAt);
+    }
+  };
+
   const visit = (node: ts.Node): void => {
     let architecturalFunctionId: string | undefined;
     let architecturalFunctionBody: ts.Block | undefined;
@@ -333,18 +350,20 @@ export const detectListeners = ({
         }
         ts.forEachChild(functionNode, inspectFunction);
       };
-      inspectFunction(architecturalFunctionBody);
+      measureListenerPhase("listener-discovery", () => inspectFunction(architecturalFunctionBody));
 
       for (const callback of infrastructureCallbacks) {
-        addInfrastructureListeningRelationship(
-          sourceFile,
-          graph,
-          architecturalFunctionId,
-          callback,
-          bindings,
-          collectRelationships,
-          sourceFiles,
-          semanticIndex,
+        measureListenerPhase("listener-infrastructure", () =>
+          addInfrastructureListeningRelationship(
+            sourceFile,
+            graph,
+            architecturalFunctionId,
+            callback,
+            bindings,
+            collectRelationships,
+            sourceFiles,
+            semanticIndex,
+          ),
         );
       }
 
@@ -358,23 +377,27 @@ export const detectListeners = ({
           bindings,
           collectRelationships,
         );
-        addDispatchRelationships(
-          graph,
-          architecturalFunctionId,
-          configuration,
-          bindings,
-          collectRelationships,
+        measureListenerPhase("listener-dispatch", () =>
+          addDispatchRelationships(
+            graph,
+            architecturalFunctionId,
+            configuration,
+            bindings,
+            collectRelationships,
+          ),
         );
-        addExternalRelationships({
-          sourceFile,
-          graph,
-          bindings,
-          collectRelationships,
-          sourceFiles,
-          semanticIndex,
-          handlerId: architecturalFunctionId,
-          configuration,
-        });
+        measureListenerPhase("listener-external", () =>
+          addExternalRelationships({
+            sourceFile,
+            graph,
+            bindings,
+            collectRelationships,
+            sourceFiles,
+            semanticIndex,
+            handlerId: architecturalFunctionId,
+            configuration,
+          }),
+        );
       }
     }
 
@@ -392,17 +415,21 @@ export const detectListeners = ({
       const configuration = node.initializer.arguments[0];
       if (configuration && ts.isObjectLiteralExpression(configuration)) {
         addListeningRelationship(graph, handlerId, configuration, bindings, collectRelationships);
-        addDispatchRelationships(graph, handlerId, configuration, bindings, collectRelationships);
-        addExternalRelationships({
-          sourceFile,
-          graph,
-          bindings,
-          collectRelationships,
-          sourceFiles,
-          semanticIndex,
-          handlerId,
-          configuration,
-        });
+        measureListenerPhase("listener-dispatch", () =>
+          addDispatchRelationships(graph, handlerId, configuration, bindings, collectRelationships),
+        );
+        measureListenerPhase("listener-external", () =>
+          addExternalRelationships({
+            sourceFile,
+            graph,
+            bindings,
+            collectRelationships,
+            sourceFiles,
+            semanticIndex,
+            handlerId,
+            configuration,
+          }),
+        );
       }
     }
 
@@ -414,18 +441,22 @@ export const detectListeners = ({
       ts.isArrowFunction(node.initializer) &&
       (ts.isArrowFunction(node.initializer.body) || ts.isFunctionExpression(node.initializer.body))
     ) {
-      graph.addNode({ id: node.name.text, kind: "Handler" });
+      const handlerId = node.name.text;
+      graph.addNode({ id: handlerId, kind: "Handler" });
       if (collectRelationships) {
-        const returnedFunction = findReturnedFunctionLike(
-          sourceFile,
-          node.name.text,
-          sourceFiles,
-          semanticIndex,
-        );
+        let returnedFunction: ReturnType<typeof findReturnedFunctionLike>;
+        measureListenerPhase("listener-thunk", () => {
+          returnedFunction = findReturnedFunctionLike(
+            sourceFile,
+            handlerId,
+            sourceFiles,
+            semanticIndex,
+          );
+        });
         if (returnedFunction) {
           addDispatchRelationshipsFromBody(
             graph,
-            node.name.text,
+            handlerId,
             returnedFunction.body,
             bindings,
             collectRelationships,
@@ -433,7 +464,7 @@ export const detectListeners = ({
           for (const externalId of getExternalIdsCalledByFunctionLike(
             sourceFile,
             graph,
-            node.name.text,
+            handlerId,
             returnedFunction,
             new Set(),
             new Map(),

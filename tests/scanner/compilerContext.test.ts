@@ -51,6 +51,11 @@ describe("compiler context", () => {
       "relationship-event-detection",
       "relationship-listener-detection",
       "relationship-state-detection",
+      "listener-discovery",
+      "listener-infrastructure",
+      "listener-dispatch",
+      "listener-external",
+      "listener-thunk",
       "relationship-pass",
     ]);
   });
