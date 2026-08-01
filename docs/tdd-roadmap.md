@@ -110,6 +110,12 @@ remaining measured phases were below 0.21 seconds each, with a total scan of
 approximately 6.08 seconds. The next performance decision must focus on those
 dominant phases rather than add isolated resolver caches.
 
+Detector-level profiling now isolates `listenerDetector` at approximately
+2.65 seconds of the relationship pass on Fragments; External, Event and State
+detectors are each below 20 ms. The next performance investigation should
+trace repeated resolution work from listeners before changing the compiler
+context again.
+
 ## Delivered History
 
 ### Milestone 1: Core graph

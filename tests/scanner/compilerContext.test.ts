@@ -47,6 +47,10 @@ describe("compiler context", () => {
       "import-bindings",
       "state-discovery",
       "discovery-pass",
+      "relationship-external-detection",
+      "relationship-event-detection",
+      "relationship-listener-detection",
+      "relationship-state-detection",
       "relationship-pass",
     ]);
   });

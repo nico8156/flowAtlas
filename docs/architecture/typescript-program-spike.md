@@ -212,3 +212,17 @@ in isolation. The next investigation should determine whether the
 relationship pass repeatedly traverses the same declarations, then decide
 whether selective checker use there is justified. No facts/IR model should be
 introduced from this measurement alone.
+
+The detector-level profile now explains the relationship cost more precisely:
+
+| Relationship detector | Observed |
+| --------------------- | -------: |
+| External              |   ~18 ms |
+| Event                 |   ~19 ms |
+| Listener              |  ~2.65 s |
+| State                 |   ~19 ms |
+
+Listener detection is therefore the current hot path by a wide margin. The
+next investigation should inspect repeated function/external resolution from
+`listenerDetector` before changing the compiler architecture. No optimization
+is justified from the aggregate relationship timing alone.

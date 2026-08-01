@@ -1,7 +1,11 @@
 import { performance } from "node:perf_hooks";
 
 import { createArchitectureGraph, type ArchitectureGraph } from "../domain/architectureGraph.js";
-import { resolveProjectSymbols, type TypeScriptProject } from "./projectSymbolResolver.js";
+import {
+  resolveProjectSymbols,
+  type ScanPhase,
+  type TypeScriptProject,
+} from "./projectSymbolResolver.js";
 import { getStoreStateIds } from "./stateDetector.js";
 import { scanSourceIntoGraph } from "./sourceScanner.js";
 
@@ -17,6 +21,7 @@ export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureG
   for (const collectRelationships of [false, true]) {
     const phase = collectRelationships ? "relationship-pass" : "discovery-pass";
     const startedAt = performance.now();
+    const detectorDurations = new Map<ScanPhase, number>();
     try {
       for (const file of project.files) {
         scanSourceIntoGraph(
@@ -29,9 +34,30 @@ export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureG
           resolution.sourceFiles.map(({ sourceFile }) => sourceFile),
           resolution.semanticIndex,
           resolution.sourceFiles.find((source) => source.file === file.file)?.sourceFile,
+          collectRelationships
+            ? (detectorPhase, durationMs) => {
+                detectorDurations.set(
+                  detectorPhase,
+                  (detectorDurations.get(detectorPhase) ?? 0) + durationMs,
+                );
+              }
+            : undefined,
         );
       }
     } finally {
+      if (collectRelationships) {
+        for (const detectorPhase of [
+          "relationship-external-detection",
+          "relationship-event-detection",
+          "relationship-listener-detection",
+          "relationship-state-detection",
+        ] as const) {
+          project.onScanPhase?.({
+            phase: detectorPhase,
+            durationMs: detectorDurations.get(detectorPhase) ?? 0,
+          });
+        }
+      }
       project.onScanPhase?.({ phase, durationMs: performance.now() - startedAt });
     }
   }
