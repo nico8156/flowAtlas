@@ -16,7 +16,7 @@ import {
 
 type Pane = "explorer" | "map" | "inspector";
 type MapRepresentation = "territory" | "neighborhood";
-export type ProjectionMode = "full" | "focus" | "upstream" | "downstream";
+export type ProjectionMode = "full" | "focus" | "upstream" | "downstream" | "handlers";
 
 export type ProjectionChange = {
   readonly projection: GraphProjection;
@@ -31,6 +31,7 @@ type TerminalTuiProps = {
   readonly projectFocus?: (nodeId: string) => ProjectionChange;
   readonly projectUpstream?: (nodeId: string) => ProjectionChange;
   readonly projectDownstream?: (nodeId: string) => ProjectionChange;
+  readonly projectIncomingHandlers?: (nodeId: string) => ProjectionChange;
 };
 
 export type TerminalTuiLoadResult = {
@@ -39,6 +40,7 @@ export type TerminalTuiLoadResult = {
   readonly projectFocus?: (nodeId: string) => ProjectionChange;
   readonly projectUpstream?: (nodeId: string) => ProjectionChange;
   readonly projectDownstream?: (nodeId: string) => ProjectionChange;
+  readonly projectIncomingHandlers?: (nodeId: string) => ProjectionChange;
 };
 
 type TerminalTuiLoaderProps = {
@@ -190,6 +192,7 @@ export const TerminalTui = ({
   projectFocus,
   projectUpstream,
   projectDownstream,
+  projectIncomingHandlers,
 }: TerminalTuiProps) => {
   const { exit } = useApp();
   const { stdout } = useStdout();
@@ -336,6 +339,7 @@ export const TerminalTui = ({
     if (input === "f") changeProjection(projectFocus);
     if (input === "u") changeProjection(projectUpstream);
     if (input === "d") changeProjection(projectDownstream);
+    if (input === "r") changeProjection(projectIncomingHandlers);
 
     if (key.tab) {
       setActivePane((current) => {
@@ -509,7 +513,7 @@ export const TerminalTui = ({
       <Box borderColor={theme.muted} borderStyle="single" paddingX={1}>
         <Text color={theme.muted}>
           {activePane === "map"
-            ? "e / explore   i inspect   n neighborhood   t territory   hjkl pan   +/- density   f focus   u upstream   d downstream   q quit"
+            ? "e / explore   i inspect   n neighborhood   t territory   hjkl pan   +/- density   f focus   u upstream   d downstream   r handlers   q quit"
             : activePane === "explorer"
               ? "↑↓/jk navigate   enter map   esc back   q quit"
               : "esc back   q quit"}
