@@ -25,12 +25,17 @@ export const filterTerminalProjection = (
   const visibleNodeIds = new Set(
     projection.nodes.filter((node) => nodeKinds.includes(node.kind)).map((node) => node.id),
   );
+  const seenEdges = new Set<string>();
 
   return {
     nodes: projection.nodes.filter((node) => visibleNodeIds.has(node.id)),
-    edges: projection.edges.filter(
-      (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target),
-    ),
+    edges: projection.edges.filter((edge) => {
+      if (!visibleNodeIds.has(edge.source) || !visibleNodeIds.has(edge.target)) return false;
+      const identity = `${edge.source}\u0000${edge.kind}\u0000${edge.target}`;
+      if (seenEdges.has(identity)) return false;
+      seenEdges.add(identity);
+      return true;
+    }),
   };
 };
 
