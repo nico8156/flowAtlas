@@ -113,4 +113,32 @@ describe("terminal map layout", () => {
       "protectedNode",
     );
   });
+
+  it("shortens relation labels only in compact density", () => {
+    const projection = {
+      nodes: [
+        { id: "handler", kind: "Handler" as const },
+        { id: "gateway", kind: "External" as const },
+      ],
+      edges: [{ source: "handler", target: "gateway", kind: "CALLS_EXTERNAL" as const }],
+    };
+    const layout = layoutNeighborhood(projection, "handler", { density: "compact" });
+
+    const compact = renderTerminalMap(
+      layout,
+      { x: 0, y: 0, width: 80, height: 4 },
+      "handler",
+      "compact",
+    ).join("\n");
+    const normal = renderTerminalMap(
+      layout,
+      { x: 0, y: 0, width: 80, height: 4 },
+      "handler",
+      "normal",
+    ).join("\n");
+
+    expect(compact).toContain("EXTERNAL");
+    expect(compact).not.toContain("CALLS_EXTERNAL");
+    expect(normal).toContain("CALLS_EXTERNAL");
+  });
 });

@@ -473,6 +473,8 @@ Delivered so far:
   inventing edges.
 - Map nodes are rendered as the top visual layer so edge strokes cannot
   overwrite node identities or the selected marker.
+- Compact Map density shortens relation labels for readability while normal
+  and detailed densities retain the canonical relation names.
 
 ### Known gaps
 

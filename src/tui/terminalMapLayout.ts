@@ -204,6 +204,13 @@ const visualEdgeForLayout = (edge: ArchitectureEdge): { source: string; target: 
     ? { source: edge.target, target: edge.source }
     : { source: edge.source, target: edge.target };
 
+const compactRelationLabel: Readonly<Record<ArchitectureEdge["kind"], string>> = {
+  LISTENS_TO: "LISTEN",
+  DISPATCHES: "DISPATCH",
+  UPDATES: "UPDATE",
+  CALLS_EXTERNAL: "EXTERNAL",
+};
+
 const put = (canvas: string[][], x: number, y: number, value: string): void => {
   if (y < 0 || y >= canvas.length || x < 0 || x >= (canvas[y]?.length ?? 0)) return;
   const row = canvas[y];
@@ -254,6 +261,7 @@ export const renderTerminalMap = (
   layout: LayoutGraph,
   viewport: Viewport,
   selectedNodeId?: string,
+  density: Density = "normal",
 ): readonly string[] => {
   const canvas = Array.from({ length: viewport.height }, () => Array(viewport.width).fill(" "));
   const visibleNodes = layout.nodes.filter(
@@ -284,7 +292,7 @@ export const renderTerminalMap = (
     }
 
     for (let x = x1; x < x2; x += 1) put(canvas, x, targetY, "─");
-    const label = edge.kind;
+    const label = density === "compact" ? compactRelationLabel[edge.kind] : edge.kind;
     const labelX = x1 + Math.max(0, Math.floor((x2 - x1 - label.length) / 2));
     putLabel(canvas, labelX, targetY, label);
     put(canvas, x2 - 1, targetY, "▶");
