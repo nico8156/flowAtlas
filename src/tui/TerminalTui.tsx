@@ -210,7 +210,7 @@ export const TerminalTui = ({
 }: TerminalTuiProps) => {
   const { exit } = useApp();
   const { stdout } = useStdout();
-  const [activePane, setActivePane] = useState<Pane>("explorer");
+  const [activePane, setActivePane] = useState<Pane>("map");
   const [searchMode, setSearchMode] = useState(false);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -244,7 +244,7 @@ export const TerminalTui = ({
     [density, filteredProjection, mapRepresentation, viewState.selectedNodeId],
   );
   const cursorNode = view.visibleNodes[cursor] ?? view.visibleNodes[0];
-  const mapWidth = Math.max(24, Math.floor((stdout.columns ?? 80) * 0.5) - 4);
+  const mapWidth = Math.max(24, (stdout.columns ?? 80) - 4);
   const mapHeight = Math.max(8, (stdout.rows ?? 24) - 8);
 
   useEffect(() => {
@@ -392,77 +392,83 @@ export const TerminalTui = ({
         FlowAtlas · READY · {modeTitle(viewState.mode, viewState.rootNodeId)}
       </Text>
       <Box flexDirection="row" flexGrow={1}>
-        <Box
-          borderColor={activePane === "explorer" ? theme.selection : theme.muted}
-          borderStyle="single"
-          flexDirection="column"
-          paddingX={1}
-          width="25%"
-        >
-          <Text color={activePane === "explorer" ? theme.selection : theme.foreground} bold>
-            {paneTitle("Explorer", activePane === "explorer")}
-          </Text>
-          <Text color={searchMode ? theme.selection : theme.muted}>
-            {searchMode ? `/${query}` : "/ search"}
-          </Text>
-          <Text color={theme.muted}>
-            Kinds: {viewState.nodeKinds.map(markerFor).join(" ") || "none"} · 0 all
-          </Text>
-          {view.visibleNodes.map((node, index) => (
-            <Text color={theme[node.kind]} key={node.id}>
-              {index === cursor ? ">" : " "} [{markerFor(node.kind)}] {node.id}
+        {activePane === "explorer" && (
+          <Box
+            borderColor={theme.selection}
+            borderStyle="single"
+            flexDirection="column"
+            paddingX={1}
+            width="100%"
+          >
+            <Text color={activePane === "explorer" ? theme.selection : theme.foreground} bold>
+              {paneTitle("Explorer", activePane === "explorer")}
             </Text>
-          ))}
-        </Box>
-        <Box
-          borderColor={activePane === "map" ? theme.selection : theme.muted}
-          borderStyle="single"
-          flexDirection="column"
-          paddingX={1}
-          width="50%"
-        >
-          <Text color={activePane === "map" ? theme.selection : theme.foreground} bold>
-            {paneTitle("Map", activePane === "map")}
-          </Text>
-          <Text color={theme.muted}>Representation: {mapRepresentation}</Text>
-          <Text color={theme.muted}>Density: {density}</Text>
-          {renderTerminalMap(layout, viewport, viewState.selectedNodeId).map((line, index) => (
-            <Text key={`${line}-${index}`}>{line}</Text>
-          ))}
-        </Box>
-        <Box
-          borderColor={activePane === "inspector" ? theme.selection : theme.muted}
-          borderStyle="single"
-          flexDirection="column"
-          paddingX={1}
-          width="25%"
-        >
-          <Text color={activePane === "inspector" ? theme.selection : theme.foreground} bold>
-            {paneTitle("Inspector", activePane === "inspector")}
-          </Text>
-          {view.inspector.node ? (
-            <>
-              <Text bold>{view.inspector.node.id}</Text>
-              <Text>Kind: {view.inspector.node.kind}</Text>
-              <Text>
-                Source:{" "}
-                {view.inspector.node.sourceLocation
-                  ? `${view.inspector.node.sourceLocation.file}:${view.inspector.node.sourceLocation.line}`
-                  : "unavailable"}
+            <Text color={searchMode ? theme.selection : theme.muted}>
+              {searchMode ? `/${query}` : "/ search"}
+            </Text>
+            <Text color={theme.muted}>
+              Kinds: {viewState.nodeKinds.map(markerFor).join(" ") || "none"} · 0 all
+            </Text>
+            {view.visibleNodes.map((node, index) => (
+              <Text color={theme[node.kind]} key={node.id}>
+                {index === cursor ? ">" : " "} [{markerFor(node.kind)}] {node.id}
               </Text>
-              <Text>Incoming</Text>
-              {view.inspector.incoming.map((line) => (
-                <Text key={`in-${line}`}>{line}</Text>
-              ))}
-              <Text>Outgoing</Text>
-              {view.inspector.outgoing.map((line) => (
-                <Text key={`out-${line}`}>{line}</Text>
-              ))}
-            </>
-          ) : (
-            <Text>No node selected</Text>
-          )}
-        </Box>
+            ))}
+          </Box>
+        )}
+        {activePane === "map" && (
+          <Box
+            borderColor={theme.selection}
+            borderStyle="single"
+            flexDirection="column"
+            paddingX={1}
+            width="100%"
+          >
+            <Text color={activePane === "map" ? theme.selection : theme.foreground} bold>
+              {paneTitle("Map", activePane === "map")}
+            </Text>
+            <Text color={theme.muted}>Representation: {mapRepresentation}</Text>
+            <Text color={theme.muted}>Density: {density}</Text>
+            {renderTerminalMap(layout, viewport, viewState.selectedNodeId).map((line, index) => (
+              <Text key={`${line}-${index}`}>{line}</Text>
+            ))}
+          </Box>
+        )}
+        {activePane === "inspector" && (
+          <Box
+            borderColor={theme.selection}
+            borderStyle="single"
+            flexDirection="column"
+            paddingX={1}
+            width="100%"
+          >
+            <Text color={activePane === "inspector" ? theme.selection : theme.foreground} bold>
+              {paneTitle("Inspector", activePane === "inspector")}
+            </Text>
+            {view.inspector.node ? (
+              <>
+                <Text bold>{view.inspector.node.id}</Text>
+                <Text>Kind: {view.inspector.node.kind}</Text>
+                <Text>
+                  Source:{" "}
+                  {view.inspector.node.sourceLocation
+                    ? `${view.inspector.node.sourceLocation.file}:${view.inspector.node.sourceLocation.line}`
+                    : "unavailable"}
+                </Text>
+                <Text>Incoming</Text>
+                {view.inspector.incoming.map((line) => (
+                  <Text key={`in-${line}`}>{line}</Text>
+                ))}
+                <Text>Outgoing</Text>
+                {view.inspector.outgoing.map((line) => (
+                  <Text key={`out-${line}`}>{line}</Text>
+                ))}
+              </>
+            ) : (
+              <Text>No node selected</Text>
+            )}
+          </Box>
+        )}
       </Box>
       <Box borderColor={theme.muted} borderStyle="single" paddingX={1}>
         <Text color={theme.muted}>

@@ -60,7 +60,13 @@ describe("Terminal visualizer loading acceptance", () => {
     const readyFrame = instance.lastFrame() ?? "";
     expect(readyFrame).toContain("READY");
     expect(readyFrame).toContain("LikeRequested");
-    expect(readyFrame).toContain("Kind: Event");
+
+    await act(async () => {
+      instance.stdin.write("\t");
+      await nextMicrotask();
+    });
+    const inspectorFrame = instance.lastFrame() ?? "";
+    expect(inspectorFrame).toContain("Kind: Event");
 
     await act(async () => {
       instance.cleanup();

@@ -90,6 +90,9 @@ describeFragments("Fragments terminal projection navigation acceptance", () => {
     await nextFrame();
     expect(instance.lastFrame()).toContain("UPSTREAM · uiTicketSubmitRequested");
 
+    instance.stdin.write("\t");
+    instance.stdin.write("\t");
+    await nextFrame();
     instance.stdin.write("2");
     await nextFrame();
     expect(instance.lastFrame()).toContain("Kinds: E S X · 0 all");

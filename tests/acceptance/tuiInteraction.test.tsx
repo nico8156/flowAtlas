@@ -34,23 +34,25 @@ describe("Terminal visualizer interaction acceptance", () => {
       <TerminalTui initialSelectedNodeId="LikeRequested" projection={createFixtureProjection()} />,
     );
 
-    expect(instance.lastFrame()).toContain("Explorer · active");
-    expect(instance.lastFrame()).toContain("Map");
-    expect(instance.lastFrame()).toContain("Inspector");
+    expect(instance.lastFrame()).toContain("Map · active");
+    expect(instance.lastFrame()).not.toContain("Explorer · active");
     expect(instance.lastFrame()).toContain("LikeRequested");
 
     instance.stdin.write("\t");
     await nextFrame();
-    expect(instance.lastFrame()).toContain("Map · active");
+    expect(instance.lastFrame()).toContain("Inspector · active");
 
     instance.stdin.write("\t");
-    instance.stdin.write("\t");
     await nextFrame();
+    expect(instance.lastFrame()).toContain("Explorer · active");
     instance.stdin.write("/");
     await nextFrame();
     instance.stdin.write("LikeHandler");
     await nextFrame();
     instance.stdin.write("\r");
+    await nextFrame();
+    instance.stdin.write("\t");
+    instance.stdin.write("\t");
     await nextFrame();
 
     const frame = instance.lastFrame() ?? "";
@@ -65,6 +67,7 @@ describe("Terminal visualizer interaction acceptance", () => {
     expect(frame).toContain("CALLS_EXTERNAL");
 
     instance.stdin.write("\t");
+    instance.stdin.write("\t");
     await nextFrame();
     instance.stdin.write("l");
     instance.stdin.write("+");
@@ -73,14 +76,12 @@ describe("Terminal visualizer interaction acceptance", () => {
     expect(mapFrame).toContain("Map · active");
     expect(mapFrame).toContain("Density: detailed");
     expect(mapFrame).toContain("LikeHandler");
-    expect(mapFrame).toContain("Kind: Handler");
 
     instance.stdin.write("n");
     await nextFrame();
     const neighborhoodFrame = instance.lastFrame() ?? "";
     expect(neighborhoodFrame).toContain("Map · active");
     expect(neighborhoodFrame).toContain("Representation: neighborhood");
-    expect(neighborhoodFrame).toContain("Kind: Handler");
 
     instance.stdin.write("t");
     await nextFrame();

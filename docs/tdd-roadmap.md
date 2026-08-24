@@ -446,6 +446,8 @@ Delivered so far:
 - the interactive TUI can switch between `territory` and `Neighborhood`
   representations with `t` and `n`, without changing the Inspector or graph
   semantics.
+- the ready-state TUI displays one full-screen pane at a time, with Map as the
+  default and `Tab` navigation to Inspector and Explorer.
 
 ### Known gaps
 
@@ -462,6 +464,8 @@ The browser implementation is not the M7 product target. The TUI still needs:
   graph becomes ready.
 - validate the interactive `Neighborhood` representation on a real Fragments
   projection and assess whether the reduced territory improves readability.
+- improve the full-screen `Neighborhood` layout and add temporary Explorer and
+  Inspector overlays if the real terminal review confirms they are needed.
 
 ### Before-layout evidence
 
