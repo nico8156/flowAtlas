@@ -152,6 +152,17 @@ describe("Terminal visualizer interaction acceptance", () => {
     instance.cleanup();
   });
 
+  it("keeps a visible selection when the requested node is absent", async () => {
+    const instance = render(
+      <TerminalTui initialSelectedNodeId="missingNode" projection={createLongProjection()} />,
+    );
+
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("\u001b[38;2;174;129;255m>");
+    expect(frame).toContain("Node00");
+    instance.cleanup();
+  });
+
   it("resets Explorer filters and search when leaving the screen", async () => {
     const instance = render(
       <TerminalTui initialSelectedNodeId="LikeRequested" projection={createFixtureProjection()} />,

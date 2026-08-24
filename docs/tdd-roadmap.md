@@ -475,6 +475,8 @@ Delivered so far:
   overwrite node identities or the selected marker.
 - Compact Map density shortens relation labels for readability while normal
   and detailed densities retain the canonical relation names.
+- Selection is derived against the current visible projection before render,
+  preventing empty or unmarked Map frames during node and projection changes.
 
 ### Known gaps
 

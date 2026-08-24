@@ -97,6 +97,9 @@ selected node or truncate its architectural identifier.
 In `compact` density, relation labels are shortened (`DISPATCH`, `UPDATE`,
 `EXTERNAL`, `LISTEN`) to keep branched territories readable; `normal` and
 `detailed` retain the canonical relation names.
+The Map always renders a selected node that exists in the current projection;
+when a requested node is unavailable, it falls back deterministically to the
+first visible node instead of showing an empty territory.
 
 Explorer filters use `e` (Events), `h` (Handlers), `s` (States) and `x`
 (Externals). From the full list, the first letter narrows the list to that

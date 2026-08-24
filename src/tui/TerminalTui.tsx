@@ -220,16 +220,21 @@ export const TerminalTui = ({
     () => filterTerminalProjection(viewState.projection, viewState.nodeKinds),
     [viewState.nodeKinds, viewState.projection],
   );
+  const displayedSelectedNodeId = nextVisibleSelection(
+    viewState.projection,
+    viewState.nodeKinds,
+    viewState.selectedNodeId,
+  );
   const view = useMemo(
-    () => buildTerminalView(filteredProjection, viewState.selectedNodeId, query),
-    [filteredProjection, query, viewState.selectedNodeId],
+    () => buildTerminalView(filteredProjection, displayedSelectedNodeId, query),
+    [displayedSelectedNodeId, filteredProjection, query],
   );
   const layout = useMemo(
     () =>
       mapRepresentation === "neighborhood" && viewState.selectedNodeId
-        ? layoutNeighborhood(filteredProjection, viewState.selectedNodeId, { density })
+        ? layoutNeighborhood(filteredProjection, displayedSelectedNodeId ?? "", { density })
         : layoutProjection(filteredProjection, { density }),
-    [density, filteredProjection, mapRepresentation, viewState.selectedNodeId],
+    [density, displayedSelectedNodeId, filteredProjection, mapRepresentation],
   );
   const cursorNode = view.visibleNodes[cursor] ?? view.visibleNodes[0];
   const explorerVisibleCount = Math.max(1, Math.min(16, (stdout.rows ?? 24) - 8));
@@ -249,8 +254,8 @@ export const TerminalTui = ({
   }, [mapHeight, mapWidth]);
 
   useEffect(() => {
-    setViewport((current) => ensureNodeVisible(layout, current, viewState.selectedNodeId));
-  }, [layout, viewState.selectedNodeId]);
+    setViewport((current) => ensureNodeVisible(layout, current, displayedSelectedNodeId));
+  }, [displayedSelectedNodeId, layout]);
 
   useEffect(() => {
     setViewState((current) => {
@@ -261,7 +266,7 @@ export const TerminalTui = ({
       );
       return selectedNodeId === current.selectedNodeId ? current : { ...current, selectedNodeId };
     });
-  }, [viewState.nodeKinds]);
+  }, [viewState.nodeKinds, viewState.projection, viewState.selectedNodeId]);
 
   const changeProjection = (action: ((nodeId: string) => ProjectionChange) | undefined): void => {
     if (!action || !viewState.selectedNodeId) return;
@@ -466,7 +471,7 @@ export const TerminalTui = ({
             <Text color={theme.muted}>Representation: {mapRepresentation}</Text>
             <Text color={theme.muted}>Density: {density}</Text>
             {colorizeTerminalMap(
-              renderTerminalMap(layout, viewport, viewState.selectedNodeId, density),
+              renderTerminalMap(layout, viewport, displayedSelectedNodeId, density),
             ).map((line, index) => (
               <Text key={`${line}-${index}`}>{line || " "}</Text>
             ))}
