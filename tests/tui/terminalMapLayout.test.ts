@@ -4,6 +4,7 @@ import {
   calculateMapHeight,
   layoutNeighborhood,
   layoutProjection,
+  renderStackedTerminalMap,
   renderTerminalMap,
 } from "../../src/tui/terminalMapLayout.js";
 import { colorizeTerminalMap } from "../../src/tui/terminalMapColor.js";
@@ -140,5 +141,36 @@ describe("terminal map layout", () => {
     expect(compact).toContain("EXTERNAL");
     expect(compact).not.toContain("CALLS_EXTERNAL");
     expect(normal).toContain("CALLS_EXTERNAL");
+  });
+
+  it("renders a wide territory as bounded one-relation rows", () => {
+    const projection = {
+      nodes: [
+        { id: "processOutboxFactory", kind: "Handler" as const },
+        { id: "outboxProcessOnce", kind: "Event" as const },
+        { id: "LikeWlGateway", kind: "External" as const },
+      ],
+      edges: [
+        {
+          source: "processOutboxFactory",
+          target: "outboxProcessOnce",
+          kind: "DISPATCHES" as const,
+        },
+        {
+          source: "processOutboxFactory",
+          target: "LikeWlGateway",
+          kind: "CALLS_EXTERNAL" as const,
+        },
+      ],
+    };
+
+    const lines = renderStackedTerminalMap(projection, 48, "processOutboxFactory");
+
+    expect(lines).toContain("> [H] processOutboxFactory");
+    expect(lines).toContain("  --DISPATCHES-->");
+    expect(lines).toContain("  [E] outboxProcessOnce");
+    expect(lines).toContain("  --CALLS_EXTERNAL-->");
+    expect(lines).toContain("  [X] LikeWlGateway");
+    expect(lines.every((line) => line.length <= 48)).toBe(true);
   });
 });

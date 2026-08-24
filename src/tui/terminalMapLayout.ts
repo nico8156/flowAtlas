@@ -305,3 +305,44 @@ export const renderTerminalMap = (
 
   return canvas.map((row) => row.join("").trimEnd());
 };
+
+const boundedLine = (value: string, width: number): string => {
+  if (value.length <= width) return value;
+  if (width <= 1) return value.slice(0, width);
+  return `${value.slice(0, width - 1)}…`;
+};
+
+const stackedNodeLabel = (node: ArchitectureNode, selectedNodeId?: string): string =>
+  `${node.id === selectedNodeId ? ">" : " "} [${markerFor(node)}] ${node.id}`;
+
+export const renderStackedTerminalMap = (
+  projection: GraphProjection,
+  width: number,
+  selectedNodeId?: string,
+): readonly string[] => {
+  const lines: string[] = [];
+  const renderedNodeIds = new Set<string>();
+  const nodeById = new Map(projection.nodes.map((node) => [node.id, node]));
+
+  for (const edge of projection.edges) {
+    const rendered = visualEdgeForLayout(edge);
+    const source = nodeById.get(rendered.source);
+    const target = nodeById.get(rendered.target);
+    if (!source || !target) continue;
+
+    if (!renderedNodeIds.has(source.id)) {
+      lines.push(boundedLine(stackedNodeLabel(source, selectedNodeId), width));
+      renderedNodeIds.add(source.id);
+    }
+    lines.push(boundedLine(`  --${edge.kind}-->`, width));
+    lines.push(boundedLine(`  [${markerFor(target)}] ${target.id}`, width));
+    renderedNodeIds.add(target.id);
+  }
+
+  for (const node of projection.nodes) {
+    if (renderedNodeIds.has(node.id)) continue;
+    lines.push(boundedLine(stackedNodeLabel(node, selectedNodeId), width));
+  }
+
+  return lines;
+};

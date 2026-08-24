@@ -12,6 +12,7 @@ import {
   ensureNodeVisible,
   layoutNeighborhood,
   layoutProjection,
+  renderStackedTerminalMap,
   renderTerminalMap,
   type Density,
 } from "./terminalMapLayout.js";
@@ -236,6 +237,11 @@ export const TerminalTui = ({
         : layoutProjection(filteredProjection, { density }),
     [density, displayedSelectedNodeId, filteredProjection, mapRepresentation],
   );
+  const territoryOverflowsViewport =
+    mapRepresentation === "territory" &&
+    layout.nodes.some(
+      (node) => node.x < viewport.x || node.x + node.width > viewport.x + viewport.width,
+    );
   const cursorNode = view.visibleNodes[cursor] ?? view.visibleNodes[0];
   const explorerVisibleCount = Math.max(1, Math.min(16, (stdout.rows ?? 24) - 8));
   const explorerStart = Math.max(
@@ -472,10 +478,19 @@ export const TerminalTui = ({
             <Text color={activePane === "map" ? theme.selection : theme.foreground} bold>
               {paneTitle("Map", activePane === "map")}
             </Text>
-            <Text color={theme.muted}>Representation: {mapRepresentation}</Text>
+            <Text color={theme.muted}>
+              Representation: {mapRepresentation}
+              {territoryOverflowsViewport ? " · stacked" : ""}
+            </Text>
             <Text color={theme.muted}>Density: {density}</Text>
             {colorizeTerminalMap(
-              renderTerminalMap(layout, viewport, displayedSelectedNodeId, density),
+              territoryOverflowsViewport
+                ? renderStackedTerminalMap(
+                    filteredProjection,
+                    viewport.width,
+                    displayedSelectedNodeId,
+                  )
+                : renderTerminalMap(layout, viewport, displayedSelectedNodeId, density),
             ).map((line, index) => (
               <Text key={`${line}-${index}`}>{line || " "}</Text>
             ))}
