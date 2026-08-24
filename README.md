@@ -86,6 +86,10 @@ consumes the existing graph projection and `f/u/d` request focus, upstream and
 downstream projections through the CLI application boundary. It does not add
 traversal or analysis logic to the terminal adapter.
 
+The Map uses a Monokai-inspired palette while retaining `[E]`, `[H]`, `[S]`
+and `[X]` markers: Events are cyan, Handlers pink, States green, Externals
+orange, relation labels muted and the selected marker violet.
+
 Explorer filters use `e` (Events), `h` (Handlers), `s` (States) and `x`
 (Externals). From the full list, the first letter narrows the list to that
 kind; additional letters add kinds to the visible set. Pressing the last

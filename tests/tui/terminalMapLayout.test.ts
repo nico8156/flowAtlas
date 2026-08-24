@@ -5,6 +5,7 @@ import {
   layoutProjection,
   renderTerminalMap,
 } from "../../src/tui/terminalMapLayout.js";
+import { colorizeTerminalMap } from "../../src/tui/terminalMapColor.js";
 
 describe("terminal map layout", () => {
   it("renders a selected node with only its directly connected territory", () => {
@@ -59,5 +60,16 @@ describe("terminal map layout", () => {
     const map = renderTerminalMap(layout, { x: 0, y: 0, width: 80, height: 10 });
 
     expect(map.join("\n")).toContain("LISTENS_TO");
+  });
+
+  it("colors node kinds, relation labels and the selected marker", () => {
+    const colored = colorizeTerminalMap([
+      "> [H] handler ──DISPATCHES──▶ [E] event",
+      "[S] state [X] gateway",
+    ]).join("\n");
+
+    expect(colored).toContain("\u001b[38;2;249;38;114m[H]");
+    expect(colored).toContain("\u001b[38;2;117;113;94mDISPATCHES");
+    expect(colored).toContain("\u001b[38;2;174;129;255m>");
   });
 });

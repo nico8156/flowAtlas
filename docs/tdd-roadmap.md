@@ -464,6 +464,8 @@ Delivered so far:
   clipping and selection visibility; Neighborhood remains stable and focused.
 - The active Map pane fills the available terminal height, including blank
   space, so short projections remain inside one stable full-screen surface.
+- The terminal Map applies the Monokai NodeKind palette and a distinct
+  selection marker without changing the underlying projection.
 
 ### Known gaps
 
