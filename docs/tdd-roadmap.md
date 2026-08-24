@@ -460,6 +460,8 @@ Delivered so far:
   predictable starting point for the next exploration.
 - The Map `r` action shows the direct Handlers that dispatch the selected Event
   through a depth-one upstream projection.
+- Territory supports spatial pan; Neighborhood intentionally hides and ignores
+  pan controls so the focused representation remains stable.
 
 ### Known gaps
 
