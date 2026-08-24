@@ -24,6 +24,14 @@ const createFixtureProjection = () => {
   return projectDownstream(graph, "LikeRequested");
 };
 
+const createLongProjection = () => ({
+  nodes: Array.from({ length: 40 }, (_, index) => ({
+    id: `Node${String(index).padStart(2, "0")}`,
+    kind: "Event" as const,
+  })),
+  edges: [],
+});
+
 const nextFrame = async (): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 0));
 };
@@ -95,6 +103,28 @@ describe("Terminal visualizer interaction acceptance", () => {
 
     instance.stdin.write("q");
     await nextFrame();
+    instance.cleanup();
+  });
+
+  it("keeps a long explorer list within the terminal and scrolls to the cursor", async () => {
+    const instance = render(
+      <TerminalTui initialSelectedNodeId="Node00" projection={createLongProjection()} />,
+    );
+
+    instance.stdin.write("e");
+    await nextFrame();
+    const initialFrame = instance.lastFrame() ?? "";
+    expect(initialFrame).toContain("Node00");
+    expect(initialFrame).not.toContain("Node39");
+
+    for (let index = 0; index < 39; index += 1) {
+      instance.stdin.write("j");
+      await nextFrame();
+    }
+    const scrolledFrame = instance.lastFrame() ?? "";
+    expect(scrolledFrame).toContain("> [E] Node39");
+    expect(scrolledFrame).not.toContain("Node00");
+
     instance.cleanup();
   });
 });

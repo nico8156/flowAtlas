@@ -454,6 +454,8 @@ Delivered so far:
 - Explorer kind filters use `e`, `h`, `s` and `x`: the first key narrows the
   list to that kind, additional keys compose the visible set, and pressing
   the last active kind or `0` restores all kinds.
+- Long Explorer lists use a bounded visible window with a range indicator;
+  `j/k` scroll the window while keeping the cursor visible.
 
 ### Known gaps
 

@@ -227,6 +227,15 @@ export const TerminalTui = ({
     [density, filteredProjection, mapRepresentation, viewState.selectedNodeId],
   );
   const cursorNode = view.visibleNodes[cursor] ?? view.visibleNodes[0];
+  const explorerVisibleCount = Math.max(1, Math.min(16, (stdout.rows ?? 24) - 8));
+  const explorerStart = Math.max(
+    0,
+    Math.min(cursor - explorerVisibleCount + 1, view.visibleNodes.length - explorerVisibleCount),
+  );
+  const explorerNodes = view.visibleNodes.slice(
+    explorerStart,
+    explorerStart + explorerVisibleCount,
+  );
   const mapWidth = Math.max(24, (stdout.columns ?? 80) - 4);
   const mapHeight = Math.max(8, (stdout.rows ?? 24) - 8);
 
@@ -418,11 +427,17 @@ export const TerminalTui = ({
               {searchMode ? `/${query}` : "/ search"}
             </Text>
             <Text color={theme.muted}>
-              Kinds: {viewState.nodeKinds.map(markerFor).join(" ") || "none"} · 0 all
+              Kinds: {viewState.nodeKinds.map(markerFor).join(" ") || "none"} · 0 all ·{" "}
+              {view.visibleNodes.length === 0
+                ? "0 nodes"
+                : `${explorerStart + 1}-${Math.min(
+                    explorerStart + explorerNodes.length,
+                    view.visibleNodes.length,
+                  )} / ${view.visibleNodes.length}`}
             </Text>
-            {view.visibleNodes.map((node, index) => (
+            {explorerNodes.map((node, index) => (
               <Text color={theme[node.kind]} key={node.id}>
-                {index === cursor ? ">" : " "} [{markerFor(node.kind)}] {node.id}
+                {index + explorerStart === cursor ? ">" : " "} [{markerFor(node.kind)}] {node.id}
               </Text>
             ))}
           </Box>
