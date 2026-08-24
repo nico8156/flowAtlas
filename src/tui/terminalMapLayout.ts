@@ -318,29 +318,43 @@ const stackedNodeLabel = (node: ArchitectureNode, selectedNodeId?: string): stri
 export const renderStackedTerminalMap = (
   projection: GraphProjection,
   width: number,
+  height: number,
   selectedNodeId?: string,
 ): readonly string[] => {
   const lines: string[] = [];
   const renderedNodeIds = new Set<string>();
   const nodeById = new Map(projection.nodes.map((node) => [node.id, node]));
+  let renderedEdges = 0;
 
-  for (const edge of projection.edges) {
+  for (const [index, edge] of projection.edges.entries()) {
     const rendered = visualEdgeForLayout(edge);
     const source = nodeById.get(rendered.source);
     const target = nodeById.get(rendered.target);
     if (!source || !target) continue;
 
+    const sourceLines = renderedNodeIds.has(source.id) ? 0 : 1;
+    const remainingEdges = projection.edges.length - index;
+    const needsSummary = remainingEdges > 1;
+    if (lines.length + sourceLines + 1 + (needsSummary ? 1 : 0) > height) break;
+
     if (!renderedNodeIds.has(source.id)) {
       lines.push(boundedLine(stackedNodeLabel(source, selectedNodeId), width));
       renderedNodeIds.add(source.id);
     }
-    lines.push(boundedLine(`  --${edge.kind}-->`, width));
-    lines.push(boundedLine(`  [${markerFor(target)}] ${target.id}`, width));
+    lines.push(boundedLine(`  --${edge.kind}--> [${markerFor(target)}] ${target.id}`, width));
     renderedNodeIds.add(target.id);
+    renderedEdges += 1;
+  }
+
+  const omittedEdges = projection.edges.length - renderedEdges;
+  if (omittedEdges > 0) {
+    const summary = boundedLine(`… ${omittedEdges} more relations`, width);
+    if (lines.length < height) lines.push(summary);
+    else if (height > 0) lines[height - 1] = summary;
   }
 
   for (const node of projection.nodes) {
-    if (renderedNodeIds.has(node.id)) continue;
+    if (renderedNodeIds.has(node.id) || lines.length >= height) continue;
     lines.push(boundedLine(stackedNodeLabel(node, selectedNodeId), width));
   }
 

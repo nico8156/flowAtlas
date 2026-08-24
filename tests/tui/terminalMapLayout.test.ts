@@ -164,13 +164,33 @@ describe("terminal map layout", () => {
       ],
     };
 
-    const lines = renderStackedTerminalMap(projection, 48, "processOutboxFactory");
+    const lines = renderStackedTerminalMap(projection, 48, 8, "processOutboxFactory");
 
     expect(lines).toContain("> [H] processOutboxFactory");
-    expect(lines).toContain("  --DISPATCHES-->");
-    expect(lines).toContain("  [E] outboxProcessOnce");
-    expect(lines).toContain("  --CALLS_EXTERNAL-->");
-    expect(lines).toContain("  [X] LikeWlGateway");
+    expect(lines).toContain("  --DISPATCHES--> [E] outboxProcessOnce");
+    expect(lines).toContain("  --CALLS_EXTERNAL--> [X] LikeWlGateway");
     expect(lines.every((line) => line.length <= 48)).toBe(true);
+  });
+
+  it("bounds stacked territory rows and does not repeat node rows", () => {
+    const projection = {
+      nodes: [
+        { id: "eventA", kind: "Event" as const },
+        { id: "eventB", kind: "Event" as const },
+        { id: "handler", kind: "Handler" as const },
+        { id: "gateway", kind: "External" as const },
+      ],
+      edges: [
+        { source: "handler", target: "eventA", kind: "DISPATCHES" as const },
+        { source: "handler", target: "eventB", kind: "DISPATCHES" as const },
+        { source: "handler", target: "gateway", kind: "CALLS_EXTERNAL" as const },
+      ],
+    };
+
+    const lines = renderStackedTerminalMap(projection, 32, 3, "handler");
+
+    expect(lines.length).toBeLessThanOrEqual(5);
+    expect(lines.filter((line) => line.includes("handler")).length).toBe(1);
+    expect(lines.join("\n")).toContain("more relations");
   });
 });
