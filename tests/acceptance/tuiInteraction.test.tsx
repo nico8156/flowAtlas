@@ -100,7 +100,9 @@ describe("Terminal visualizer interaction acceptance", () => {
 
     instance.stdin.write("t");
     await nextFrame();
-    expect(instance.lastFrame()).toContain("Representation: territory");
+    const territoryFrame = instance.lastFrame() ?? "";
+    expect(territoryFrame).toContain("Representation: territory");
+    expect(territoryFrame).not.toContain("hjkl pan");
 
     instance.stdin.write("q");
     await nextFrame();

@@ -10,7 +10,6 @@ import {
   ensureNodeVisible,
   layoutNeighborhood,
   layoutProjection,
-  panViewport,
   renderTerminalMap,
   type Density,
 } from "./terminalMapLayout.js";
@@ -359,16 +358,6 @@ export const TerminalTui = ({
         setMapRepresentation("territory");
         return;
       }
-      if (mapRepresentation === "territory") {
-        if (input === "h" || key.leftArrow)
-          setViewport((current) => panViewport(current, { x: -4, y: 0 }));
-        if (input === "l" || key.rightArrow)
-          setViewport((current) => panViewport(current, { x: 4, y: 0 }));
-        if (input === "k" || key.upArrow)
-          setViewport((current) => panViewport(current, { x: 0, y: -2 }));
-        if (input === "j" || key.downArrow)
-          setViewport((current) => panViewport(current, { x: 0, y: 2 }));
-      }
       if (input === "+") {
         setDensity((current) => densities[densities.indexOf(current) + 1] ?? current);
       }
@@ -516,9 +505,7 @@ export const TerminalTui = ({
       <Box borderColor={theme.muted} borderStyle="single" paddingX={1}>
         <Text color={theme.muted}>
           {activePane === "map"
-            ? `e / explore   i inspect   n neighborhood   t territory   ${
-                mapRepresentation === "territory" ? "hjkl pan   " : ""
-              }+/- density   f focus   u upstream   d downstream   r handlers   q quit`
+            ? "e / explore   i inspect   n neighborhood   t territory   +/- density   f focus   u upstream   d downstream   r handlers   q quit"
             : activePane === "explorer"
               ? "↑↓/jk navigate   enter map   esc back   q quit"
               : "esc back   q quit"}

@@ -460,14 +460,16 @@ Delivered so far:
   predictable starting point for the next exploration.
 - The Map `r` action shows the direct Handlers that dispatch the selected Event
   through a depth-one upstream projection.
-- Territory supports spatial pan; Neighborhood intentionally hides and ignores
-  pan controls so the focused representation remains stable.
+- The Map no longer exposes spatial pan controls. Its viewport is reserved for
+  clipping and selection visibility; Neighborhood remains stable and focused.
 
 ### Known gaps
 
 The browser implementation is not the M7 product target. The TUI still needs:
 
 - Explorer, Map and Inspector panes with responsive terminal sizing;
+- a Map representation that uses the available terminal width without asking
+  users to navigate horizontally;
 - more expressive edge routing when branches become dense;
 - a visual review on a full-size real Fragments terminal session;
 - TTFG on the full Fragments project remains measurable: the direct scan is
