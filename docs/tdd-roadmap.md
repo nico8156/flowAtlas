@@ -446,8 +446,9 @@ Delivered so far:
 - the interactive TUI can switch between `territory` and `Neighborhood`
   representations with `t` and `n`, without changing the Inspector or graph
   semantics.
-- the ready-state TUI displays one full-screen pane at a time, with Map as the
-  default and `Tab` navigation to Inspector and Explorer.
+- the ready-state TUI displays one full-screen screen at a time, with Map as
+  the default, `/`/`e` opening Explorer, `Enter` returning to Map and `i`
+  opening Inspector.
 
 ### Known gaps
 
@@ -466,6 +467,8 @@ The browser implementation is not the M7 product target. The TUI still needs:
   projection and assess whether the reduced territory improves readability.
 - improve the full-screen `Neighborhood` layout and add temporary Explorer and
   Inspector overlays if the real terminal review confirms they are needed.
+- enter the terminal alternate screen at startup and restore the user's shell
+  cleanly on `q`, error and interrupt.
 
 ### Before-layout evidence
 

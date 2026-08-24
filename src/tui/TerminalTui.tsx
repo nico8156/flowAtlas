@@ -287,6 +287,7 @@ export const TerminalTui = ({
       }
       if (key.return) {
         if (cursorNode) setViewState((current) => ({ ...current, selectedNodeId: cursorNode.id }));
+        setActivePane("map");
         setSearchMode(false);
         return;
       }
@@ -307,6 +308,11 @@ export const TerminalTui = ({
       return;
     }
     if (key.escape || input === "\u001b") {
+      if (activePane !== "map") {
+        setActivePane("map");
+        setSearchMode(false);
+        return;
+      }
       const previous = history.at(-1);
       if (previous) {
         setHistory((current) => current.slice(0, -1));
@@ -314,6 +320,15 @@ export const TerminalTui = ({
         setQuery("");
         setCursor(0);
       }
+      return;
+    }
+    if (input === "/" || input === "e") {
+      setActivePane("explorer");
+      setSearchMode(input === "/");
+      return;
+    }
+    if (input === "i") {
+      setActivePane("inspector");
       return;
     }
     if (input === "f") changeProjection(projectFocus);
@@ -355,10 +370,6 @@ export const TerminalTui = ({
     }
 
     if (activePane !== "explorer") return;
-    if (input === "/") {
-      setSearchMode(true);
-      return;
-    }
     if (input === "1" || input === "2" || input === "3" || input === "4") {
       const kind = allNodeKinds[Number(input) - 1];
       if (kind) {
@@ -473,8 +484,10 @@ export const TerminalTui = ({
       <Box borderColor={theme.muted} borderStyle="single" paddingX={1}>
         <Text color={theme.muted}>
           {activePane === "map"
-            ? "n neighborhood   t territory   hjkl pan   +/- density   f focus   u upstream   d downstream   tab pane   q quit"
-            : "/ search   ↑↓/jk navigate   enter select   f focus   u upstream   d downstream   tab pane   q quit"}
+            ? "e / explore   i inspect   n neighborhood   t territory   hjkl pan   +/- density   f focus   u upstream   d downstream   q quit"
+            : activePane === "explorer"
+              ? "↑↓/jk navigate   enter map   esc back   q quit"
+              : "esc back   q quit"}
         </Text>
       </Box>
     </Box>

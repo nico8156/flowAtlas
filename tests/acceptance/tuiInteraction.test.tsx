@@ -38,21 +38,16 @@ describe("Terminal visualizer interaction acceptance", () => {
     expect(instance.lastFrame()).not.toContain("Explorer · active");
     expect(instance.lastFrame()).toContain("LikeRequested");
 
-    instance.stdin.write("\t");
-    await nextFrame();
-    expect(instance.lastFrame()).toContain("Inspector · active");
-
-    instance.stdin.write("\t");
-    await nextFrame();
-    expect(instance.lastFrame()).toContain("Explorer · active");
     instance.stdin.write("/");
     await nextFrame();
+    expect(instance.lastFrame()).toContain("Explorer · active");
     instance.stdin.write("LikeHandler");
     await nextFrame();
     instance.stdin.write("\r");
     await nextFrame();
-    instance.stdin.write("\t");
-    instance.stdin.write("\t");
+    expect(instance.lastFrame()).toContain("Map · active");
+
+    instance.stdin.write("i");
     await nextFrame();
 
     const frame = instance.lastFrame() ?? "";
