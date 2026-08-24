@@ -89,11 +89,12 @@ The terminal map is being extended with presentation modes. The first mode is
 `Neighborhood`: a selected node and its directly connected architectural
 territory, without changing the underlying graph or projection semantics.
 
-The TUI shell appears in an `ANALYZING PROJECT` state before the TypeScript
-project and graph are available, then switches to `READY` when the real graph
-has been built. No placeholder graph is displayed. The scan runs in a worker,
-so the terminal remains responsive and `q` can cancel an in-progress scan. The
-full project may still take time to become interactive while its graph is built.
+The TUI starts with a single full-screen `ANALYZING PROJECT` state before the
+TypeScript project and graph are available, then switches to `READY` when the
+real graph has been built. No placeholder graph is displayed. The scan runs
+in a worker, so the terminal remains responsive and `q` can cancel an
+in-progress scan. The full project may still take time to become interactive
+while its graph is built.
 
 To run those tests, point `FLOWATLAS_FRAGMENTS_ROOT` at a local checkout of
 Fragments. The default is `../fragmentsCleanFront` relative to the repository:

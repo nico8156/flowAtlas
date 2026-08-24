@@ -449,6 +449,8 @@ Delivered so far:
 - the ready-state TUI displays one full-screen screen at a time, with Map as
   the default, `/`/`e` opening Explorer, `Enter` returning to Map and `i`
   opening Inspector.
+- the loading state also uses one full-screen screen instead of the legacy
+  three-column shell.
 
 ### Known gaps
 

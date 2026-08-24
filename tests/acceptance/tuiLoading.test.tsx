@@ -46,9 +46,9 @@ describe("Terminal visualizer loading acceptance", () => {
 
     const loadingFrame = instance.lastFrame() ?? "";
     expect(loadingFrame).toContain("ANALYZING PROJECT");
-    expect(loadingFrame).toContain("Explorer");
-    expect(loadingFrame).toContain("Map");
-    expect(loadingFrame).toContain("Inspector");
+    expect(loadingFrame).toContain("Analyzing project…");
+    expect(loadingFrame).not.toContain("Explorer");
+    expect(loadingFrame).not.toContain("Inspector");
     expect(loadingFrame).not.toContain("LikeRequested");
 
     await act(async () => {

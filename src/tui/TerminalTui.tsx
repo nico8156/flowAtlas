@@ -86,49 +86,19 @@ const LoaderShell = ({
       FlowAtlas · {phase === "loading" ? "ANALYZING PROJECT" : "ERROR"}
     </Text>
     <Text color={theme.muted}>{projectLabel}</Text>
-    <Box flexDirection="row" flexGrow={1}>
-      <Box
-        borderColor={theme.muted}
-        borderStyle="single"
-        flexDirection="column"
-        paddingX={1}
-        width="25%"
-      >
-        <Text color={theme.foreground} bold>
-          Explorer
-        </Text>
-        <Text color={theme.muted}>
-          {phase === "loading" ? "Waiting for graph…" : "Unavailable"}
-        </Text>
-      </Box>
-      <Box
-        borderColor={theme.selection}
-        borderStyle="single"
-        flexDirection="column"
-        paddingX={1}
-        width="50%"
-      >
-        <Text color={theme.foreground} bold>
-          Map
-        </Text>
-        <Text color={phase === "loading" ? theme.selection : theme.Event}>
-          {phase === "loading" ? "Analyzing project…" : message}
-        </Text>
-      </Box>
-      <Box
-        borderColor={theme.muted}
-        borderStyle="single"
-        flexDirection="column"
-        paddingX={1}
-        width="25%"
-      >
-        <Text color={theme.foreground} bold>
-          Inspector
-        </Text>
-        <Text color={theme.muted}>
-          {phase === "loading" ? "Waiting for graph…" : "No node selected"}
-        </Text>
-      </Box>
+    <Box
+      borderColor={phase === "loading" ? theme.selection : theme.Event}
+      borderStyle="single"
+      flexDirection="column"
+      flexGrow={1}
+      padding={2}
+    >
+      <Text color={theme.foreground} bold>
+        {phase === "loading" ? "Analyzing project…" : message}
+      </Text>
+      <Text color={theme.muted}>
+        {phase === "loading" ? "Building the architecture graph" : "The visualizer could not start"}
+      </Text>
     </Box>
     <Box borderColor={theme.muted} borderStyle="single" paddingX={1}>
       <Text color={theme.muted}>{phase === "loading" ? "q quit" : "q quit"}</Text>
