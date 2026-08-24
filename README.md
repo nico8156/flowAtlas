@@ -94,6 +94,9 @@ connector before each horizontal target segment so relation labels remain
 separate and directional.
 Node labels are rendered above edge strokes, so connectors cannot overwrite a
 selected node or truncate its architectural identifier.
+In `compact` density, relation labels are shortened (`DISPATCH`, `UPDATE`,
+`EXTERNAL`, `LISTEN`) to keep branched territories readable; `normal` and
+`detailed` retain the canonical relation names.
 
 Explorer filters use `e` (Events), `h` (Handlers), `s` (States) and `x`
 (Externals). From the full list, the first letter narrows the list to that

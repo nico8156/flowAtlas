@@ -465,11 +465,11 @@ export const TerminalTui = ({
             </Text>
             <Text color={theme.muted}>Representation: {mapRepresentation}</Text>
             <Text color={theme.muted}>Density: {density}</Text>
-            {colorizeTerminalMap(renderTerminalMap(layout, viewport, viewState.selectedNodeId)).map(
-              (line, index) => (
-                <Text key={`${line}-${index}`}>{line || " "}</Text>
-              ),
-            )}
+            {colorizeTerminalMap(
+              renderTerminalMap(layout, viewport, viewState.selectedNodeId, density),
+            ).map((line, index) => (
+              <Text key={`${line}-${index}`}>{line || " "}</Text>
+            ))}
           </Box>
         )}
         {activePane === "inspector" && (
