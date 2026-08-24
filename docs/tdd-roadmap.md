@@ -458,6 +458,8 @@ Delivered so far:
   `j/k` scroll the window while keeping the cursor visible.
 - Reopening Explorer with `e` resets its search and kind filters, providing a
   predictable starting point for the next exploration.
+- The Map `r` action shows the direct Handlers that dispatch the selected Event
+  through a depth-one upstream projection.
 
 ### Known gaps
 

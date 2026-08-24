@@ -93,6 +93,7 @@ Long Explorer lists are rendered through a bounded window and show their
 visible range; `j/k` scroll the window while keeping the cursor visible.
 Opening Explorer again with `e` resets its search and kind filters so each
 exploration starts from the complete visible node list.
+From the Map, `r` shows the Handlers that dispatch the selected Event.
 
 The terminal map is being extended with presentation modes. The first mode is
 `Neighborhood`: a selected node and its directly connected architectural

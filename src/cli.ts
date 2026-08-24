@@ -86,6 +86,12 @@ export const runCli = async (
               projectionChange("downstream", (id) => projectDownstream(graph, id), selectedNodeId),
             projectUpstream: (selectedNodeId) =>
               projectionChange("upstream", (id) => projectUpstream(graph, id), selectedNodeId),
+            projectIncomingHandlers: (selectedNodeId) =>
+              projectionChange(
+                "handlers",
+                (id) => projectUpstream(graph, id, { maxDepth: 1 }),
+                selectedNodeId,
+              ),
           };
         },
         cancel: () => activeScanCancel(),

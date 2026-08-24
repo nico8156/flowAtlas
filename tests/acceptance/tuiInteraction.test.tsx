@@ -2,7 +2,7 @@ import { render } from "ink-testing-library";
 import { describe, expect, it } from "vitest";
 
 import { createArchitectureGraph } from "../../src/domain/architectureGraph.js";
-import { projectDownstream } from "../../src/domain/graphProjection.js";
+import { projectDownstream, projectUpstream } from "../../src/domain/graphProjection.js";
 import { TerminalTui } from "../../src/tui/TerminalTui.js";
 
 const createFixtureProjection = () => {
@@ -150,6 +150,39 @@ describe("Terminal visualizer interaction acceptance", () => {
     expect(resetFrame).toContain("Kinds: E H S X · 0 all");
     expect(resetFrame).toContain("/ search");
     expect(resetFrame).toContain("[E] LikeRequested");
+
+    instance.cleanup();
+  });
+
+  it("shows the handlers that dispatch a selected event", async () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "Requested", kind: "Event" });
+    graph.addNode({ id: "ListeningHandler", kind: "Handler" });
+    graph.addNode({ id: "DispatchingHandler", kind: "Handler" });
+    graph.addNode({ id: "State", kind: "State" });
+    graph.addEdge({ source: "ListeningHandler", target: "Requested", kind: "LISTENS_TO" });
+    graph.addEdge({ source: "DispatchingHandler", target: "Requested", kind: "DISPATCHES" });
+    graph.addEdge({ source: "Requested", target: "State", kind: "UPDATES" });
+
+    const instance = render(
+      <TerminalTui
+        initialSelectedNodeId="Requested"
+        projection={{ nodes: graph.nodes, edges: graph.edges }}
+        projectIncomingHandlers={(nodeId) => ({
+          mode: "handlers",
+          projection: projectUpstream(graph, nodeId, { maxDepth: 1 }),
+          rootNodeId: nodeId,
+        })}
+      />,
+    );
+
+    instance.stdin.write("r");
+    await nextFrame();
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("HANDLERS · Requested");
+    expect(frame).toContain("DispatchingHandler");
+    expect(frame).not.toContain("ListeningHandler");
+    expect(frame).not.toContain("State");
 
     instance.cleanup();
   });
