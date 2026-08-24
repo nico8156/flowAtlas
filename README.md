@@ -85,6 +85,10 @@ consumes the existing graph projection and `f/u/d` request focus, upstream and
 downstream projections through the CLI application boundary. It does not add
 traversal or analysis logic to the terminal adapter.
 
+Explorer filters are toggled with `e` (Events), `h` (Handlers), `s` (States)
+and `x` (Externals). Press the same letter again to restore that kind; `0`
+restores all kinds.
+
 The terminal map is being extended with presentation modes. The first mode is
 `Neighborhood`: a selected node and its directly connected architectural
 territory, without changing the underlying graph or projection semantics.

@@ -451,6 +451,8 @@ Delivered so far:
   opening Inspector.
 - the loading state also uses one full-screen screen instead of the legacy
   three-column shell.
+- Explorer kind filters can be toggled directly with `e`, `h`, `s` and `x`,
+  with `0` restoring all kinds.
 
 ### Known gaps
 

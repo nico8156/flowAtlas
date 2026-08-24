@@ -292,7 +292,7 @@ export const TerminalTui = ({
       }
       return;
     }
-    if (input === "/" || input === "e") {
+    if (activePane !== "explorer" && (input === "/" || input === "e")) {
       setActivePane("explorer");
       setSearchMode(input === "/");
       return;
@@ -340,6 +340,29 @@ export const TerminalTui = ({
     }
 
     if (activePane !== "explorer") return;
+    if (input === "/") {
+      setSearchMode(true);
+      return;
+    }
+    const kindShortcut: Readonly<Record<string, NodeKind>> = {
+      e: "Event",
+      h: "Handler",
+      s: "State",
+      x: "External",
+    };
+    const selectedKind = kindShortcut[input];
+    if (selectedKind) {
+      setViewState((current) => ({
+        ...current,
+        nodeKinds: current.nodeKinds.includes(selectedKind)
+          ? current.nodeKinds.filter((kind) => kind !== selectedKind)
+          : allNodeKinds.filter(
+              (kind) => current.nodeKinds.includes(kind) || kind === selectedKind,
+            ),
+      }));
+      setCursor(0);
+      return;
+    }
     if (input === "1" || input === "2" || input === "3" || input === "4") {
       const kind = allNodeKinds[Number(input) - 1];
       if (kind) {
