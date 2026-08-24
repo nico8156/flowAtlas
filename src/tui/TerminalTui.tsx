@@ -488,6 +488,7 @@ export const TerminalTui = ({
                 ? renderStackedTerminalMap(
                     filteredProjection,
                     viewport.width,
+                    viewport.height,
                     displayedSelectedNodeId,
                   )
                 : renderTerminalMap(layout, viewport, displayedSelectedNodeId, density),

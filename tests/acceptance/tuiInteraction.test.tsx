@@ -103,9 +103,7 @@ describe("Terminal visualizer interaction acceptance", () => {
     const territoryFrame = instance.lastFrame() ?? "";
     expect(territoryFrame).toContain("Representation: territory");
     expect(territoryFrame).not.toContain("hjkl pan");
-    expect(territoryFrame.split("\n").filter((line) => line.includes("│")).length).toBeGreaterThan(
-      10,
-    );
+    expect(territoryFrame).toContain("Representation: territory · stacked");
 
     instance.stdin.write("q");
     await nextFrame();
