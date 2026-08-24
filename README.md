@@ -85,9 +85,10 @@ consumes the existing graph projection and `f/u/d` request focus, upstream and
 downstream projections through the CLI application boundary. It does not add
 traversal or analysis logic to the terminal adapter.
 
-Explorer filters are toggled with `e` (Events), `h` (Handlers), `s` (States)
-and `x` (Externals). Press the same letter again to restore that kind; `0`
-restores all kinds.
+Explorer filters use `e` (Events), `h` (Handlers), `s` (States) and `x`
+(Externals). From the full list, the first letter narrows the list to that
+kind; additional letters add kinds to the visible set. Pressing the last
+active kind restores all kinds, and `0` always restores the full list.
 
 The terminal map is being extended with presentation modes. The first mode is
 `Neighborhood`: a selected node and its directly connected architectural

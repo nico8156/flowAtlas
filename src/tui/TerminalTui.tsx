@@ -67,6 +67,19 @@ const theme = {
 
 const markerFor = (kind: NodeKind): string => (kind === "External" ? "X" : kind.slice(0, 1));
 
+const toggleVisibleKind = (
+  currentKinds: readonly NodeKind[],
+  selectedKind: NodeKind,
+): readonly NodeKind[] => {
+  const allKindsSelected = currentKinds.length === allNodeKinds.length;
+  if (allKindsSelected || currentKinds.length === 0) return [selectedKind];
+  if (!currentKinds.includes(selectedKind)) {
+    return allNodeKinds.filter((kind) => currentKinds.includes(kind) || kind === selectedKind);
+  }
+  if (currentKinds.length === 1) return allNodeKinds;
+  return currentKinds.filter((kind) => kind !== selectedKind);
+};
+
 const paneTitle = (name: string, active: boolean): string => (active ? `${name} · active` : name);
 
 const modeTitle = (mode: ProjectionMode, rootNodeId: string): string =>
@@ -354,11 +367,7 @@ export const TerminalTui = ({
     if (selectedKind) {
       setViewState((current) => ({
         ...current,
-        nodeKinds: current.nodeKinds.includes(selectedKind)
-          ? current.nodeKinds.filter((kind) => kind !== selectedKind)
-          : allNodeKinds.filter(
-              (kind) => current.nodeKinds.includes(kind) || kind === selectedKind,
-            ),
+        nodeKinds: toggleVisibleKind(current.nodeKinds, selectedKind),
       }));
       setCursor(0);
       return;
@@ -368,9 +377,7 @@ export const TerminalTui = ({
       if (kind) {
         setViewState((current) => ({
           ...current,
-          nodeKinds: current.nodeKinds.includes(kind)
-            ? current.nodeKinds.filter((candidate) => candidate !== kind)
-            : [...current.nodeKinds, kind],
+          nodeKinds: toggleVisibleKind(current.nodeKinds, kind),
         }));
         setCursor(0);
       }

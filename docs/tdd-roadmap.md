@@ -451,8 +451,9 @@ Delivered so far:
   opening Inspector.
 - the loading state also uses one full-screen screen instead of the legacy
   three-column shell.
-- Explorer kind filters can be toggled directly with `e`, `h`, `s` and `x`,
-  with `0` restoring all kinds.
+- Explorer kind filters use `e`, `h`, `s` and `x`: the first key narrows the
+  list to that kind, additional keys compose the visible set, and pressing
+  the last active kind or `0` restores all kinds.
 
 ### Known gaps
 

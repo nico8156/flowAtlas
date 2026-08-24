@@ -95,7 +95,7 @@ describeFragments("Fragments terminal projection navigation acceptance", () => {
     await nextFrame();
     instance.stdin.write("2");
     await nextFrame();
-    expect(instance.lastFrame()).toContain("Kinds: E S X · 0 all");
+    expect(instance.lastFrame()).toContain("Kinds: H · 0 all");
 
     instance.stdin.write("0");
     await nextFrame();
