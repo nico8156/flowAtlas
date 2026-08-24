@@ -8,6 +8,7 @@ import { colorizeTerminalMap } from "./terminalMapColor.js";
 import { relationRenderKey } from "./terminalRenderKeys.js";
 import {
   createViewport,
+  calculateMapHeight,
   ensureNodeVisible,
   layoutNeighborhood,
   layoutProjection,
@@ -241,7 +242,7 @@ export const TerminalTui = ({
     explorerStart + explorerVisibleCount,
   );
   const mapWidth = Math.max(24, (stdout.columns ?? 80) - 4);
-  const mapHeight = Math.max(8, (stdout.rows ?? 24) - 8);
+  const mapHeight = calculateMapHeight(stdout.rows ?? 24);
 
   useEffect(() => {
     setViewport((current) => ({ ...current, width: mapWidth, height: mapHeight }));
@@ -424,7 +425,6 @@ export const TerminalTui = ({
             borderColor={theme.selection}
             borderStyle="single"
             flexDirection="column"
-            height={mapHeight + 4}
             paddingX={1}
             width="100%"
           >
@@ -455,6 +455,7 @@ export const TerminalTui = ({
             borderColor={theme.selection}
             borderStyle="single"
             flexDirection="column"
+            flexGrow={1}
             paddingX={1}
             width="100%"
           >

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  calculateMapHeight,
   layoutNeighborhood,
   layoutProjection,
   renderTerminalMap,
@@ -8,6 +9,11 @@ import {
 import { colorizeTerminalMap } from "../../src/tui/terminalMapColor.js";
 
 describe("terminal map layout", () => {
+  it("reserves space for the TUI header and status bar", () => {
+    expect(calculateMapHeight(24)).toBe(12);
+    expect(calculateMapHeight(10)).toBe(8);
+  });
+
   it("renders a selected node with only its directly connected territory", () => {
     const projection = {
       nodes: [
