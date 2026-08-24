@@ -22,6 +22,8 @@ export type Viewport = {
   readonly height: number;
 };
 
+export const calculateMapHeight = (terminalRows: number): number => Math.max(8, terminalRows - 12);
+
 type LayoutOptions = {
   readonly density: Density;
 };
