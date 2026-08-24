@@ -113,6 +113,8 @@ list.
 Opening Explorer again with `e` resets its search and kind filters so each
 exploration starts from the complete visible node list.
 From the Map, `r` shows the Handlers that dispatch the selected Event.
+Selecting a node from Explorer automatically switches the Map to its
+`Neighborhood`; press `t` when the full territory is needed again.
 
 The terminal map is being extended with presentation modes. The first mode is
 `Neighborhood`: a selected node and its directly connected architectural
