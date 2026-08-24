@@ -1,8 +1,33 @@
 import { describe, expect, it } from "vitest";
 
-import { layoutProjection, renderTerminalMap } from "../../src/tui/terminalMapLayout.js";
+import {
+  layoutNeighborhood,
+  layoutProjection,
+  renderTerminalMap,
+} from "../../src/tui/terminalMapLayout.js";
 
 describe("terminal map layout", () => {
+  it("renders a selected node with only its directly connected territory", () => {
+    const projection = {
+      nodes: [
+        { id: "requested", kind: "Event" as const },
+        { id: "handler", kind: "Handler" as const },
+        { id: "state", kind: "State" as const },
+        { id: "unrelated", kind: "External" as const },
+      ],
+      edges: [
+        { source: "handler", target: "requested", kind: "LISTENS_TO" as const },
+        { source: "handler", target: "state", kind: "DISPATCHES" as const },
+      ],
+    };
+
+    const neighborhood = layoutNeighborhood(projection, "handler", { density: "normal" });
+
+    expect(neighborhood.nodes.map(({ id }) => id)).toEqual(["requested", "handler", "state"]);
+    expect(neighborhood.edges).toEqual(projection.edges);
+    expect(neighborhood.nodes.find(({ id }) => id === "handler")?.x).toBeGreaterThan(0);
+  });
+
   it("lays out cyclic architectural projections", () => {
     const projection = {
       nodes: [

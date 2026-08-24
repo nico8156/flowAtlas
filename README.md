@@ -82,6 +82,10 @@ and `f/u/d` request focus, upstream and downstream projections through the CLI
 application boundary. It does not add traversal or analysis logic to the
 terminal adapter.
 
+The terminal map is being extended with presentation modes. The first mode is
+`Neighborhood`: a selected node and its directly connected architectural
+territory, without changing the underlying graph or projection semantics.
+
 The TUI shell appears in an `ANALYZING PROJECT` state before the TypeScript
 project and graph are available, then switches to `READY` when the real graph
 has been built. No placeholder graph is displayed. The scan runs in a worker,

@@ -441,6 +441,8 @@ Delivered so far:
 - cyclic real-project projections are layout-safe; terminal Map edges expose
   their canonical relation kind so `LISTENS_TO`, `DISPATCHES`, `UPDATES` and
   `CALLS_EXTERNAL` remain distinguishable.
+- a presentation-only `Neighborhood` layout can isolate a selected node and
+  its directly connected territory while preserving the projection edges.
 
 ### Known gaps
 
@@ -455,6 +457,8 @@ The browser implementation is not the M7 product target. The TUI still needs:
   worker keeps the TUI responsive while TTFG is in progress.
 - a visual review on a full-size real Fragments terminal session after the
   graph becomes ready.
+- expose the `Neighborhood` representation through the interactive TUI and
+  validate it on a real Fragments projection.
 
 ### Before-layout evidence
 

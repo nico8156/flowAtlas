@@ -26,6 +26,26 @@ type LayoutOptions = {
   readonly density: Density;
 };
 
+const selectNeighborhood = (
+  projection: GraphProjection,
+  selectedNodeId: string,
+): GraphProjection => {
+  const connectedNodeIds = new Set<string>([selectedNodeId]);
+  for (const edge of projection.edges) {
+    if (edge.source === selectedNodeId || edge.target === selectedNodeId) {
+      connectedNodeIds.add(edge.source);
+      connectedNodeIds.add(edge.target);
+    }
+  }
+
+  return {
+    nodes: projection.nodes.filter((node) => connectedNodeIds.has(node.id)),
+    edges: projection.edges.filter(
+      (edge) => connectedNodeIds.has(edge.source) && connectedNodeIds.has(edge.target),
+    ),
+  };
+};
+
 type Point = {
   readonly x: number;
   readonly y: number;
@@ -154,6 +174,12 @@ export const layoutProjection = (
     edges: projection.edges,
   };
 };
+
+export const layoutNeighborhood = (
+  projection: GraphProjection,
+  selectedNodeId: string,
+  options: LayoutOptions,
+): LayoutGraph => layoutProjection(selectNeighborhood(projection, selectedNodeId), options);
 
 export const createViewport = (width: number, height: number): Viewport => ({
   x: 0,
