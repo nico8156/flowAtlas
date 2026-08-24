@@ -466,6 +466,9 @@ Delivered so far:
   space, so short projections remain inside one stable full-screen surface.
 - The terminal Map applies the Monokai NodeKind palette and a distinct
   selection marker without changing the underlying projection.
+- Branched Neighborhood relations use explicit vertical connectors before
+  their target segments, keeping multiple relation labels readable without
+  inventing edges.
 
 ### Known gaps
 
