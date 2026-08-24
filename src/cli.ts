@@ -9,6 +9,7 @@ import { formatNodeInspection } from "./application/nodeInspection.js";
 import { formatTerminalMap } from "./application/terminalMapOutput.js";
 import { loadTypeScriptProject } from "./cli/projectLoader.js";
 import { startScanProjectInWorker } from "./cli/scanInWorker.js";
+import { runInAlternateTerminalScreen } from "./cli/terminalSession.js";
 import { projectDownstream, projectUpstream } from "./domain/graphProjection.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
 import {
@@ -54,50 +55,63 @@ export const runCli = async (
     }
 
     let activeScanCancel = (): void => undefined;
-    const instance = render(
-      createElement(TerminalTuiLoader, {
-        projectLabel: projectPath,
-        load: async (): Promise<TerminalTuiLoadResult> => {
-          const task = startScanProjectInWorker(projectPath);
-          activeScanCancel = task.cancel;
-          const graph = await task.promise;
+    await runInAlternateTerminalScreen(
+      (sequence) => process.stdout.write(sequence),
+      async () => {
+        const instance = render(
+          createElement(TerminalTuiLoader, {
+            projectLabel: projectPath,
+            load: async (): Promise<TerminalTuiLoadResult> => {
+              const task = startScanProjectInWorker(projectPath);
+              activeScanCancel = task.cancel;
+              const graph = await task.promise;
 
-          if (!graph.findNode(nodeId)) {
-            throw new Error(`Node not found: ${nodeId}`);
-          }
+              if (!graph.findNode(nodeId)) {
+                throw new Error(`Node not found: ${nodeId}`);
+              }
 
-          const fullProjection = { nodes: graph.nodes, edges: graph.edges };
-          const projectionChange = (
-            mode: ProjectionChange["mode"],
-            createProjection: (selectedNodeId: string) => ProjectionChange["projection"],
-            selectedNodeId: string,
-          ): ProjectionChange => ({
-            mode,
-            projection: createProjection(selectedNodeId),
-            rootNodeId: selectedNodeId,
-          });
+              const fullProjection = { nodes: graph.nodes, edges: graph.edges };
+              const projectionChange = (
+                mode: ProjectionChange["mode"],
+                createProjection: (selectedNodeId: string) => ProjectionChange["projection"],
+                selectedNodeId: string,
+              ): ProjectionChange => ({
+                mode,
+                projection: createProjection(selectedNodeId),
+                rootNodeId: selectedNodeId,
+              });
 
-          return {
-            initialSelectedNodeId: nodeId,
-            projection: fullProjection,
-            projectFocus: (selectedNodeId) =>
-              projectionChange("focus", (id) => projectFocusedTerritory(graph, id), selectedNodeId),
-            projectDownstream: (selectedNodeId) =>
-              projectionChange("downstream", (id) => projectDownstream(graph, id), selectedNodeId),
-            projectUpstream: (selectedNodeId) =>
-              projectionChange("upstream", (id) => projectUpstream(graph, id), selectedNodeId),
-            projectIncomingHandlers: (selectedNodeId) =>
-              projectionChange(
-                "handlers",
-                (id) => projectUpstream(graph, id, { maxDepth: 1 }),
-                selectedNodeId,
-              ),
-          };
-        },
-        cancel: () => activeScanCancel(),
-      }),
+              return {
+                initialSelectedNodeId: nodeId,
+                projection: fullProjection,
+                projectFocus: (selectedNodeId) =>
+                  projectionChange(
+                    "focus",
+                    (id) => projectFocusedTerritory(graph, id),
+                    selectedNodeId,
+                  ),
+                projectDownstream: (selectedNodeId) =>
+                  projectionChange(
+                    "downstream",
+                    (id) => projectDownstream(graph, id),
+                    selectedNodeId,
+                  ),
+                projectUpstream: (selectedNodeId) =>
+                  projectionChange("upstream", (id) => projectUpstream(graph, id), selectedNodeId),
+                projectIncomingHandlers: (selectedNodeId) =>
+                  projectionChange(
+                    "handlers",
+                    (id) => projectUpstream(graph, id, { maxDepth: 1 }),
+                    selectedNodeId,
+                  ),
+              };
+            },
+            cancel: () => activeScanCancel(),
+          }),
+        );
+        await instance.waitUntilExit();
+      },
     );
-    await instance.waitUntilExit();
     return;
   }
 
