@@ -423,6 +423,7 @@ export const TerminalTui = ({
             borderColor={theme.selection}
             borderStyle="single"
             flexDirection="column"
+            height={mapHeight + 4}
             paddingX={1}
             width="100%"
           >
@@ -462,7 +463,7 @@ export const TerminalTui = ({
             <Text color={theme.muted}>Representation: {mapRepresentation}</Text>
             <Text color={theme.muted}>Density: {density}</Text>
             {renderTerminalMap(layout, viewport, viewState.selectedNodeId).map((line, index) => (
-              <Text key={`${line}-${index}`}>{line}</Text>
+              <Text key={`${line}-${index}`}>{line || " "}</Text>
             ))}
           </Box>
         )}
