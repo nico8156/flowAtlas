@@ -92,6 +92,8 @@ orange, relation labels muted and the selected marker violet.
 When a node has several outgoing relations, the Map uses a vertical branch
 connector before each horizontal target segment so relation labels remain
 separate and directional.
+Node labels are rendered above edge strokes, so connectors cannot overwrite a
+selected node or truncate its architectural identifier.
 
 Explorer filters use `e` (Events), `h` (Handlers), `s` (States) and `x`
 (Externals). From the full list, the first letter narrows the list to that
