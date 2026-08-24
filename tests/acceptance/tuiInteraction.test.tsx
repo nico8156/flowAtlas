@@ -153,6 +153,52 @@ describe("Terminal visualizer interaction acceptance", () => {
     instance.cleanup();
   });
 
+  it("restores the full map after selecting from a filtered Explorer", async () => {
+    const graph = createArchitectureGraph();
+    graph.addNode({ id: "LikeRequested", kind: "Event" });
+    graph.addNode({ id: "LikeHandler", kind: "Handler" });
+    graph.addNode({ id: "LikeAccepted", kind: "Event" });
+    graph.addNode({ id: "LikesState", kind: "State" });
+    graph.addNode({ id: "SocialApi", kind: "External" });
+    graph.addEdge({ source: "LikeHandler", target: "LikeRequested", kind: "LISTENS_TO" });
+    graph.addEdge({ source: "LikeHandler", target: "LikeAccepted", kind: "DISPATCHES" });
+    graph.addEdge({ source: "LikeAccepted", target: "LikesState", kind: "UPDATES" });
+    graph.addEdge({ source: "LikeHandler", target: "SocialApi", kind: "CALLS_EXTERNAL" });
+
+    const instance = render(
+      <TerminalTui
+        initialSelectedNodeId="LikeRequested"
+        projection={{ nodes: graph.nodes, edges: graph.edges }}
+        projectFocus={(nodeId) => ({
+          mode: "focus",
+          projection: { nodes: graph.nodes, edges: graph.edges },
+          rootNodeId: nodeId,
+        })}
+      />,
+    );
+
+    instance.stdin.write("e");
+    await nextFrame();
+    instance.stdin.write("h");
+    await nextFrame();
+    instance.stdin.write("j");
+    await nextFrame();
+    instance.stdin.write("\r");
+    await nextFrame();
+    instance.stdin.write("i");
+    await nextFrame();
+
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("LikeHandler");
+    expect(frame).toContain("LikeRequested");
+    expect(frame).toContain("LikeAccepted");
+    expect(frame).toContain("SocialApi");
+    expect(frame).toContain("DISPATCHES");
+    expect(frame).toContain("CALLS_EXTERNAL");
+
+    instance.cleanup();
+  });
+
   it("keeps a visible selection when the requested node is absent", async () => {
     const instance = render(
       <TerminalTui initialSelectedNodeId="missingNode" projection={createLongProjection()} />,
