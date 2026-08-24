@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { NodeKind } from "../domain/architectureGraph.js";
 import type { GraphProjection } from "../domain/graphProjection.js";
 import { buildTerminalView, filterTerminalProjection } from "./terminalVisualizer.js";
+import { colorizeTerminalMap } from "./terminalMapColor.js";
 import { relationRenderKey } from "./terminalRenderKeys.js";
 import {
   createViewport,
@@ -462,9 +463,11 @@ export const TerminalTui = ({
             </Text>
             <Text color={theme.muted}>Representation: {mapRepresentation}</Text>
             <Text color={theme.muted}>Density: {density}</Text>
-            {renderTerminalMap(layout, viewport, viewState.selectedNodeId).map((line, index) => (
-              <Text key={`${line}-${index}`}>{line || " "}</Text>
-            ))}
+            {colorizeTerminalMap(renderTerminalMap(layout, viewport, viewState.selectedNodeId)).map(
+              (line, index) => (
+                <Text key={`${line}-${index}`}>{line || " "}</Text>
+              ),
+            )}
           </Box>
         )}
         {activePane === "inspector" && (
