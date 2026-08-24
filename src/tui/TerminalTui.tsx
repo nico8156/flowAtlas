@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { NodeKind } from "../domain/architectureGraph.js";
 import type { GraphProjection } from "../domain/graphProjection.js";
 import { buildTerminalView, filterTerminalProjection } from "./terminalVisualizer.js";
+import { relationRenderKey } from "./terminalRenderKeys.js";
 import {
   createViewport,
   ensureNodeVisible,
@@ -498,12 +499,12 @@ export const TerminalTui = ({
                     : "unavailable"}
                 </Text>
                 <Text>Incoming</Text>
-                {view.inspector.incoming.map((line) => (
-                  <Text key={`in-${line}`}>{line}</Text>
+                {view.inspector.incoming.map((line, index) => (
+                  <Text key={relationRenderKey("in", line, index)}>{line}</Text>
                 ))}
                 <Text>Outgoing</Text>
-                {view.inspector.outgoing.map((line) => (
-                  <Text key={`out-${line}`}>{line}</Text>
+                {view.inspector.outgoing.map((line, index) => (
+                  <Text key={relationRenderKey("out", line, index)}>{line}</Text>
                 ))}
               </>
             ) : (

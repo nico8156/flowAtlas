@@ -282,12 +282,12 @@ export const ArchitectureMap = ({ graph }: { graph: ArchitectureGraph }) => {
                 : "unavailable"}
             </p>
             <h3>Incoming relations</h3>
-            {incoming.map((edge) => (
-              <p key={`${edge.source}-${edge.kind}`}>{formatRelation(edge)}</p>
+            {incoming.map((edge, index) => (
+              <p key={`${edge.source}-${edge.kind}-${index}`}>{formatRelation(edge)}</p>
             ))}
             <h3>Outgoing relations</h3>
-            {outgoing.map((edge) => (
-              <p key={`${edge.kind}-${edge.target}`}>{formatRelation(edge)}</p>
+            {outgoing.map((edge, index) => (
+              <p key={`${edge.kind}-${edge.target}-${index}`}>{formatRelation(edge)}</p>
             ))}
             <button
               type="button"
