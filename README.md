@@ -91,6 +91,8 @@ kind; additional letters add kinds to the visible set. Pressing the last
 active kind restores all kinds, and `0` always restores the full list.
 Long Explorer lists are rendered through a bounded window and show their
 visible range; `j/k` scroll the window while keeping the cursor visible.
+Opening Explorer again with `e` resets its search and kind filters so each
+exploration starts from the complete visible node list.
 
 The terminal map is being extended with presentation modes. The first mode is
 `Neighborhood`: a selected node and its directly connected architectural

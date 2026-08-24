@@ -127,4 +127,30 @@ describe("Terminal visualizer interaction acceptance", () => {
 
     instance.cleanup();
   });
+
+  it("resets Explorer filters and search when leaving the screen", async () => {
+    const instance = render(
+      <TerminalTui initialSelectedNodeId="LikeRequested" projection={createFixtureProjection()} />,
+    );
+
+    instance.stdin.write("e");
+    await nextFrame();
+    instance.stdin.write("h");
+    await nextFrame();
+    instance.stdin.write("/");
+    await nextFrame();
+    instance.stdin.write("LikeHandler");
+    await nextFrame();
+    instance.stdin.write("\r");
+    await nextFrame();
+    instance.stdin.write("e");
+    await nextFrame();
+
+    const resetFrame = instance.lastFrame() ?? "";
+    expect(resetFrame).toContain("Kinds: E H S X · 0 all");
+    expect(resetFrame).toContain("/ search");
+    expect(resetFrame).toContain("[E] LikeRequested");
+
+    instance.cleanup();
+  });
 });

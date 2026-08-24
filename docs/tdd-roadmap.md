@@ -456,6 +456,8 @@ Delivered so far:
   the last active kind or `0` restores all kinds.
 - Long Explorer lists use a bounded visible window with a range indicator;
   `j/k` scroll the window while keeping the cursor visible.
+- Reopening Explorer with `e` resets its search and kind filters, providing a
+  predictable starting point for the next exploration.
 
 ### Known gaps
 

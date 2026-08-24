@@ -303,6 +303,11 @@ export const TerminalTui = ({
       if (activePane !== "map") {
         setActivePane("map");
         setSearchMode(false);
+        if (activePane === "explorer") {
+          setQuery("");
+          setCursor(0);
+          setViewState((current) => ({ ...current, nodeKinds: allNodeKinds }));
+        }
         return;
       }
       const previous = history.at(-1);
@@ -317,6 +322,11 @@ export const TerminalTui = ({
     if (activePane !== "explorer" && (input === "/" || input === "e")) {
       setActivePane("explorer");
       setSearchMode(input === "/");
+      if (input === "e") {
+        setQuery("");
+        setCursor(0);
+        setViewState((current) => ({ ...current, nodeKinds: allNodeKinds }));
+      }
       return;
     }
     if (input === "i") {
