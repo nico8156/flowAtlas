@@ -458,6 +458,8 @@ Delivered so far:
   `j/k` scroll the window while keeping the cursor visible.
 - Reopening Explorer with `e` resets its search and kind filters, providing a
   predictable starting point for the next exploration.
+- Explorer selection with `Enter` returns to the Map, and its footer exposes
+  the kind filters plus `0 all` reset explicitly.
 - The Map `r` action shows the direct Handlers that dispatch the selected Event
   through a depth-one upstream projection.
 - The Map no longer exposes spatial pan controls. Its viewport is reserved for

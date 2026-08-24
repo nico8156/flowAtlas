@@ -411,6 +411,7 @@ export const TerminalTui = ({
     }
     if (key.return && cursorNode) {
       setViewState((current) => ({ ...current, selectedNodeId: cursorNode.id }));
+      setActivePane("map");
     }
   });
 
@@ -512,7 +513,7 @@ export const TerminalTui = ({
           {activePane === "map"
             ? "e / explore   i inspect   n neighborhood   t territory   +/- density   f focus   u upstream   d downstream   r handlers   q quit"
             : activePane === "explorer"
-              ? "↑↓/jk navigate   enter map   esc back   q quit"
+              ? "↑↓/jk navigate   1/2/3/4 filter   0 all   enter map   esc back   q quit"
               : "esc back   q quit"}
         </Text>
       </Box>
