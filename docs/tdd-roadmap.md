@@ -462,6 +462,8 @@ Delivered so far:
   through a depth-one upstream projection.
 - The Map no longer exposes spatial pan controls. Its viewport is reserved for
   clipping and selection visibility; Neighborhood remains stable and focused.
+- The active Map pane fills the available terminal height, including blank
+  space, so short projections remain inside one stable full-screen surface.
 
 ### Known gaps
 
