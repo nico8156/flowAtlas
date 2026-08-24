@@ -7,6 +7,7 @@ import { buildTerminalView, filterTerminalProjection } from "./terminalVisualize
 import {
   createViewport,
   ensureNodeVisible,
+  layoutNeighborhood,
   layoutProjection,
   panViewport,
   renderTerminalMap,
@@ -14,6 +15,7 @@ import {
 } from "./terminalMapLayout.js";
 
 type Pane = "explorer" | "map" | "inspector";
+type MapRepresentation = "territory" | "neighborhood";
 export type ProjectionMode = "full" | "focus" | "upstream" | "downstream";
 
 export type ProjectionChange = {
@@ -213,6 +215,7 @@ export const TerminalTui = ({
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const [density, setDensity] = useState<Density>("normal");
+  const [mapRepresentation, setMapRepresentation] = useState<MapRepresentation>("territory");
   const [viewport, setViewport] = useState(() =>
     createViewport(Math.max(24, Math.floor((stdout.columns ?? 80) * 0.5) - 4), 16),
   );
@@ -234,8 +237,11 @@ export const TerminalTui = ({
     [filteredProjection, query, viewState.selectedNodeId],
   );
   const layout = useMemo(
-    () => layoutProjection(filteredProjection, { density }),
-    [density, filteredProjection],
+    () =>
+      mapRepresentation === "neighborhood" && viewState.selectedNodeId
+        ? layoutNeighborhood(filteredProjection, viewState.selectedNodeId, { density })
+        : layoutProjection(filteredProjection, { density }),
+    [density, filteredProjection, mapRepresentation, viewState.selectedNodeId],
   );
   const cursorNode = view.visibleNodes[cursor] ?? view.visibleNodes[0];
   const mapWidth = Math.max(24, Math.floor((stdout.columns ?? 80) * 0.5) - 4);
@@ -323,6 +329,14 @@ export const TerminalTui = ({
     }
 
     if (activePane === "map") {
+      if (input === "n") {
+        setMapRepresentation("neighborhood");
+        return;
+      }
+      if (input === "t") {
+        setMapRepresentation("territory");
+        return;
+      }
       if (input === "h" || key.leftArrow)
         setViewport((current) => panViewport(current, { x: -4, y: 0 }));
       if (input === "l" || key.rightArrow)
@@ -410,6 +424,7 @@ export const TerminalTui = ({
           <Text color={activePane === "map" ? theme.selection : theme.foreground} bold>
             {paneTitle("Map", activePane === "map")}
           </Text>
+          <Text color={theme.muted}>Representation: {mapRepresentation}</Text>
           <Text color={theme.muted}>Density: {density}</Text>
           {renderTerminalMap(layout, viewport, viewState.selectedNodeId).map((line, index) => (
             <Text key={`${line}-${index}`}>{line}</Text>
@@ -452,7 +467,7 @@ export const TerminalTui = ({
       <Box borderColor={theme.muted} borderStyle="single" paddingX={1}>
         <Text color={theme.muted}>
           {activePane === "map"
-            ? "hjkl pan   +/- density   f focus   u upstream   d downstream   tab pane   q quit"
+            ? "n neighborhood   t territory   hjkl pan   +/- density   f focus   u upstream   d downstream   tab pane   q quit"
             : "/ search   ↑↓/jk navigate   enter select   f focus   u upstream   d downstream   tab pane   q quit"}
         </Text>
       </Box>

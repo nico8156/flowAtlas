@@ -76,11 +76,12 @@ npx flowatlas tui uiLikeToggleRequested .
 ```
 
 It provides Explorer, Map and Inspector panes with `Tab`, `/`, `j/k`, arrows,
-`Enter`, `Esc` and `q`. When Map is active, `h/j/k/l` pans the viewport and
-`+/-` changes presentation density. It consumes the existing graph projection
-and `f/u/d` request focus, upstream and downstream projections through the CLI
-application boundary. It does not add traversal or analysis logic to the
-terminal adapter.
+`Enter`, `Esc` and `q`. When Map is active, `h/j/k/l` pans the viewport,
+`+/-` changes presentation density, `n` shows the selected node's
+`Neighborhood`, and `t` restores the full territory representation. It
+consumes the existing graph projection and `f/u/d` request focus, upstream and
+downstream projections through the CLI application boundary. It does not add
+traversal or analysis logic to the terminal adapter.
 
 The terminal map is being extended with presentation modes. The first mode is
 `Neighborhood`: a selected node and its directly connected architectural

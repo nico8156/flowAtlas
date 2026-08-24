@@ -443,6 +443,9 @@ Delivered so far:
   `CALLS_EXTERNAL` remain distinguishable.
 - a presentation-only `Neighborhood` layout can isolate a selected node and
   its directly connected territory while preserving the projection edges.
+- the interactive TUI can switch between `territory` and `Neighborhood`
+  representations with `t` and `n`, without changing the Inspector or graph
+  semantics.
 
 ### Known gaps
 
@@ -457,8 +460,8 @@ The browser implementation is not the M7 product target. The TUI still needs:
   worker keeps the TUI responsive while TTFG is in progress.
 - a visual review on a full-size real Fragments terminal session after the
   graph becomes ready.
-- expose the `Neighborhood` representation through the interactive TUI and
-  validate it on a real Fragments projection.
+- validate the interactive `Neighborhood` representation on a real Fragments
+  projection and assess whether the reduced territory improves readability.
 
 ### Before-layout evidence
 

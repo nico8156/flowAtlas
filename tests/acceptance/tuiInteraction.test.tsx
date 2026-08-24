@@ -75,6 +75,17 @@ describe("Terminal visualizer interaction acceptance", () => {
     expect(mapFrame).toContain("LikeHandler");
     expect(mapFrame).toContain("Kind: Handler");
 
+    instance.stdin.write("n");
+    await nextFrame();
+    const neighborhoodFrame = instance.lastFrame() ?? "";
+    expect(neighborhoodFrame).toContain("Map · active");
+    expect(neighborhoodFrame).toContain("Representation: neighborhood");
+    expect(neighborhoodFrame).toContain("Kind: Handler");
+
+    instance.stdin.write("t");
+    await nextFrame();
+    expect(instance.lastFrame()).toContain("Representation: territory");
+
     instance.stdin.write("q");
     await nextFrame();
     instance.cleanup();
