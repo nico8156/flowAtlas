@@ -99,6 +99,9 @@ kind; additional letters add kinds to the visible set. Pressing the last
 active kind restores all kinds, and `0` always restores the full list.
 Long Explorer lists are rendered through a bounded window and show their
 visible range; `j/k` scroll the window while keeping the cursor visible.
+Press `Enter` on the cursor to select that node and return to the Map. The
+Explorer footer exposes `1/2/3/4` kind filters and `0 all` to restore the full
+list.
 Opening Explorer again with `e` resets its search and kind filters so each
 exploration starts from the complete visible node list.
 From the Map, `r` shows the Handlers that dispatch the selected Event.

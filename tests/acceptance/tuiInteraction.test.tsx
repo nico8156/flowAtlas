@@ -134,6 +134,24 @@ describe("Terminal visualizer interaction acceptance", () => {
     instance.cleanup();
   });
 
+  it("selects the Explorer cursor and returns to the Map", async () => {
+    const instance = render(
+      <TerminalTui initialSelectedNodeId="Node00" projection={createLongProjection()} />,
+    );
+
+    instance.stdin.write("e");
+    await nextFrame();
+    instance.stdin.write("j");
+    await nextFrame();
+    instance.stdin.write("\r");
+    await nextFrame();
+
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("Map · active");
+    expect(frame).toContain("Node01");
+    instance.cleanup();
+  });
+
   it("resets Explorer filters and search when leaving the screen", async () => {
     const instance = render(
       <TerminalTui initialSelectedNodeId="LikeRequested" projection={createFixtureProjection()} />,
