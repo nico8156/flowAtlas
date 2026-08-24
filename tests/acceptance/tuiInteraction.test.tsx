@@ -96,6 +96,7 @@ describe("Terminal visualizer interaction acceptance", () => {
     const neighborhoodFrame = instance.lastFrame() ?? "";
     expect(neighborhoodFrame).toContain("Map · active");
     expect(neighborhoodFrame).toContain("Representation: neighborhood");
+    expect(neighborhoodFrame).not.toContain("hjkl pan");
 
     instance.stdin.write("t");
     await nextFrame();

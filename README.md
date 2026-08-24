@@ -78,8 +78,9 @@ npx flowatlas tui uiLikeToggleRequested .
 It provides Map, Explorer and Inspector as full-screen application screens. Map
 is the default; `/` or `e` opens Explorer, `Enter` returns to Map with the
 selected node, and `i` opens Inspector. `Esc` returns to Map. In Explorer,
-`j/k`, arrows and search select nodes. When Map is active, `h/j/k/l` pans the
-viewport, `+/-` changes presentation density, `n` shows the selected node's
+`j/k`, arrows and search select nodes. In the Map, `h/j/k/l` pans only the
+`Territory` representation, while `Neighborhood` stays stable and focused.
+`+/-` changes presentation density, `n` shows the selected node's
 `Neighborhood`, and `t` restores the full territory representation. It
 consumes the existing graph projection and `f/u/d` request focus, upstream and
 downstream projections through the CLI application boundary. It does not add
