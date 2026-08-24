@@ -290,6 +290,7 @@ export const TerminalTui = ({
       if (key.return) {
         if (cursorNode) setViewState((current) => ({ ...current, selectedNodeId: cursorNode.id }));
         setActivePane("map");
+        setMapRepresentation("neighborhood");
         setSearchMode(false);
         return;
       }
@@ -417,6 +418,7 @@ export const TerminalTui = ({
     if (key.return && cursorNode) {
       setViewState((current) => ({ ...current, selectedNodeId: cursorNode.id }));
       setActivePane("map");
+      setMapRepresentation("neighborhood");
     }
   });
 

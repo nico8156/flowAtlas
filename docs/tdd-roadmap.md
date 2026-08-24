@@ -477,6 +477,8 @@ Delivered so far:
   and detailed densities retain the canonical relation names.
 - Selection is derived against the current visible projection before render,
   preventing empty or unmarked Map frames during node and projection changes.
+- Selecting a node from Explorer enters Neighborhood automatically; Territory
+  remains an explicit full-projection view via `t`.
 
 ### Known gaps
 

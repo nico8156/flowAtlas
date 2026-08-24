@@ -148,6 +148,7 @@ describe("Terminal visualizer interaction acceptance", () => {
 
     const frame = instance.lastFrame() ?? "";
     expect(frame).toContain("Map · active");
+    expect(frame).toContain("Representation: neighborhood");
     expect(frame).toContain("Node01");
     instance.cleanup();
   });
