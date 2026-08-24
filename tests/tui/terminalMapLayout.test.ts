@@ -98,4 +98,19 @@ describe("terminal map layout", () => {
     expect(map.join("\n")).toContain("DISPATCHES");
     expect(map.join("\n")).toContain("CALLS_EXTERNAL");
   });
+
+  it("keeps node labels readable when an edge label crosses their row", () => {
+    const layout = {
+      nodes: [
+        { id: "source", kind: "Handler" as const, x: 0, y: 0, width: 10, height: 1 },
+        { id: "protectedNode", kind: "Event" as const, x: 15, y: 0, width: 22, height: 1 },
+        { id: "target", kind: "External" as const, x: 45, y: 0, width: 10, height: 1 },
+      ],
+      edges: [{ source: "source", target: "target", kind: "CALLS_EXTERNAL" as const }],
+    };
+
+    expect(renderTerminalMap(layout, { x: 0, y: 0, width: 70, height: 4 }).join("\n")).toContain(
+      "protectedNode",
+    );
+  });
 });

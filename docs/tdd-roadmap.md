@@ -471,6 +471,8 @@ Delivered so far:
 - Branched Neighborhood relations use explicit vertical connectors before
   their target segments, keeping multiple relation labels readable without
   inventing edges.
+- Map nodes are rendered as the top visual layer so edge strokes cannot
+  overwrite node identities or the selected marker.
 
 ### Known gaps
 

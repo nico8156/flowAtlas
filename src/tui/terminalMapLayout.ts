@@ -292,7 +292,7 @@ export const renderTerminalMap = (
 
   for (const node of visibleNodes) {
     const label = `${node.id === selectedNodeId ? ">" : " "} [${markerFor(node)}] ${node.id}`;
-    put(canvas, node.x - viewport.x, node.y - viewport.y, label);
+    putLabel(canvas, node.x - viewport.x, node.y - viewport.y, label);
   }
 
   return canvas.map((row) => row.join("").trimEnd());
