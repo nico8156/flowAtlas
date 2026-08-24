@@ -72,4 +72,24 @@ describe("terminal map layout", () => {
     expect(colored).toContain("\u001b[38;2;117;113;94mDISPATCHES");
     expect(colored).toContain("\u001b[38;2;174;129;255m>");
   });
+
+  it("routes branched relations with a visible vertical connection", () => {
+    const projection = {
+      nodes: [
+        { id: "handler", kind: "Handler" as const },
+        { id: "accepted", kind: "Event" as const },
+        { id: "gateway", kind: "External" as const },
+      ],
+      edges: [
+        { source: "handler", target: "accepted", kind: "DISPATCHES" as const },
+        { source: "handler", target: "gateway", kind: "CALLS_EXTERNAL" as const },
+      ],
+    };
+    const layout = layoutNeighborhood(projection, "handler", { density: "normal" });
+    const map = renderTerminalMap(layout, { x: 0, y: 0, width: 100, height: 12 });
+
+    expect(map.join("\n")).toContain("│");
+    expect(map.join("\n")).toContain("DISPATCHES");
+    expect(map.join("\n")).toContain("CALLS_EXTERNAL");
+  });
 });

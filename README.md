@@ -89,6 +89,9 @@ traversal or analysis logic to the terminal adapter.
 The Map uses a Monokai-inspired palette while retaining `[E]`, `[H]`, `[S]`
 and `[X]` markers: Events are cyan, Handlers pink, States green, Externals
 orange, relation labels muted and the selected marker violet.
+When a node has several outgoing relations, the Map uses a vertical branch
+connector before each horizontal target segment so relation labels remain
+separate and directional.
 
 Explorer filters use `e` (Events), `h` (Handlers), `s` (States) and `x`
 (Externals). From the full list, the first letter narrows the list to that

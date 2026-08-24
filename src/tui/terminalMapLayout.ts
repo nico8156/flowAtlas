@@ -271,13 +271,21 @@ export const renderTerminalMap = (
 
     const x1 = source.x + source.width - viewport.x;
     const x2 = target.x - viewport.x;
-    const y = source.y - viewport.y;
-    if (x2 <= x1 || y < 0 || y >= viewport.height) continue;
-    for (let x = x1; x < x2; x += 1) put(canvas, x, y, "─");
+    const sourceY = source.y - viewport.y;
+    const targetY = target.y - viewport.y;
+    if (x2 <= x1 || targetY < 0 || targetY >= viewport.height) continue;
+
+    if (sourceY !== targetY) {
+      const firstY = Math.min(sourceY, targetY);
+      const lastY = Math.max(sourceY, targetY);
+      for (let y = firstY; y <= lastY; y += 1) put(canvas, x1, y, "│");
+    }
+
+    for (let x = x1; x < x2; x += 1) put(canvas, x, targetY, "─");
     const label = edge.kind;
     const labelX = x1 + Math.max(0, Math.floor((x2 - x1 - label.length) / 2));
-    putLabel(canvas, labelX, y, label);
-    put(canvas, x2 - 1, target.y - viewport.y, target.y >= source.y ? "▼" : "▲");
+    putLabel(canvas, labelX, targetY, label);
+    put(canvas, x2 - 1, targetY, "▶");
   }
 
   for (const node of visibleNodes) {
