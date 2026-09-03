@@ -711,7 +711,6 @@ observes source modifications without serving a stale graph.
 ### Known gaps
 
 - focused CLI projections other than `context` produce human-oriented text;
-- projections are depth-limited but not node- or edge-budgeted;
 - projection traversal currently scans graph edges rather than using public
   adjacency indexes;
 - the package is private and is not yet installable from npm as a normal
@@ -732,6 +731,9 @@ observes source modifications without serving a stale graph.
   justified separately by measured repeated-scan cost.
 - Missing static causality remains missing and is never repaired for agent
   convenience.
+- Bounded contexts use breadth-first distance, case-insensitive lexical node
+  identity within each layer and atomic induced-graph additions; traversal
+  stops before the first addition that exceeds a node or edge budget.
 - Adjacency indexes are reconstructible implementation details and will be
   introduced only if a large-corpus benchmark justifies them.
 
@@ -749,20 +751,24 @@ observes source modifications without serving a stale graph.
   inferring features, use cases or semantic similarity;
 - the real Fragments acceptance proves stable filtering, ranking, limiting and
   source-location output for Like Events.
+- optional `context --max-nodes --max-edges` budgets stop a deterministic
+  breadth-first traversal before the first addition that would exceed either
+  limit;
+- bounded contexts preserve the induced graph between returned nodes and
+  expose completion, returned counts and canonical relations crossing the
+  unexplored frontier;
+- the real Fragments `lState` acceptance proves that an edge budget can stop
+  before the node budget without silently hiding an internal relation.
 
 ### Discovered micro-cycles
 
-The context JSON and deterministic node-discovery cycles are delivered through
-real Fragments Like acceptances. The next RED must be derived from an observed
-wide projection that requires explicit context bounds; this roadmap does not
-pre-authorize the MCP server, caching or graph-index changes.
+The context JSON, deterministic node-discovery and explicitly bounded context
+cycles are delivered through real Fragments Like acceptances. The next driver
+must measure equivalent coding-agent tasks with and without FlowAtlas; this
+roadmap does not pre-authorize the MCP server, caching or graph-index changes.
 
 ### Open design questions
 
-- What is the smallest stable JSON envelope that distinguishes graph absence
-  from projection truncation?
-- Which deterministic ordering governs traversal when a node or edge budget
-  is reached?
 - Should discovery and context remain separate CLI scans, or should a single
   command support query-to-context after the baseline is measured?
 - What evidence threshold demonstrates that FlowAtlas materially improves an

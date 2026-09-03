@@ -29,7 +29,7 @@ import {
 } from "./tui/TerminalTui.js";
 
 const usage =
-  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas find <query> [path] --kind <Event|Handler|State|External> --limit <count> --json | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> --json | flowatlas tui <nodeId> [path]";
+  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas find <query> [path] --kind <Event|Handler|State|External> --limit <count> --json | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> [--max-nodes <count> --max-edges <count>] --json | flowatlas tui <nodeId> [path]";
 
 const nodeKinds: readonly NodeKind[] = ["Event", "Handler", "State", "External"];
 
@@ -84,6 +84,8 @@ const parseContextArguments = (
   projectPath: string;
   direction: ArchitectureContextDirection;
   maxDepth: number;
+  maxNodes?: number;
+  maxEdges?: number;
 } => {
   const [nodeId, possiblePath, ...remainingArguments] = arguments_;
   if (!nodeId) throw new Error(usage);
@@ -97,6 +99,8 @@ const parseContextArguments = (
       : [possiblePath, ...remainingArguments];
   let direction: ArchitectureContextDirection | undefined;
   let maxDepth: number | undefined;
+  let maxNodes: number | undefined;
+  let maxEdges: number | undefined;
   let json = false;
 
   for (let index = 0; index < options.length; index += 1) {
@@ -121,12 +125,39 @@ const parseContextArguments = (
       index += 1;
       continue;
     }
+    if (option === "--max-nodes") {
+      const value = Number(options[index + 1]);
+      if (!Number.isInteger(value) || value <= 0) throw new Error(usage);
+      maxNodes = value;
+      index += 1;
+      continue;
+    }
+    if (option === "--max-edges") {
+      const value = Number(options[index + 1]);
+      if (!Number.isInteger(value) || value < 0) throw new Error(usage);
+      maxEdges = value;
+      index += 1;
+      continue;
+    }
     throw new Error(usage);
   }
 
-  if (!json || direction === undefined || maxDepth === undefined) throw new Error(usage);
+  if (
+    !json ||
+    direction === undefined ||
+    maxDepth === undefined ||
+    (maxNodes === undefined) !== (maxEdges === undefined)
+  ) {
+    throw new Error(usage);
+  }
 
-  return { nodeId, projectPath, direction, maxDepth };
+  return {
+    nodeId,
+    projectPath,
+    direction,
+    maxDepth,
+    ...(maxNodes !== undefined && maxEdges !== undefined ? { maxNodes, maxEdges } : {}),
+  };
 };
 
 export const runCli = async (
@@ -142,10 +173,14 @@ export const runCli = async (
   }
 
   if (arguments_[0] === "context") {
-    const { nodeId, projectPath, direction, maxDepth } = parseContextArguments(arguments_.slice(1));
+    const { nodeId, projectPath, direction, maxDepth, maxNodes, maxEdges } = parseContextArguments(
+      arguments_.slice(1),
+    );
     const loadedProject = await loadTypeScriptProject(projectPath);
     const graph = scanTypeScriptProject(loadedProject.project);
-    const context = buildArchitectureContext(graph, nodeId, direction, maxDepth);
+    const limits =
+      maxNodes !== undefined && maxEdges !== undefined ? { maxNodes, maxEdges } : undefined;
+    const context = buildArchitectureContext(graph, nodeId, direction, maxDepth, limits);
     process.stdout.write(`${serializeArchitectureContext(context)}\n`);
     return;
   }

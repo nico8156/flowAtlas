@@ -49,7 +49,7 @@ npx flowatlas downstream <nodeId> .
 npx flowatlas upstream <nodeId> .
 npx flowatlas scan --json .
 npx flowatlas find <query> . --kind Event --limit 10 --json
-npx flowatlas context <nodeId> . --direction both --depth 2 --json
+npx flowatlas context <nodeId> . --direction both --depth 2 --max-nodes 40 --max-edges 80 --json
 npx flowatlas focus <nodeId> .
 npx flowatlas tui <nodeId> .
 ```
@@ -58,6 +58,10 @@ npx flowatlas tui <nodeId> .
 machine consumption. Its traversal direction is independent from the
 canonical storage direction of relations, and the returned source locations
 are orientation evidence rather than an exhaustive list of files to modify.
+Optional node and edge budgets stop before the first deterministic breadth-first
+addition that would exceed either limit. The result reports whether traversal
+completed, its returned counts and each known relation crossing the unexplored
+frontier; relations between returned nodes are never silently removed.
 
 `find` returns a limited, deterministic list of architectural node candidates.
 It searches existing node identifiers, kinds, provenance and source paths; it
