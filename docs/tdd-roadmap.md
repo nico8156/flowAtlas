@@ -18,6 +18,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 6. CLI productization                      | DELIVERED                                 |
 | 7. Visualizer MVP                          | ACTIVE: CLI/TUI pivot                     |
 | 7A. Terminal Map CLI                       | DELIVERED: absorbed into M7               |
+| 7B. Agent context interfaces               | PROPOSED: application -> CLI -> MCP       |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -580,6 +581,191 @@ requiring a browser or manual JSON file loading.
 `flowatlas focus` is covered by a real CLI acceptance test, renders a useful
 focused projection, supports bounded depth, handles unknown nodes cleanly and
 remains compatible with pipes and CI output.
+
+## Milestone 7B - Agent Context Interfaces
+
+**Status: PROPOSED — application contract, then CLI, then MCP**
+
+### Goal
+
+Let coding agents build a small, trustworthy architectural context on demand
+without receiving the complete graph. FlowAtlas establishes statically
+justifiable architecture; the agent decides how to explore and modify the
+source.
+
+The target dependency direction is:
+
+```text
+ArchitectureGraph
+      -> application discovery and context projection
+            -> CLI adapter
+            -> MCP adapter
+```
+
+MCP is a delivery mechanism, not a new analysis or graph model. The CLI and
+MCP adapters must expose the same application behavior rather than implement
+parallel search, traversal or truncation rules.
+
+### Acceptance drivers
+
+The first driver is a real Fragments use case whose architectural entry point
+is not supplied in advance. A consumer must be able to:
+
+1. find a small deterministic set of candidate nodes from a query;
+2. request a focused, depth-limited JSON projection from one candidate;
+3. locate the referenced source files;
+4. distinguish a complete projection from one limited by an explicit budget;
+5. deepen exploration from a frontier node without receiving the full graph.
+
+After the CLI contract is usable, compare equivalent coding-agent tasks with
+and without FlowAtlas. Record at least files opened, search commands, context
+size, missed architectural relations, incorrect hypotheses and final test
+results. Token counts are useful when available but are not required for the
+first evaluation.
+
+The MCP driver follows only after that evaluation: a local MCP client must be
+able to discover a node, request its context and inspect it with results
+equivalent to the CLI on the same checkout.
+
+### Proposed application capabilities
+
+Candidate capabilities are independent from their transport:
+
+```text
+findArchitectureNodes(query, filters, limit)
+buildArchitectureContext(nodeId, direction, limits)
+inspectArchitectureNode(nodeId)
+```
+
+The initial CLI shape may expose them as:
+
+```text
+flowatlas find <query> [path] --kind <kind> --limit <count> --json
+flowatlas context <nodeId> [path] --direction <direction> --depth <count> --json
+```
+
+Exact argument ordering and defaults remain acceptance decisions. The first
+JSON context contract should be versioned and contain the focus, request,
+projection and source locations. It must preserve canonical edge directions;
+the requested traversal direction is separate metadata.
+
+### Context bounds and truthfulness
+
+Depth alone may not bound a highly connected territory. Node and edge budgets
+are candidates after observing a real wide projection:
+
+```text
+--max-nodes <count>
+--max-edges <count>
+```
+
+When a budget is reached, the result must not silently imply that the returned
+projection is exhaustive. A context envelope may report:
+
+- whether the requested traversal completed within its limits;
+- the applied depth, node and edge limits;
+- returned node and edge counts;
+- frontier nodes with known neighbors that were not expanded.
+
+The frontier describes projection coverage, not new architecture. It must use
+canonical `RelationKind` values plus a separate traversal direction; it must
+not introduce inverse relations such as `LISTENED_BY` into the graph.
+
+A provider-specific `maxTokens` option is excluded initially. Deterministic
+node and edge budgets validate contextual selection without coupling the core
+to a model tokenizer. A byte-size budget may be evaluated later if measured
+serialization size becomes a problem.
+
+### Deterministic discovery
+
+Initial node discovery is limited to existing graph information: node id,
+kind, provenance and source path. Exact, prefix, word and substring matches
+may be ranked deterministically with lexical tie-breaking.
+
+Discovery must not infer `Feature`, `UseCase`, package ownership or semantic
+similarity from directory names. Source paths may be searchable metadata
+without becoming hierarchy in `ArchitectureGraph`. Embeddings and LLM-based
+ranking are outside this milestone.
+
+### MCP delivery
+
+The first MCP adapter may expose:
+
+```text
+flowatlas_find_nodes
+flowatlas_get_context
+flowatlas_inspect_node
+```
+
+The MCP SDK remains at the adapter boundary. The domain and scanner must not
+depend on MCP, and the server must not reinterpret results produced by the
+application capabilities.
+
+The first vertical should prefer freshness over optimization and may rescan
+for every architectural request. A long-lived graph, file invalidation,
+incremental TypeScript Program or persistent cache requires measurements and
+a separate architecture decision. If repeated scans make the validated
+workflow unusable, a later acceptance must prove that a same-session request
+observes source modifications without serving a stale graph.
+
+### Known gaps
+
+- only complete-graph JSON serialization exists today;
+- focused CLI projections currently produce human-oriented text;
+- no machine-oriented node discovery command exists;
+- projections are depth-limited but not node- or edge-budgeted;
+- projection traversal currently scans graph edges rather than using public
+  adjacency indexes;
+- the package is private and is not yet installable from npm as a normal
+  project development dependency;
+- no measured coding-agent comparison currently establishes context savings;
+- project lifetime, freshness and multi-checkout behavior are undecided for a
+  persistent MCP server.
+
+### Decisions
+
+- Option B is selected: application capabilities precede transport adapters.
+- `ArchitectureGraph` remains the only canonical architecture model.
+- Agent context is a versioned application output over a graph projection,
+  not a stored `Flow`, facts model or new domain vocabulary.
+- Full-graph export is not the primary agent workflow.
+- The CLI validates the context contract before MCP productization.
+- MCP is justified by tool discovery and structured access; persistence is
+  justified separately by measured repeated-scan cost.
+- Missing static causality remains missing and is never repaired for agent
+  convenience.
+- Adjacency indexes are reconstructible implementation details and will be
+  introduced only if a large-corpus benchmark justifies them.
+
+### Discovered micro-cycles
+
+None scheduled. The first RED must project a real Fragments discovery and
+context request through an application boundary. Subsequent micro-cycles are
+derived from that acceptance gap; this roadmap does not pre-authorize the MCP
+server, caching or graph-index changes.
+
+### Open design questions
+
+- What is the smallest stable JSON envelope that distinguishes graph absence
+  from projection truncation?
+- Which deterministic ordering governs traversal when a node or edge budget
+  is reached?
+- Should discovery and context remain separate CLI scans, or should a single
+  command support query-to-context after the baseline is measured?
+- What evidence threshold demonstrates that FlowAtlas materially improves an
+  agent task?
+- Which freshness contract would justify retaining a graph in an MCP process?
+- How should project roots and multiple TypeScript configurations be selected
+  without changing node identity or scan-scope semantics?
+
+### Completion criteria
+
+The milestone is complete when a coding agent can discover and progressively
+explore a bounded real architectural territory through both CLI and MCP; both
+adapters return equivalent, versioned, explicitly complete-or-truncated
+results; the agent reads referenced sources before editing; and measured tasks
+show a useful exploration benefit without changing graph vocabulary,
+inventing causality or serving stale architectural truth.
 
 ## Milestone 8 - Broader Validation
 
