@@ -710,8 +710,7 @@ observes source modifications without serving a stale graph.
 
 ### Known gaps
 
-- only complete-graph JSON serialization exists today;
-- focused CLI projections currently produce human-oriented text;
+- focused CLI projections other than `context` produce human-oriented text;
 - no machine-oriented node discovery command exists;
 - projections are depth-limited but not node- or edge-budgeted;
 - projection traversal currently scans graph edges rather than using public
@@ -737,12 +736,21 @@ observes source modifications without serving a stale graph.
 - Adjacency indexes are reconstructible implementation details and will be
   introduced only if a large-corpus benchmark justifies them.
 
+### Delivered capabilities
+
+- `context <nodeId> [path] --direction <upstream|downstream|both> --depth
+<count> --json` exports a versioned focused projection;
+- the application context keeps traversal request metadata separate from
+  canonical graph edge directions;
+- the real Fragments Like event acceptance preserves source locations, known
+  relations and the requested depth boundary.
+
 ### Discovered micro-cycles
 
-None scheduled. The first RED must project a real Fragments discovery and
-context request through an application boundary. Subsequent micro-cycles are
-derived from that acceptance gap; this roadmap does not pre-authorize the MCP
-server, caching or graph-index changes.
+The first context JSON cycle is delivered through a real Fragments Like
+acceptance. The next RED must be derived from deterministic node discovery;
+this roadmap does not pre-authorize the MCP server, caching or graph-index
+changes.
 
 ### Open design questions
 

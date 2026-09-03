@@ -2,6 +2,11 @@ import { render } from "ink";
 import { createElement } from "react";
 
 import { formatArchitectureSummary } from "./application/architectureSummary.js";
+import {
+  buildArchitectureContext,
+  serializeArchitectureContext,
+  type ArchitectureContextDirection,
+} from "./application/architectureContext.js";
 import { serializeArchitectureGraph } from "./application/architectureGraphJson.js";
 import { formatGraphProjection } from "./application/graphProjectionOutput.js";
 import { projectFocusedTerritory } from "./application/focusedGraphProjection.js";
@@ -19,11 +24,72 @@ import {
 } from "./tui/TerminalTui.js";
 
 const usage =
-  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas tui <nodeId> [path]";
+  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> --json | flowatlas tui <nodeId> [path]";
+
+const parseContextArguments = (
+  arguments_: readonly string[],
+): {
+  nodeId: string;
+  projectPath: string;
+  direction: ArchitectureContextDirection;
+  maxDepth: number;
+} => {
+  const [nodeId, possiblePath, ...remainingArguments] = arguments_;
+  if (!nodeId) throw new Error(usage);
+
+  const hasProjectPath = possiblePath !== undefined && !possiblePath.startsWith("--");
+  const projectPath = hasProjectPath ? possiblePath : ".";
+  const options = hasProjectPath
+    ? remainingArguments
+    : possiblePath === undefined
+      ? remainingArguments
+      : [possiblePath, ...remainingArguments];
+  let direction: ArchitectureContextDirection | undefined;
+  let maxDepth: number | undefined;
+  let json = false;
+
+  for (let index = 0; index < options.length; index += 1) {
+    const option = options[index];
+    if (option === "--json") {
+      json = true;
+      continue;
+    }
+    if (option === "--direction") {
+      const value = options[index + 1];
+      if (value !== "upstream" && value !== "downstream" && value !== "both") {
+        throw new Error(usage);
+      }
+      direction = value;
+      index += 1;
+      continue;
+    }
+    if (option === "--depth") {
+      const value = Number(options[index + 1]);
+      if (!Number.isInteger(value) || value < 0) throw new Error(usage);
+      maxDepth = value;
+      index += 1;
+      continue;
+    }
+    throw new Error(usage);
+  }
+
+  if (!json || direction === undefined || maxDepth === undefined) throw new Error(usage);
+
+  return { nodeId, projectPath, direction, maxDepth };
+};
 
 export const runCli = async (
   arguments_: readonly string[] = process.argv.slice(2),
 ): Promise<void> => {
+  if (arguments_[0] === "context") {
+    const { nodeId, projectPath, direction, maxDepth } = parseContextArguments(arguments_.slice(1));
+    const loadedProject = await loadTypeScriptProject(projectPath);
+    const graph = scanTypeScriptProject(loadedProject.project);
+    const context = buildArchitectureContext(graph, nodeId, direction, maxDepth);
+    process.stdout.write(`${serializeArchitectureContext(context)}\n`);
+    return;
+  }
+
   const [command = "scan", firstArgument, secondArgument, ...unexpectedArguments] = arguments_;
 
   const jsonExport = command === "scan" && firstArgument === "--json";

@@ -48,9 +48,15 @@ npx flowatlas inspect <nodeId> .
 npx flowatlas downstream <nodeId> .
 npx flowatlas upstream <nodeId> .
 npx flowatlas scan --json .
+npx flowatlas context <nodeId> . --direction both --depth 2 --json
 npx flowatlas focus <nodeId> .
 npx flowatlas tui <nodeId> .
 ```
+
+`context` exports a versioned, focused `ArchitectureGraph` projection for
+machine consumption. Its traversal direction is independent from the
+canonical storage direction of relations, and the returned source locations
+are orientation evidence rather than an exhaustive list of files to modify.
 
 The browser adapter can still be run locally with:
 
