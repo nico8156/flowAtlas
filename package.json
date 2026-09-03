@@ -5,18 +5,21 @@
   "description": "An architecture map for event-driven applications.",
   "license": "MIT",
   "bin": {
-    "flowatlas": "dist/index.js"
+    "flowatlas": "dist/index.js",
+    "flowatlas-mcp": "dist/mcp.js"
   },
   "type": "module",
   "files": [
     "dist"
   ],
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@xyflow/react": "^12.11.2",
     "ink": "^7.1.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "zod": "^4.5.4"
   },
   "scripts": {
     "build": "tsup",

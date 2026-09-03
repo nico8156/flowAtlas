@@ -67,6 +67,31 @@ frontier; relations between returned nodes are never silently removed.
 It searches existing node identifiers, kinds, provenance and source paths; it
 does not infer features, use cases or semantic similarity.
 
+### MCP server
+
+The first local MCP adapter exposes the same application behavior through two
+tools:
+
+- `flowatlas_find_nodes` discovers deterministic candidates;
+- `flowatlas_get_context` returns a bounded, versioned architecture context.
+
+Build and start the source checkout over `stdio` with:
+
+```sh
+npm run build
+node dist/mcp.js
+```
+
+The server writes MCP protocol messages only to `stdout`; diagnostics belong on
+`stderr`. Each tool call loads and scans the requested `projectPath` afresh.
+There is no retained graph, cache, watcher or invalidation policy in this first
+vertical. The MCP adapter receives an `ArchitectureGraph` loader and delegates
+discovery and projection to the same application functions as the CLI.
+
+The source package also declares the future installed binary name
+`flowatlas-mcp`. Package publication and Codex client configuration remain
+separate milestones.
+
 The browser adapter can still be run locally with:
 
 ```sh

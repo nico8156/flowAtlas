@@ -18,7 +18,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 6. CLI productization                      | DELIVERED                                 |
 | 7. Visualizer MVP                          | ACTIVE: CLI/TUI pivot                     |
 | 7A. Terminal Map CLI                       | DELIVERED: absorbed into M7               |
-| 7B. Agent context interfaces               | ACTIVE: autonomous CLI validated          |
+| 7B. Agent context interfaces               | ACTIVE: first MCP vertical delivered      |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -584,7 +584,7 @@ remains compatible with pipes and CI output.
 
 ## Milestone 7B - Agent Context Interfaces
 
-**Status: ACTIVE — autonomous CLI validated; MCP not started**
+**Status: ACTIVE — ephemeral MCP vertical delivered**
 
 ### Goal
 
@@ -767,15 +767,21 @@ observes source modifications without serving a stale graph.
 - the first paired observation is recorded in
   `docs/evaluations/codex-autonomous-exploration.md`: autonomy succeeded, but
   the treatment consumed more tokens and opened more files than the control.
+- a local `stdio` MCP adapter exposes exactly `flowatlas_find_nodes` and
+  `flowatlas_get_context`, delegating to the existing application capabilities;
+- a real Fragments protocol acceptance proves MCP initialization, tool
+  discovery, structured results and exact equivalence with application output;
+- the `flowatlas-mcp` composition root scans the requested checkout afresh for
+  every tool call and retains no graph or cache.
 
 ### Discovered micro-cycles
 
 The context JSON, deterministic node-discovery and explicitly bounded context
 cycles are delivered through real Fragments Like acceptances. The autonomous
-Codex driver is also delivered, including a control/treatment observation and
-a tightened stop policy. The next driver must isolate repeated scan cost and
-repeat the comparison on change-oriented tasks; this roadmap does not
-pre-authorize the MCP server, caching or graph-index changes.
+Codex driver and first ephemeral MCP transport are also delivered. The next
+driver must connect Codex to these MCP tools, compare MCP with CLI on a
+change-oriented task and observe freshness after a source modification. This
+roadmap does not pre-authorize persistence, caching or graph-index changes.
 
 ### Open design questions
 
