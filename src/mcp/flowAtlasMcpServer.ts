@@ -11,7 +11,12 @@ const nodeKindSchema = z.enum(["Event", "Handler", "State", "External"]);
 const directionSchema = z.enum(["upstream", "downstream", "both"]);
 
 const toolResult = (value: object) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }],
+  content: [
+    {
+      type: "text" as const,
+      text: "FlowAtlas returned structured architectural data in structuredContent.",
+    },
+  ],
   structuredContent: value as Record<string, unknown>,
 });
 

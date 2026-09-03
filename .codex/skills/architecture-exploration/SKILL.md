@@ -11,10 +11,18 @@ source inspection or prove runtime causality.
 
 ## Exploration
 
+Prefer the configured MCP tools `flowatlas_find_nodes` and
+`flowatlas_get_context` when they are available. Use the source-checkout CLI
+commands below only as a fallback when those tools are unavailable or fail.
+Do not query the same territory through both transports merely to confirm a
+successful result.
+
 If the task already names a likely `Event`, `Handler`, `State` or `External`
-node id, request its context directly. Do not first search for that id with
-`rg`, enumerate project files or call `find`. Otherwise, search for a small
-candidate set first:
+node id, call `flowatlas_get_context` directly. Do not first search for that id
+with `rg`, enumerate project files or call `flowatlas_find_nodes`. Otherwise,
+call `flowatlas_find_nodes` for a small candidate set first.
+
+For a source-checkout CLI fallback, use:
 
 ```text
 node dist/index.js find <query> [path] --kind <kind> --limit 5 --json
@@ -40,6 +48,8 @@ Begin with one projection. Do not expand a complete projection merely to make
 the architectural account more exhaustive. Open only the referenced sources
 needed to decide or perform the requested change; source inspection may reveal
 implementation details that are intentionally absent from the graph.
+Do not run a broad symbol search merely to reconfirm nodes and relations that a
+successful projection and its referenced source already establish.
 
 If `complete` is false and an omitted frontier can affect the task, deepen the
 exploration from the relevant frontier node rather than exporting the complete

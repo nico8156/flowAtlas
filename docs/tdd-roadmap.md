@@ -18,7 +18,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 6. CLI productization                      | DELIVERED                                 |
 | 7. Visualizer MVP                          | ACTIVE: CLI/TUI pivot                     |
 | 7A. Terminal Map CLI                       | DELIVERED: absorbed into M7               |
-| 7B. Agent context interfaces               | ACTIVE: first MCP vertical delivered      |
+| 7B. Agent context interfaces               | DELIVERED: autonomous CLI and MCP         |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -584,7 +584,7 @@ remains compatible with pipes and CI output.
 
 ## Milestone 7B - Agent Context Interfaces
 
-**Status: ACTIVE — ephemeral MCP vertical delivered**
+**Status: DELIVERED — autonomous CLI and ephemeral MCP validated**
 
 ### Goal
 
@@ -773,15 +773,24 @@ observes source modifications without serving a stale graph.
   discovery, structured results and exact equivalence with application output;
 - the `flowatlas-mcp` composition root scans the requested checkout afresh for
   every tool call and retains no graph or cache.
+- Codex now prefers the configured MCP tools and falls back to the CLI only
+  when MCP is unavailable or fails;
+- a paired change-oriented observation measured 210,109 MCP input tokens
+  versus 269,046 through the CLI, approximately 21.9% fewer, while preserving
+  the same architectural gaps;
+- a same-session freshness check observed a newly declared Event on the second
+  request without restarting the MCP server;
+- both MCP change-oriented runs repeated the same context request, exposing a
+  concrete scan-cost driver for the next persistence architecture review.
 
 ### Discovered micro-cycles
 
-The context JSON, deterministic node-discovery and explicitly bounded context
-cycles are delivered through real Fragments Like acceptances. The autonomous
-Codex driver and first ephemeral MCP transport are also delivered. The next
-driver must connect Codex to these MCP tools, compare MCP with CLI on a
-change-oriented task and observe freshness after a source modification. This
-roadmap does not pre-authorize persistence, caching or graph-index changes.
+The complete autonomous agent-context path is delivered through CLI and MCP.
+Its evaluation is recorded in
+`docs/evaluations/codex-mcp-exploration.md`. The next driver is an explicit
+architecture review of retained-session options against repeated scan cost.
+This roadmap does not pre-authorize persistence, caching or graph-index
+changes.
 
 ### Open design questions
 

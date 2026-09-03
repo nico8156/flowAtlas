@@ -89,8 +89,17 @@ vertical. The MCP adapter receives an `ArchitectureGraph` loader and delegates
 discovery and projection to the same application functions as the CLI.
 
 The source package also declares the future installed binary name
-`flowatlas-mcp`. Package publication and Codex client configuration remain
-separate milestones.
+`flowatlas-mcp`. For a local source checkout, Codex can register the built
+server with an absolute path:
+
+```sh
+codex mcp add flowatlas -- node /absolute/path/to/FlowAtlas/dist/mcp.js
+codex mcp list
+```
+
+This changes the local Codex client configuration, not the repository. The
+repository architecture-exploration skill prefers the configured MCP tools and
+uses the CLI only as fallback. Package publication remains a separate concern.
 
 The browser adapter can still be run locally with:
 
