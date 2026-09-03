@@ -147,5 +147,6 @@ Read the specialized skill corresponding to the work before executing it:
 - `.codex/skills/scanner-development/SKILL.md`
 - `.codex/skills/architecture-review/SKILL.md`
 - `.codex/skills/documentation-roadmap/SKILL.md`
+- `.codex/skills/architecture-exploration/SKILL.md`
 
 When a skill and this constitution conflict, this constitution wins.

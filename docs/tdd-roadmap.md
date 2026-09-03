@@ -18,7 +18,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 6. CLI productization                      | DELIVERED                                 |
 | 7. Visualizer MVP                          | ACTIVE: CLI/TUI pivot                     |
 | 7A. Terminal Map CLI                       | DELIVERED: absorbed into M7               |
-| 7B. Agent context interfaces               | PROPOSED: application -> CLI -> MCP       |
+| 7B. Agent context interfaces               | ACTIVE: autonomous CLI validated          |
 | 8. Broader validation                      | PROPOSED                                  |
 | 9. Diagnostics                             | LONG TERM                                 |
 | 10. Runtime overlay                        | LONG TERM                                 |
@@ -584,7 +584,7 @@ remains compatible with pipes and CI output.
 
 ## Milestone 7B - Agent Context Interfaces
 
-**Status: PROPOSED — application contract, then CLI, then MCP**
+**Status: ACTIVE — autonomous CLI validated; MCP not started**
 
 ### Goal
 
@@ -759,20 +759,30 @@ observes source modifications without serving a stale graph.
   unexplored frontier;
 - the real Fragments `lState` acceptance proves that an edge budget can stop
   before the node budget without silently hiding an internal relation.
+- a repository-owned Codex exploration skill now selects `find` only when the
+  entry point is unknown, requests bounded `context`, reads referenced sources
+  and preserves explicit architectural gaps;
+- an ephemeral read-only Codex treatment selected FlowAtlas without being
+  prompted to do so and reconstructed the canonical Like territory;
+- the first paired observation is recorded in
+  `docs/evaluations/codex-autonomous-exploration.md`: autonomy succeeded, but
+  the treatment consumed more tokens and opened more files than the control.
 
 ### Discovered micro-cycles
 
 The context JSON, deterministic node-discovery and explicitly bounded context
-cycles are delivered through real Fragments Like acceptances. The next driver
-must measure equivalent coding-agent tasks with and without FlowAtlas; this
-roadmap does not pre-authorize the MCP server, caching or graph-index changes.
+cycles are delivered through real Fragments Like acceptances. The autonomous
+Codex driver is also delivered, including a control/treatment observation and
+a tightened stop policy. The next driver must isolate repeated scan cost and
+repeat the comparison on change-oriented tasks; this roadmap does not
+pre-authorize the MCP server, caching or graph-index changes.
 
 ### Open design questions
 
 - Should discovery and context remain separate CLI scans, or should a single
   command support query-to-context after the baseline is measured?
-- What evidence threshold demonstrates that FlowAtlas materially improves an
-  agent task?
+- What repeated change-oriented evidence threshold demonstrates that FlowAtlas
+  materially improves an agent task beyond identifier correctness?
 - Which freshness contract would justify retaining a graph in an MCP process?
 - How should project roots and multiple TypeScript configurations be selected
   without changing node identity or scan-scope semantics?
