@@ -701,12 +701,14 @@ The MCP SDK remains at the adapter boundary. The domain and scanner must not
 depend on MCP, and the server must not reinterpret results produced by the
 application capabilities.
 
-The first vertical should prefer freshness over optimization and may rescan
-for every architectural request. A long-lived graph, file invalidation,
-incremental TypeScript Program or persistent cache requires measurements and
-a separate architecture decision. If repeated scans make the validated
-workflow unusable, a later acceptance must prove that a same-session request
-observes source modifications without serving a stale graph.
+The first vertical preferred freshness over optimization and rescanned for
+every architectural request. Repeated MCP requests then provided the evidence
+for a separate architecture decision: the process may retain one verified
+graph snapshot, but must reload and fingerprint the complete scanner input
+before every reuse. A changed source set or TypeScript configuration rebuilds
+the graph synchronously; a failed verification or rebuild must never fall back
+to stale architectural data. This does not authorize a watcher, TTL,
+incremental TypeScript Program or persisted graph.
 
 ### Known gaps
 
@@ -716,8 +718,8 @@ observes source modifications without serving a stale graph.
 - the package is private and is not yet installable from npm as a normal
   project development dependency;
 - no measured coding-agent comparison currently establishes context savings;
-- project lifetime, freshness and multi-checkout behavior are undecided for a
-  persistent MCP server.
+- no benchmark yet quantifies the scan-time reduction from the verified MCP
+  snapshot on a large checkout;
 
 ### Decisions
 
@@ -729,6 +731,9 @@ observes source modifications without serving a stale graph.
 - The CLI validates the context contract before MCP productization.
 - MCP is justified by tool discovery and structured access; persistence is
   justified separately by measured repeated-scan cost.
+- MCP session reuse retains one graph only after verifying the canonical
+  project root and a content-derived fingerprint of the complete scanner input;
+  it never relies on elapsed time or file timestamps.
 - Missing static causality remains missing and is never repaired for agent
   convenience.
 - Bounded contexts use breadth-first distance, case-insensitive lexical node
@@ -771,8 +776,8 @@ observes source modifications without serving a stale graph.
   `flowatlas_get_context`, delegating to the existing application capabilities;
 - a real Fragments protocol acceptance proves MCP initialization, tool
   discovery, structured results and exact equivalence with application output;
-- the `flowatlas-mcp` composition root scans the requested checkout afresh for
-  every tool call and retains no graph or cache.
+- the initial `flowatlas-mcp` composition root scanned the requested checkout
+  afresh for every tool call;
 - Codex now prefers the configured MCP tools and falls back to the CLI only
   when MCP is unavailable or fails;
 - a paired change-oriented observation measured 210,109 MCP input tokens
@@ -782,15 +787,19 @@ observes source modifications without serving a stale graph.
   request without restarting the MCP server;
 - both MCP change-oriented runs repeated the same context request, exposing a
   concrete scan-cost driver for the next persistence architecture review.
+- the resulting verified-snapshot loader now reuses one session-local graph
+  when project identity and scanner-input content are unchanged, rebuilds after
+  a source or configuration change, isolates project roots and propagates
+  rebuild failures instead of serving stale data.
 
 ### Discovered micro-cycles
 
 The complete autonomous agent-context path is delivered through CLI and MCP.
 Its evaluation is recorded in
-`docs/evaluations/codex-mcp-exploration.md`. The next driver is an explicit
-architecture review of retained-session options against repeated scan cost.
-This roadmap does not pre-authorize persistence, caching or graph-index
-changes.
+`docs/evaluations/codex-mcp-exploration.md`. The retained-session review selected
+a content-verified, single-snapshot loader at the MCP composition boundary.
+This decision does not pre-authorize persistent storage, incremental compiler
+state, TTL caches or graph-index changes.
 
 ### Open design questions
 
@@ -798,7 +807,8 @@ changes.
   command support query-to-context after the baseline is measured?
 - What repeated change-oriented evidence threshold demonstrates that FlowAtlas
   materially improves an agent task beyond identifier correctness?
-- Which freshness contract would justify retaining a graph in an MCP process?
+- What large-checkout benchmark demonstrates the effective scan-time reduction
+  of verified snapshot reuse?
 - How should project roots and multiple TypeScript configurations be selected
   without changing node identity or scan-scope semantics?
 

@@ -90,3 +90,16 @@ The next milestone must review persistent-session options against the observed
 duplicate scan cost. It must preserve the freshness property established here
 and may not introduce caching, invalidation or a retained graph without that
 explicit architecture decision.
+
+## Persistence follow-up
+
+The subsequent architecture review selected a session-local verified snapshot.
+Before reusing its last `ArchitectureGraph`, the MCP composition reloads the
+requested project and compares a content-derived fingerprint covering source
+paths, source contents, project files and TypeScript configuration. A changed
+fingerprint rebuilds the graph synchronously; verification and rebuild failures
+are propagated rather than masked by the previous snapshot.
+
+This addresses the duplicated-scan driver without introducing a TTL, watcher,
+persisted graph or MCP-visible session protocol. A separate large-checkout
+benchmark remains necessary to quantify the time saved.
