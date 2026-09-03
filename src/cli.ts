@@ -8,6 +8,10 @@ import {
   type ArchitectureContextDirection,
 } from "./application/architectureContext.js";
 import { serializeArchitectureGraph } from "./application/architectureGraphJson.js";
+import {
+  findArchitectureNodes,
+  serializeArchitectureNodeDiscovery,
+} from "./application/architectureNodeDiscovery.js";
 import { formatGraphProjection } from "./application/graphProjectionOutput.js";
 import { projectFocusedTerritory } from "./application/focusedGraphProjection.js";
 import { formatNodeInspection } from "./application/nodeInspection.js";
@@ -16,6 +20,7 @@ import { loadTypeScriptProject } from "./cli/projectLoader.js";
 import { startScanProjectInWorker } from "./cli/scanInWorker.js";
 import { runInAlternateTerminalScreen } from "./cli/terminalSession.js";
 import { projectDownstream, projectUpstream } from "./domain/graphProjection.js";
+import type { NodeKind } from "./domain/architectureGraph.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
 import {
   TerminalTuiLoader,
@@ -24,7 +29,53 @@ import {
 } from "./tui/TerminalTui.js";
 
 const usage =
-  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> --json | flowatlas tui <nodeId> [path]";
+  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas find <query> [path] --kind <Event|Handler|State|External> --limit <count> --json | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> --json | flowatlas tui <nodeId> [path]";
+
+const nodeKinds: readonly NodeKind[] = ["Event", "Handler", "State", "External"];
+
+const parseFindArguments = (
+  arguments_: readonly string[],
+): { query: string; projectPath: string; kind: NodeKind; limit: number } => {
+  const [query, possiblePath, ...remainingArguments] = arguments_;
+  if (!query || !query.trim()) throw new Error(usage);
+
+  const hasProjectPath = possiblePath !== undefined && !possiblePath.startsWith("--");
+  const projectPath = hasProjectPath ? possiblePath : ".";
+  const options = hasProjectPath
+    ? remainingArguments
+    : possiblePath === undefined
+      ? remainingArguments
+      : [possiblePath, ...remainingArguments];
+  let kind: NodeKind | undefined;
+  let limit: number | undefined;
+  let json = false;
+
+  for (let index = 0; index < options.length; index += 1) {
+    const option = options[index];
+    if (option === "--json") {
+      json = true;
+      continue;
+    }
+    if (option === "--kind") {
+      const value = options[index + 1] as NodeKind | undefined;
+      if (!value || !nodeKinds.includes(value)) throw new Error(usage);
+      kind = value;
+      index += 1;
+      continue;
+    }
+    if (option === "--limit") {
+      const value = Number(options[index + 1]);
+      if (!Number.isInteger(value) || value <= 0) throw new Error(usage);
+      limit = value;
+      index += 1;
+      continue;
+    }
+    throw new Error(usage);
+  }
+
+  if (!json || kind === undefined || limit === undefined) throw new Error(usage);
+  return { query, projectPath, kind, limit };
+};
 
 const parseContextArguments = (
   arguments_: readonly string[],
@@ -81,6 +132,15 @@ const parseContextArguments = (
 export const runCli = async (
   arguments_: readonly string[] = process.argv.slice(2),
 ): Promise<void> => {
+  if (arguments_[0] === "find") {
+    const { query, projectPath, kind, limit } = parseFindArguments(arguments_.slice(1));
+    const loadedProject = await loadTypeScriptProject(projectPath);
+    const graph = scanTypeScriptProject(loadedProject.project);
+    const discovery = findArchitectureNodes(graph, query, [kind], limit);
+    process.stdout.write(`${serializeArchitectureNodeDiscovery(discovery)}\n`);
+    return;
+  }
+
   if (arguments_[0] === "context") {
     const { nodeId, projectPath, direction, maxDepth } = parseContextArguments(arguments_.slice(1));
     const loadedProject = await loadTypeScriptProject(projectPath);

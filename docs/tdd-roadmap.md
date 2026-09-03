@@ -711,7 +711,6 @@ observes source modifications without serving a stale graph.
 ### Known gaps
 
 - focused CLI projections other than `context` produce human-oriented text;
-- no machine-oriented node discovery command exists;
 - projections are depth-limited but not node- or edge-budgeted;
 - projection traversal currently scans graph edges rather than using public
   adjacency indexes;
@@ -744,13 +743,19 @@ observes source modifications without serving a stale graph.
   canonical graph edge directions;
 - the real Fragments Like event acceptance preserves source locations, known
   relations and the requested depth boundary.
+- `find <query> [path] --kind <kind> --limit <count> --json` returns versioned,
+  deterministically ranked node candidates;
+- discovery uses existing node ids, kinds, provenance and source paths without
+  inferring features, use cases or semantic similarity;
+- the real Fragments acceptance proves stable filtering, ranking, limiting and
+  source-location output for Like Events.
 
 ### Discovered micro-cycles
 
-The first context JSON cycle is delivered through a real Fragments Like
-acceptance. The next RED must be derived from deterministic node discovery;
-this roadmap does not pre-authorize the MCP server, caching or graph-index
-changes.
+The context JSON and deterministic node-discovery cycles are delivered through
+real Fragments Like acceptances. The next RED must be derived from an observed
+wide projection that requires explicit context bounds; this roadmap does not
+pre-authorize the MCP server, caching or graph-index changes.
 
 ### Open design questions
 
