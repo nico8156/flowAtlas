@@ -101,6 +101,36 @@ run. Program reuse is therefore useful for the larger observed project but is
 not claimed as a universal speedup. Its invariant is stronger than its timing:
 the complete rebuilt graph must equal a cold scan after the same modification.
 
+## Context operation breakdown
+
+The focused-context benchmark separates node lookup, bounded projection and
+JSON serialization after the architecture graph has been built:
+
+```bash
+npm run benchmark:mcp -- ../fragmentsCleanFront \
+  --iterations=1000 --context-node=uiLikeToggleRequested
+npm run benchmark:mcp -- /path/to/redux-essentials-example-app \
+  --iterations=1000 --context-node=login
+```
+
+The following observations were recorded after FlowAtlas commit `995d033`:
+
+| Corpus           |                 Graph | Operation          |  Median |     P95 |      Max | Context JSON |
+| ---------------- | --------------------: | ------------------ | ------: | ------: | -------: | -----------: |
+| Fragments        | 197 nodes / 289 edges | Node lookup        |    0 ms |    0 ms |  0.03 ms |       3485 B |
+|                  |                       | Bounded projection | 0.14 ms | 0.27 ms | 13.63 ms |              |
+|                  |                       | Serialization      | 0.01 ms | 0.02 ms |  0.06 ms |              |
+| Redux Essentials |    12 nodes / 9 edges | Node lookup        |    0 ms |    0 ms |  0.02 ms |       1665 B |
+|                  |                       | Bounded projection | 0.02 ms | 0.05 ms | 16.95 ms |              |
+|                  |                       | Serialization      | 0.01 ms | 0.01 ms |  0.11 ms |              |
+
+These are same-machine observations, not latency guarantees. They do show
+that query, traversal and serialization are negligible beside project loading
+and scanning for the currently validated graph sizes. Adding adjacency indexes
+to the canonical graph is therefore not justified by evidence at this stage.
+The benchmark remains available to revisit that decision on a materially
+larger corpus.
+
 ## Excluded self-scan
 
 The FlowAtlas repository root is not a valid architecture benchmark corpus in

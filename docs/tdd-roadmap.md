@@ -1037,6 +1037,14 @@ without returning stale architectural truth.
 - The change benchmark observed an 11.6% total scan reduction on Fragments but
   a roughly 4% regression on Redux Essentials. The optimization is retained
   for large-project benefit without claiming a universal speedup.
+- A focused-context benchmark now measures node lookup, bounded projection and
+  JSON serialization independently over 1,000 iterations.
+- On Fragments, bounded projection measured `0.14 ms` median and `0.27 ms` p95;
+  Redux Essentials measured `0.02 ms` median and `0.05 ms` p95. Lookup and
+  serialization medians were at or below `0.01 ms` on both corpora.
+- Adjacency indexes are deliberately not introduced: the measured operations
+  are negligible beside loading and scanning, so changing the canonical graph
+  representation would add complexity without demonstrated benefit.
 
 ### Known gaps
 
@@ -1047,6 +1055,8 @@ without returning stale architectural truth.
   discovery and does not justify another cache representation.
 - Metadata-only verification cannot guarantee freshness when content changes
   while size and timestamps are preserved.
+- The context-operation measurements cover graphs up to 197 nodes and 289
+  edges; a materially larger corpus may justify revisiting adjacency indexes.
 
 ### Completion criteria
 
