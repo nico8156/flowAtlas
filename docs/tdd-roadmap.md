@@ -1029,6 +1029,14 @@ without returning stale architectural truth.
 - The MCP composition retains up to four independently verified project graphs
   in deterministic least-recently-used order. Revalidation refreshes recency;
   exceeding the bound evicts the least recently queried root.
+- A bounded per-project compiler snapshot now supplies `oldProgram` only when
+  the project root and `tsconfig` are unchanged. Unchanged `SourceFile` objects
+  are reused while all indexes, detector passes and graph construction rerun.
+- Modification, creation and deletion produce the same complete graph as a
+  cold scan; a `tsconfig` change intentionally starts a cold compiler context.
+- The change benchmark observed an 11.6% total scan reduction on Fragments but
+  a roughly 4% regression on Redux Essentials. The optimization is retained
+  for large-project benefit without claiming a universal speedup.
 
 ### Known gaps
 

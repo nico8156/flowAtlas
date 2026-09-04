@@ -100,6 +100,12 @@ recently used cache. Switching between a small set of worktrees therefore does
 not force an avoidable rescan; a fifth distinct root evicts the least recently
 queried graph. Every retained graph is still revalidated before use.
 
+After a detected source change, the MCP scanner supplies the previous
+compatible TypeScript `Program` when rebuilding the compiler context. Unchanged
+`SourceFile` objects may be reused, but symbol indexes, detectors and the
+complete `ArchitectureGraph` are rebuilt. A `tsconfig.json` change starts a
+cold compiler context.
+
 Content verification remains the default. An explicitly weaker metadata mode
 can be enabled for measured local sessions:
 

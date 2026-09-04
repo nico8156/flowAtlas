@@ -15,7 +15,7 @@ type BenchmarkOptions = {
   projectPath: string;
   iterations: number;
   loadProject: (projectPath: string) => Promise<LoadedTypeScriptProject>;
-  scanProject: (project: TypeScriptProject) => ArchitectureGraph;
+  scanProject: (project: TypeScriptProject, projectRoot: string) => ArchitectureGraph;
   verification?: "content" | "metadata";
   now?: () => number;
 };
@@ -65,9 +65,9 @@ export const runVerifiedSnapshotBenchmark = async ({
   };
   const loadGraph = createVerifiedSnapshotGraphLoader(
     measuredLoadProject,
-    (project) => {
+    (project, root) => {
       scans += 1;
-      return scanProject(project);
+      return scanProject(project, root);
     },
     {
       onPhase: ({ phase, durationMs }) => {

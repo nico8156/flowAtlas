@@ -11,7 +11,10 @@ type LoadedTypeScriptProject = {
 };
 
 type TypeScriptProjectLoader = (projectPath: string) => Promise<LoadedTypeScriptProject>;
-type TypeScriptProjectScanner = (project: TypeScriptProject) => ArchitectureGraph;
+type TypeScriptProjectScanner = (
+  project: TypeScriptProject,
+  projectRoot: string,
+) => ArchitectureGraph;
 
 export type VerifiedSnapshotPhase = "canonicalization" | "fingerprint" | "scan";
 
@@ -89,7 +92,7 @@ export const createVerifiedSnapshotGraphLoader = (
       }
 
       phaseStartedAt = performance.now();
-      const graph = scanProject(loadedProject.project);
+      const graph = scanProject(loadedProject.project, projectRoot);
       options.onPhase?.({ phase: "scan", durationMs: performance.now() - phaseStartedAt });
       snapshotsByProjectRoot.delete(projectRoot);
       snapshotsByProjectRoot.set(projectRoot, { projectRoot, fingerprint, graph });

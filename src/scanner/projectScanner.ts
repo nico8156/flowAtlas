@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import type * as ts from "typescript";
 
 import { createArchitectureGraph, type ArchitectureGraph } from "../domain/architectureGraph.js";
 import {
@@ -9,9 +10,18 @@ import {
 import { getStoreStateIds } from "./stateDetector.js";
 import { scanSourceIntoGraph } from "./sourceScanner.js";
 
-export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureGraph => {
+export type ProjectScanOptions = {
+  oldProgram?: ts.Program;
+  onProgramBuilt?: (program: ts.Program) => void;
+};
+
+export const scanTypeScriptProject = (
+  project: TypeScriptProject,
+  options: ProjectScanOptions = {},
+): ArchitectureGraph => {
   const graph = createArchitectureGraph();
-  const resolution = resolveProjectSymbols(project);
+  const resolution = resolveProjectSymbols(project, options.oldProgram);
+  options.onProgramBuilt?.(resolution.program);
   const externalResolutionCache = new Map<string, readonly string[]>();
   const startedStateDiscovery = performance.now();
   const stateIds = getStoreStateIds(project, resolution.bindingsByFile);

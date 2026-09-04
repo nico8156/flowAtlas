@@ -59,4 +59,31 @@ describe("compiler context", () => {
       "relationship-pass",
     ]);
   });
+
+  it("reuses unchanged compiler sources while replacing a modified source", () => {
+    const firstProject = {
+      files: [
+        { file: "src/unchanged.ts", source: `export const unchanged = true;` },
+        { file: "src/changed.ts", source: `export const requested = createAction("REQUESTED");` },
+      ],
+    };
+    const first = resolveProjectSymbols(firstProject);
+    const second = resolveProjectSymbols(
+      {
+        files: [
+          firstProject.files[0]!,
+          { file: "src/changed.ts", source: `export const succeeded = createAction("SUCCEEDED");` },
+        ],
+      },
+      first.program,
+    );
+
+    expect(second.program).not.toBe(first.program);
+    expect(second.program.getSourceFile("src/unchanged.ts")).toBe(
+      first.program.getSourceFile("src/unchanged.ts"),
+    );
+    expect(second.program.getSourceFile("src/changed.ts")).not.toBe(
+      first.program.getSourceFile("src/changed.ts"),
+    );
+  });
 });

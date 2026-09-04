@@ -76,6 +76,31 @@ snapshot rereads only added or metadata-changed files, reuses unchanged source
 objects, drops deleted files and reloads `tsconfig.json` only when its metadata
 changes. The architecture graph itself is still rebuilt in full.
 
+## TypeScript Program reuse
+
+The change benchmark appends one newline in memory to an explicitly selected
+file, scans through a session scanner, then performs a cold comparison scan:
+
+```bash
+npm run benchmark:mcp -- ../fragmentsCleanFront \
+  --program-reuse-file=app/store/appStateWl.ts
+npm run benchmark:mcp -- /path/to/redux-essentials-example-app \
+  --program-reuse-file=src/features/auth/authSlice.ts
+```
+
+Two sequential observations produced:
+
+| Corpus           | Reused total | Cold total | Reused compiler | Cold compiler | Equivalent graph |
+| ---------------- | -----------: | ---------: | --------------: | ------------: | ---------------- |
+| Fragments        |   3150.25 ms | 3562.90 ms |       732.97 ms |    1178.31 ms | yes              |
+| Redux Essentials |    855.72 ms |  822.70 ms |       791.31 ms |     762.69 ms | yes              |
+
+Fragments showed an approximately 11.6% total reduction and 37.8% compiler
+context reduction. Redux Essentials was about 4% slower with reuse on this
+run. Program reuse is therefore useful for the larger observed project but is
+not claimed as a universal speedup. Its invariant is stronger than its timing:
+the complete rebuilt graph must equal a cold scan after the same modification.
+
 ## Excluded self-scan
 
 The FlowAtlas repository root is not a valid architecture benchmark corpus in

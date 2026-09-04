@@ -6,7 +6,9 @@ import {
   inspectTypeScriptProjectManifest,
   updateTypeScriptProjectFromManifest,
 } from "./cli/metadataVerifiedProjectLoader.js";
+import { runProgramReuseBenchmark } from "./benchmark/programReuseBenchmark.js";
 import { runVerifiedSnapshotBenchmark } from "./benchmark/verifiedSnapshotBenchmark.js";
+import { createProgramReusingProjectScanner } from "./mcp/programReusingProjectScanner.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
 
 const argumentsAfterExecutable = process.argv.slice(2);
@@ -19,10 +21,13 @@ const verificationArgument = argumentsAfterExecutable.find((argument) =>
   argument.startsWith("--verification="),
 );
 const verification = verificationArgument?.split("=")[1] ?? "content";
+const changedFile = argumentsAfterExecutable
+  .find((argument) => argument.startsWith("--program-reuse-file="))
+  ?.split("=")[1];
 
 if (!projectPath || (verification !== "content" && verification !== "metadata")) {
   process.stderr.write(
-    "Usage: flowatlas-benchmark <project-path> [--iterations=5] [--verification=content|metadata]\n",
+    "Usage: flowatlas-benchmark <project-path> [--iterations=5] [--verification=content|metadata] [--program-reuse-file=path]\n",
   );
   process.exitCode = 1;
 } else {
@@ -34,13 +39,23 @@ if (!projectPath || (verification !== "content" && verification !== "metadata"))
           updateProject: updateTypeScriptProjectFromManifest,
         })
       : loadTypeScriptProject;
-  runVerifiedSnapshotBenchmark({
-    projectPath,
-    iterations,
-    verification,
-    loadProject: projectLoader,
-    scanProject: scanTypeScriptProject,
-  })
+  const programReusingScanner = createProgramReusingProjectScanner({ maxPrograms: 4 });
+  const benchmark = changedFile
+    ? runProgramReuseBenchmark({
+        projectPath,
+        changedFile,
+        loadProject: loadTypeScriptProject,
+        reusedScan: programReusingScanner,
+        coldScan: scanTypeScriptProject,
+      })
+    : runVerifiedSnapshotBenchmark({
+        projectPath,
+        iterations,
+        verification,
+        loadProject: projectLoader,
+        scanProject: programReusingScanner,
+      });
+  benchmark
     .then((report) => process.stdout.write(`${JSON.stringify(report, null, 2)}\n`))
     .catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);

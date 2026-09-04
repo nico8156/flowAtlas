@@ -150,7 +150,10 @@ const createImportFileResolver = (project: TypeScriptProject): ImportFileResolve
   };
 };
 
-const createCompilerContext = (project: TypeScriptProject): CompilerContext => {
+const createCompilerContext = (
+  project: TypeScriptProject,
+  oldProgram?: ts.Program,
+): CompilerContext => {
   const projectFiles = getProjectFiles(project);
   const resolveImportFile = createImportFileResolver(project);
   const sourcesByPath = new Map(
@@ -185,6 +188,8 @@ const createCompilerContext = (project: TypeScriptProject): CompilerContext => {
       const sourcePath = resolveSourcePath(fileName);
       const source = sourcePath ? sourcesByPath.get(sourcePath) : undefined;
       if (source !== undefined) {
+        const oldSourceFile = oldProgram?.getSourceFile(fileName);
+        if (oldSourceFile?.text === source) return oldSourceFile;
         return ts.createSourceFile(fileName, source, languageVersion, true, ts.ScriptKind.TS);
       }
       return defaultHost.getSourceFile(fileName, languageVersion);
@@ -212,6 +217,7 @@ const createCompilerContext = (project: TypeScriptProject): CompilerContext => {
     rootNames: projectFiles.map(({ file }) => file),
     options,
     host,
+    ...(oldProgram ? { oldProgram } : {}),
   });
   const sourceFiles = projectFiles
     .map(({ file }) => ({
@@ -325,9 +331,12 @@ const getSymbolBindings = (
   return bindings;
 };
 
-export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbolResolution => {
+export const resolveProjectSymbols = (
+  project: TypeScriptProject,
+  oldProgram?: ts.Program,
+): ProjectSymbolResolution => {
   const compilerContext = measurePhase(project, "compiler-context", () =>
-    createCompilerContext(project),
+    createCompilerContext(project, oldProgram),
   );
   const sourceFiles = compilerContext.sourceFiles;
   const eventIds = measurePhase(project, "event-identities", () => getProjectEventIds(sourceFiles));
