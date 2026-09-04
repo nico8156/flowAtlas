@@ -16,6 +16,7 @@ type BenchmarkOptions = {
   iterations: number;
   loadProject: (projectPath: string) => Promise<LoadedTypeScriptProject>;
   scanProject: (project: TypeScriptProject) => ArchitectureGraph;
+  verification?: "content" | "metadata";
   now?: () => number;
 };
 
@@ -34,6 +35,7 @@ export const runVerifiedSnapshotBenchmark = async ({
   iterations,
   loadProject,
   scanProject,
+  verification = "content",
   now = () => performance.now(),
 }: BenchmarkOptions) => {
   if (!Number.isInteger(iterations) || iterations < 2) {
@@ -45,6 +47,7 @@ export const runVerifiedSnapshotBenchmark = async ({
     configReadMs: [] as number[],
     fileDiscoveryMs: [] as number[],
     sourceReadMs: [] as number[],
+    manifestInspectionMs: [] as number[],
     canonicalizationMs: [] as number[],
     fingerprintMs: [] as number[],
     scanMs: [] as number[],
@@ -56,6 +59,7 @@ export const runVerifiedSnapshotBenchmark = async ({
       if (measurement.phase === "config-read") phases.configReadMs.push(value);
       if (measurement.phase === "file-discovery") phases.fileDiscoveryMs.push(value);
       if (measurement.phase === "source-read") phases.sourceReadMs.push(value);
+      if (measurement.phase === "manifest-inspection") phases.manifestInspectionMs.push(value);
     }
     return loaded;
   };
@@ -87,6 +91,7 @@ export const runVerifiedSnapshotBenchmark = async ({
   return {
     schemaVersion: 1 as const,
     benchmark: "verified-mcp-snapshot" as const,
+    verification,
     projectPath,
     environment: {
       node: process.version,

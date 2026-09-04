@@ -31,6 +31,7 @@ describe("verified snapshot benchmark", () => {
     expect(result).toMatchObject({
       schemaVersion: 1,
       benchmark: "verified-mcp-snapshot",
+      verification: "content",
       requests: 3,
       scans: 1,
       firstRequestMs: 20,
@@ -42,6 +43,7 @@ describe("verified snapshot benchmark", () => {
         configReadMs: [1, 1, 1],
         fileDiscoveryMs: [2, 2, 2],
         sourceReadMs: [3, 3, 3],
+        manifestInspectionMs: [],
       },
     });
     expect(result.phases.canonicalizationMs).toHaveLength(3);

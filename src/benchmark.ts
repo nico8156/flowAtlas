@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 
 import { loadTypeScriptProject } from "./cli/projectLoader.js";
+import {
+  createMetadataVerifiedProjectLoader,
+  inspectTypeScriptProjectManifest,
+  updateTypeScriptProjectFromManifest,
+} from "./cli/metadataVerifiedProjectLoader.js";
 import { runVerifiedSnapshotBenchmark } from "./benchmark/verifiedSnapshotBenchmark.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
 
@@ -10,15 +15,30 @@ const iterationsArgument = argumentsAfterExecutable.find((argument) =>
   argument.startsWith("--iterations="),
 );
 const iterations = Number(iterationsArgument?.split("=")[1] ?? 5);
+const verificationArgument = argumentsAfterExecutable.find((argument) =>
+  argument.startsWith("--verification="),
+);
+const verification = verificationArgument?.split("=")[1] ?? "content";
 
-if (!projectPath) {
-  process.stderr.write("Usage: flowatlas-benchmark <project-path> [--iterations=5]\n");
+if (!projectPath || (verification !== "content" && verification !== "metadata")) {
+  process.stderr.write(
+    "Usage: flowatlas-benchmark <project-path> [--iterations=5] [--verification=content|metadata]\n",
+  );
   process.exitCode = 1;
 } else {
+  const projectLoader =
+    verification === "metadata"
+      ? createMetadataVerifiedProjectLoader({
+          inspectManifest: inspectTypeScriptProjectManifest,
+          loadProject: loadTypeScriptProject,
+          updateProject: updateTypeScriptProjectFromManifest,
+        })
+      : loadTypeScriptProject;
   runVerifiedSnapshotBenchmark({
     projectPath,
     iterations,
-    loadProject: loadTypeScriptProject,
+    verification,
+    loadProject: projectLoader,
     scanProject: scanTypeScriptProject,
   })
     .then((report) => process.stdout.write(`${JSON.stringify(report, null, 2)}\n`))

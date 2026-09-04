@@ -8,7 +8,8 @@ const sourceExtensions = new Set([".ts", ".tsx"]);
 
 const normalizeRelativePath = (file: string): string => file.replaceAll("\\", "/");
 
-export type ProjectLoadPhase = "config-read" | "file-discovery" | "source-read";
+export type ProjectLoadPhase =
+  "config-read" | "file-discovery" | "source-read" | "manifest-inspection";
 
 export type ProjectLoadMeasurement = {
   phase: ProjectLoadPhase;

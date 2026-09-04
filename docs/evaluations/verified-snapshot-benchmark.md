@@ -21,6 +21,7 @@ FlowAtlas was at `886f74b60fc9d6b9ed06191ec58aebe83080f148`.
 npm run build
 npm run benchmark:mcp -- ../fragmentsCleanFront --iterations=5
 npm run benchmark:mcp -- /path/to/redux-essentials-example-app --iterations=5
+npm run benchmark:mcp -- ../fragmentsCleanFront --iterations=7 --verification=metadata
 ```
 
 The Fragments checkout was at
@@ -49,7 +50,7 @@ if repeated latency becomes a problem.
 ## Phase breakdown
 
 The first optimization measurement added phase-level samples at FlowAtlas
-commit `556e25b`. A five-request rerun observed:
+commit `869031a`. A five-request rerun observed:
 
 | Corpus           | First scan | Repeated file discovery           | Repeated source read          | Repeated fingerprint          |
 | ---------------- | ---------: | --------------------------------- | ----------------------------- | ----------------------------- |
@@ -60,6 +61,20 @@ Canonical path resolution remained below `0.31 ms` in every sample. On the
 larger Fragments checkout, recursive file discovery—not content hashing—is the
 dominant repeated cost. The next optimization should therefore retain a
 session-local file manifest before considering a hashing algorithm change.
+
+### Metadata-mode experiment
+
+A same-machine seven-request comparison on Fragments observed a repeated
+median of `1621.78 ms` with content verification and `552.13 ms` with metadata
+verification, approximately 66% lower. The metadata samples were `473.23`,
+`574.91`, `559.65`, `506.42`, `550.76` and `553.49 ms`.
+
+The result justifies keeping metadata verification as an explicit option, not
+as the default. Its contract is weaker, and its remaining latency is dominated
+by manifest inspection. When a manifest change is detected, the session
+snapshot rereads only added or metadata-changed files, reuses unchanged source
+objects, drops deleted files and reloads `tsconfig.json` only when its metadata
+changes. The architecture graph itself is still rebuilt in full.
 
 ## Excluded self-scan
 

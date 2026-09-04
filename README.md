@@ -95,6 +95,20 @@ by a TTL or maintained by a watcher. The MCP adapter still receives an
 `ArchitectureGraph` loader and delegates discovery and projection to the same
 application functions as the CLI.
 
+Content verification remains the default. An explicitly weaker metadata mode
+can be enabled for measured local sessions:
+
+```sh
+FLOWATLAS_SNAPSHOT_VERIFICATION=metadata node dist/mcp.js
+```
+
+This mode retains a session-local file manifest and loaded sources. An
+unchanged `path + size + mtime` manifest avoids rereading sources; a detected
+creation, deletion, modification or `tsconfig.json` change updates the project
+and rebuilds the graph. Unchanged source objects are reused during that update.
+Metadata verification cannot detect content changed while both size and mtime
+are deliberately preserved, so it is never selected implicitly.
+
 The source package also declares the future installed binary name
 `flowatlas-mcp`. For a local source checkout, Codex can register the built
 server with an absolute path:

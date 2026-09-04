@@ -1012,11 +1012,25 @@ without returning stale architectural truth.
   Manifest discovery is therefore the first justified optimization target.
 - On Redux Essentials, the same phases remained small; this confirms that the
   optimization must preserve a low fixed cost for small repositories.
+- An opt-in metadata-verified project loader retains the deterministic source
+  manifest and loaded project inside the MCP infrastructure boundary. The
+  default remains content verification.
+- An unchanged metadata manifest avoids source reads. A detected creation,
+  deletion or modification rebuilds the project while rereading only added or
+  metadata-changed files and reusing unchanged source objects.
+- A detected `tsconfig.json` metadata change reloads the configuration before
+  the full graph scan.
+- A seven-request Fragments comparison observed a repeated median of
+  `1621.78 ms` in content mode versus `552.13 ms` in metadata mode, about 66%
+  lower on the recorded machine.
 
 ### Known gaps
 
-- The loader still discovers and reads every source on every request.
-- No session-local per-file manifest or content-hash index exists.
+- Both modes still rediscover source paths on every request so creations and
+  deletions remain observable without a watcher.
+- Metadata mode retains source content rather than a separate per-file hash
+  index; the measured fingerprint cost is currently much smaller than manifest
+  discovery and does not justify another cache representation.
 - Metadata-only verification cannot guarantee freshness when content changes
   while size and timestamps are preserved.
 
