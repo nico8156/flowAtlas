@@ -35,6 +35,7 @@ export const scanTypeScriptProject = (project: TypeScriptProject): ArchitectureG
           resolution.sourceFiles.map(({ sourceFile }) => sourceFile),
           resolution.semanticIndex,
           resolution.sourceFiles.find((source) => source.file === file.file)?.sourceFile,
+          resolution.checker,
           collectRelationships
             ? (detectorPhase, durationMs) => {
                 detectorDurations.set(

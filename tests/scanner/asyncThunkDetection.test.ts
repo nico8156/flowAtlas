@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { scanTypeScriptSource } from "../../src/scanner/typeScriptScanner.js";
+import { scanTypeScriptProject } from "../../src/scanner/typeScriptScanner.js";
 import { readFixture } from "./fixtureSource.js";
 
 describe("Redux async thunk detection", () => {
@@ -27,5 +28,27 @@ describe("Redux async thunk detection", () => {
         kind: "DISPATCHES",
       });
     }
+  });
+
+  it("resolves a typed async thunk factory through its import", async () => {
+    const files = [
+      "tests/fixtures/typedAsyncThunkFactory.ts",
+      "tests/fixtures/typedAsyncThunkUsage.ts",
+    ];
+    const graph = scanTypeScriptProject({
+      files: await Promise.all(
+        files.map(async (file) => ({
+          file,
+          source: await readFixture(file.split("/").pop() ?? ""),
+        })),
+      ),
+    });
+
+    expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "login", kind: "Handler" }));
+    expect(graph.edges).toContainEqual({
+      source: "login",
+      target: "login.fulfilled",
+      kind: "DISPATCHES",
+    });
   });
 });

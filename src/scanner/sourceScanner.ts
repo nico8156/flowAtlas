@@ -27,6 +27,7 @@ export const scanSourceIntoGraph = (
   ],
   semanticIndex?: ProjectSymbolResolution["semanticIndex"],
   compiledSourceFile?: ts.SourceFile,
+  checker?: ts.TypeChecker,
   onDetectorPhase?: (phase: ScanPhase, durationMs: number) => void,
   externalResolutionCache?: Map<string, readonly string[]>,
 ): void => {
@@ -57,6 +58,7 @@ export const scanSourceIntoGraph = (
       collectRelationships,
       sourceFiles,
       semanticIndex,
+      checker,
       ...(onDetectorPhase ? { onListenerPhase: onDetectorPhase } : {}),
       ...(externalResolutionCache ? { externalResolutionCache } : {}),
     }),

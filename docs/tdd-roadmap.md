@@ -902,11 +902,14 @@ pinned at the evaluated commit and supplied through an optional local checkout.
   a dispatch relation absent from its body.
 - Direct `createAsyncThunk` declarations now produce one Handler, three
   lifecycle Events and their canonical `DISPATCHES` relations.
+- Typed async thunk factories are resolved through their imported symbol back
+  to an exact `createAsyncThunk.withTypes()` declaration, without name-based
+  inference.
 
 ### Known gaps
 
-- the official `createAsyncThunk.withTypes()` factory alias is not yet resolved
-  across its import boundary;
+- `addCase(asyncThunk.fulfilled, ...)` still needs to resolve the lifecycle
+  property access to its canonical Event before the auth slice is complete;
 - listener middleware still needs a separate Redux projection before the corpus
   can be considered broadly validated.
 

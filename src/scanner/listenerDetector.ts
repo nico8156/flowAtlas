@@ -22,8 +22,32 @@ type ListenerContext = {
   collectRelationships: boolean;
   sourceFiles: readonly ts.SourceFile[];
   semanticIndex?: SemanticIndex | undefined;
+  checker?: ts.TypeChecker | undefined;
   onListenerPhase?: (phase: ScanPhase, durationMs: number) => void;
   externalResolutionCache?: Map<string, readonly string[]>;
+};
+
+const isTypedAsyncThunkFactory = (expression: ts.Identifier, checker?: ts.TypeChecker): boolean => {
+  if (!checker) return false;
+
+  const importedSymbol = checker.getSymbolAtLocation(expression);
+  const factorySymbol =
+    importedSymbol && (importedSymbol.flags & ts.SymbolFlags.Alias) !== 0
+      ? checker.getAliasedSymbol(importedSymbol)
+      : importedSymbol;
+
+  return (
+    factorySymbol?.declarations?.some(
+      (declaration) =>
+        ts.isVariableDeclaration(declaration) &&
+        declaration.initializer &&
+        ts.isCallExpression(declaration.initializer) &&
+        ts.isPropertyAccessExpression(declaration.initializer.expression) &&
+        ts.isIdentifier(declaration.initializer.expression.expression) &&
+        declaration.initializer.expression.expression.text === "createAsyncThunk" &&
+        declaration.initializer.expression.name.text === "withTypes",
+    ) ?? false
+  );
 };
 
 const isNestedFunctionLike = (node: ts.Node): boolean => {
@@ -285,6 +309,7 @@ export const detectListeners = ({
   collectRelationships,
   sourceFiles,
   semanticIndex,
+  checker,
   onListenerPhase,
   externalResolutionCache,
 }: ListenerContext): void => {
@@ -425,7 +450,8 @@ export const detectListeners = ({
       node.initializer &&
       ts.isCallExpression(node.initializer) &&
       ts.isIdentifier(node.initializer.expression) &&
-      node.initializer.expression.text === "createAsyncThunk"
+      (node.initializer.expression.text === "createAsyncThunk" ||
+        isTypedAsyncThunkFactory(node.initializer.expression, checker))
     ) {
       const handlerId = node.name.text;
       const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;

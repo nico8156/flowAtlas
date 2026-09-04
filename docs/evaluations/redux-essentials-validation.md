@@ -72,8 +72,12 @@ login --DISPATCHES--> login.fulfilled
 login --DISPATCHES--> login.rejected
 ```
 
-Direct `createAsyncThunk` declarations now produce this topology with source
-locations. The official application wraps the factory through
-`createAsyncThunk.withTypes()` and imports the resulting `createAppAsyncThunk`;
-resolving that typed alias remains the next acceptance gap. Calls performed by
-the payload creator stay outside this Redux-only slice.
+Direct `createAsyncThunk` declarations produce this topology with source
+locations. The scanner also follows an imported typed factory to its exact
+`createAsyncThunk.withTypes()` declaration through the existing TypeScript
+checker; it does not infer factory identity from the local name. Calls performed
+by the payload creator stay outside this Redux-only slice.
+
+The remaining acceptance expectation is the State relation expressed as
+`builder.addCase(login.fulfilled, ...)`, whose Event reference is a property
+access rather than the identifier form currently handled by state detection.
