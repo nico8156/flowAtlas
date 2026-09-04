@@ -72,6 +72,19 @@ describe("State detection", () => {
     });
   });
 
+  it("detects an Event from an extraReducers object method", async () => {
+    const file = "tests/fixtures/methodExtraReducers.ts";
+    const source = await readFixture("methodExtraReducers.ts");
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "notificationsReceived",
+      target: "notificationsSlice",
+      kind: "UPDATES",
+    });
+  });
+
   it("ignores an unresolved reducer Event without failing the scan", async () => {
     const file = "tests/fixtures/unresolvedReducerCase.ts";
     const source = await readFixture("unresolvedReducerCase.ts");

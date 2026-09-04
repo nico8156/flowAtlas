@@ -37,9 +37,13 @@ export now gives the State its registered identity, `notifications`.
 
 State relationship detection now resolves local `isAnyOf` declarations passed
 to `addMatcher` and retains only arguments that already resolve to canonical
-Events. Generated RTK Query matchers therefore remain absent. The official
-slice also declares `extraReducers` with object-method syntax; support for that
-syntax is a separate local detector gap to verify on the next acceptance replay.
+Events. Generated RTK Query matchers therefore remain absent. State detection
+also accepts the equivalent object-method form `extraReducers(builder) { ... }`
+used by the official slice.
+
+After these three local corrections, the notification acceptance is GREEN: the
+Event and registered State are present, their `UPDATES` relation is present and
+no relation to the unrelated `auth` State is invented.
 
 The RTK Query lifecycle callback and WebSocket boundary are deliberately out of
 scope for this Redux-only validation and are not promoted to Handler or External

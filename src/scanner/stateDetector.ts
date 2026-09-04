@@ -114,13 +114,17 @@ export const detectStates = (
     if (variableCall.call.expression.text === "createReducer") {
       reducerBuilder = variableCall.call.arguments[1];
     } else if (configuration && ts.isObjectLiteralExpression(configuration)) {
-      const extraReducersProperty = configuration.properties.find(
-        (property): property is ts.PropertyAssignment =>
-          ts.isPropertyAssignment(property) &&
+      const extraReducersMember = configuration.properties.find(
+        (property): property is ts.PropertyAssignment | ts.MethodDeclaration =>
+          (ts.isPropertyAssignment(property) || ts.isMethodDeclaration(property)) &&
           ts.isIdentifier(property.name) &&
           property.name.text === "extraReducers",
       );
-      reducerBuilder = extraReducersProperty?.initializer;
+      reducerBuilder = extraReducersMember
+        ? ts.isPropertyAssignment(extraReducersMember)
+          ? extraReducersMember.initializer
+          : extraReducersMember.body
+        : undefined;
     }
 
     if (reducerBuilder && collectRelationships) {

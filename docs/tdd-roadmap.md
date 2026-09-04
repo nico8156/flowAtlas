@@ -891,11 +891,12 @@ pinned at the evaluated commit and supplied through an optional local checkout.
 - A local `isAnyOf` matcher passed to `addMatcher` now contributes only its
   explicitly resolved Events to `UPDATES`; generated matcher expressions remain
   omitted.
+- `extraReducers` object methods are traversed like equivalent property
+  callbacks, making the first official notification projection GREEN without
+  changing State or Event semantics.
 
 ### Known gaps
 
-- the official object-method form `extraReducers(builder) { ... }` still needs
-  an acceptance replay and a focused syntax cycle if confirmed;
 - async thunks and listener middleware still need separate Redux projections
   before the corpus can be considered broadly validated.
 
