@@ -46,6 +46,21 @@ the content-verified snapshot contract and identifies project loading and
 fingerprinting—not rescanning—as the next performance boundary to investigate
 if repeated latency becomes a problem.
 
+## Phase breakdown
+
+The first optimization measurement added phase-level samples at FlowAtlas
+commit `556e25b`. A five-request rerun observed:
+
+| Corpus           | First scan | Repeated file discovery           | Repeated source read          | Repeated fingerprint          |
+| ---------------- | ---------: | --------------------------------- | ----------------------------- | ----------------------------- |
+| Fragments        | 4849.26 ms | 361.74, 265.13, 263.90, 264.97 ms | 21.34, 13.22, 14.10, 16.94 ms | 25.93, 17.88, 17.81, 20.61 ms |
+| Redux Essentials | 1689.61 ms | 8.34, 7.35, 7.64, 4.39 ms         | 5.05, 2.01, 1.22, 1.13 ms     | 1.38, 1.03, 0.72, 0.74 ms     |
+
+Canonical path resolution remained below `0.31 ms` in every sample. On the
+larger Fragments checkout, recursive file discovery—not content hashing—is the
+dominant repeated cost. The next optimization should therefore retain a
+session-local file manifest before considering a hashing algorithm change.
+
 ## Excluded self-scan
 
 The FlowAtlas repository root is not a valid architecture benchmark corpus in

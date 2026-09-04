@@ -1,11 +1,19 @@
 import { readdir, readFile } from "node:fs/promises";
 import { basename, extname, relative, resolve } from "node:path";
+import { performance } from "node:perf_hooks";
 
 import type { TypeScriptProject } from "../scanner/projectSymbolResolver.js";
 
 const sourceExtensions = new Set([".ts", ".tsx"]);
 
 const normalizeRelativePath = (file: string): string => file.replaceAll("\\", "/");
+
+export type ProjectLoadPhase = "config-read" | "file-discovery" | "source-read";
+
+export type ProjectLoadMeasurement = {
+  phase: ProjectLoadPhase;
+  durationMs: number;
+};
 
 const findSourceFiles = async (directory: string, root: string): Promise<string[]> => {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -30,22 +38,31 @@ export const loadTypeScriptProject = async (
 ): Promise<{
   name: string;
   project: TypeScriptProject;
+  loadMeasurements: readonly ProjectLoadMeasurement[];
 }> => {
   const root = resolve(projectPath);
   const tsconfigPath = resolve(root, "tsconfig.json");
+  const loadMeasurements: ProjectLoadMeasurement[] = [];
+  let startedAt = performance.now();
   const tsconfig = JSON.parse(
     await readFile(tsconfigPath, "utf8"),
   ) as TypeScriptProject["tsconfig"];
+  loadMeasurements.push({ phase: "config-read", durationMs: performance.now() - startedAt });
+  startedAt = performance.now();
   const files = await findSourceFiles(root, root);
+  loadMeasurements.push({ phase: "file-discovery", durationMs: performance.now() - startedAt });
+  startedAt = performance.now();
   const sources = await Promise.all(
     files.map(async (file) => ({
       file,
       source: await readFile(resolve(root, file), "utf8"),
     })),
   );
+  loadMeasurements.push({ phase: "source-read", durationMs: performance.now() - startedAt });
 
   return {
     name: basename(root),
+    loadMeasurements,
     project: {
       files: sources,
       projectFiles: sources,

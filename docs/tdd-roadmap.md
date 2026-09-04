@@ -978,7 +978,56 @@ Fragments and the pinned Redux Essentials corpus, records reproducible commands
 and raw samples, and verifies that unchanged repeated requests perform one scan
 without weakening freshness guarantees.
 
-## Milestone 11 - Diagnostics
+## Milestone 11 - Justified Optimizations
+
+**Status: ACTIVE**
+
+### Goal
+
+Reduce repeated MCP graph-loading latency using benchmark evidence while
+preserving the default content-verified freshness contract and keeping cache
+state outside `ArchitectureGraph`.
+
+### Acceptance driver
+
+A retained MCP session repeatedly queries an unchanged real checkout, then
+observes a source creation, modification, deletion and configuration change
+without returning stale architectural truth.
+
+### Decisions
+
+- Optimization starts with phase-level measurements, not speculative scanner
+  changes.
+- `verified-content` remains the default. Metadata-only verification may be
+  evaluated only as an explicit weaker mode.
+- File manifests, hashes and timestamps are infrastructure snapshot data and
+  never enter the canonical graph.
+
+### Discovered micro-cycles
+
+- The benchmark now separates configuration read, recursive file discovery,
+  source read, project fingerprint, graph scan and path canonicalization.
+- On Fragments, repeated recursive discovery consumed roughly `264-362 ms`,
+  compared with `13-21 ms` for source reads and `18-26 ms` for fingerprinting.
+  Manifest discovery is therefore the first justified optimization target.
+- On Redux Essentials, the same phases remained small; this confirms that the
+  optimization must preserve a low fixed cost for small repositories.
+
+### Known gaps
+
+- The loader still discovers and reads every source on every request.
+- No session-local per-file manifest or content-hash index exists.
+- Metadata-only verification cannot guarantee freshness when content changes
+  while size and timestamps are preserved.
+
+### Completion criteria
+
+The phase report remains reproducible; session-local snapshot data avoids
+unnecessary discovery and reading in an explicitly selected mode; content,
+creation, deletion and `tsconfig` changes invalidate as promised; and real
+corpus measurements demonstrate the trade-off without changing graph meaning.
+
+## Milestone 12 - Diagnostics
 
 **Status: LONG TERM**
 
@@ -986,7 +1035,7 @@ Potential areas include orphan Events, Handlers without observable outcomes,
 cycles, highly connected States, unresolved architectural relations and
 hotspots. Do not invent metrics before real cases justify them.
 
-## Milestone 12 - Runtime Overlay
+## Milestone 13 - Runtime Overlay
 
 **Status: LONG TERM**
 

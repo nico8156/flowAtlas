@@ -13,6 +13,12 @@ type LoadedTypeScriptProject = {
 type TypeScriptProjectLoader = (projectPath: string) => Promise<LoadedTypeScriptProject>;
 type TypeScriptProjectScanner = (project: TypeScriptProject) => ArchitectureGraph;
 
+export type VerifiedSnapshotPhase = "canonicalization" | "fingerprint" | "scan";
+
+type VerifiedSnapshotGraphLoaderOptions = {
+  onPhase?: (measurement: { phase: VerifiedSnapshotPhase; durationMs: number }) => void;
+};
+
 type VerifiedGraphSnapshot = {
   projectRoot: string;
   fingerprint: string;
@@ -46,19 +52,29 @@ const canonicalizeProjectRoot = async (projectPath: string): Promise<string> => 
 export const createVerifiedSnapshotGraphLoader = (
   loadProject: TypeScriptProjectLoader,
   scanProject: TypeScriptProjectScanner,
+  options: VerifiedSnapshotGraphLoaderOptions = {},
 ): ((projectPath: string) => Promise<ArchitectureGraph>) => {
   let snapshot: VerifiedGraphSnapshot | undefined;
 
   return async (projectPath) => {
+    let startedAt = performance.now();
     const projectRoot = await canonicalizeProjectRoot(projectPath);
+    options.onPhase?.({
+      phase: "canonicalization",
+      durationMs: performance.now() - startedAt,
+    });
     const loadedProject = await loadProject(projectRoot);
+    startedAt = performance.now();
     const fingerprint = fingerprintProject(loadedProject.project);
+    options.onPhase?.({ phase: "fingerprint", durationMs: performance.now() - startedAt });
 
     if (snapshot?.projectRoot === projectRoot && snapshot.fingerprint === fingerprint) {
       return snapshot.graph;
     }
 
+    startedAt = performance.now();
     const graph = scanProject(loadedProject.project);
+    options.onPhase?.({ phase: "scan", durationMs: performance.now() - startedAt });
     snapshot = { projectRoot, fingerprint, graph };
     return graph;
   };

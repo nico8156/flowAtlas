@@ -6,7 +6,15 @@ import { runVerifiedSnapshotBenchmark } from "../../src/benchmark/verifiedSnapsh
 describe("verified snapshot benchmark", () => {
   it("reports the first scan separately from repeated verified snapshot loads", async () => {
     const project = { files: [{ file: "events.ts", source: "export const requested = true;" }] };
-    const loadProject = vi.fn(async () => ({ name: "project", project }));
+    const loadProject = vi.fn(async () => ({
+      name: "project",
+      project,
+      loadMeasurements: [
+        { phase: "config-read" as const, durationMs: 1 },
+        { phase: "file-discovery" as const, durationMs: 2 },
+        { phase: "source-read" as const, durationMs: 3 },
+      ],
+    }));
     const graph = createArchitectureGraph();
     graph.addNode({ id: "requested", kind: "Event" });
     const scanProject = vi.fn(() => graph);
@@ -30,7 +38,15 @@ describe("verified snapshot benchmark", () => {
       repeatedMedianMs: 5.5,
       speedup: 3.64,
       graph: { nodes: 1, edges: 0 },
+      phases: {
+        configReadMs: [1, 1, 1],
+        fileDiscoveryMs: [2, 2, 2],
+        sourceReadMs: [3, 3, 3],
+      },
     });
+    expect(result.phases.canonicalizationMs).toHaveLength(3);
+    expect(result.phases.fingerprintMs).toHaveLength(3);
+    expect(result.phases.scanMs).toHaveLength(1);
     expect(loadProject).toHaveBeenCalledTimes(3);
     expect(scanProject).toHaveBeenCalledTimes(1);
   });

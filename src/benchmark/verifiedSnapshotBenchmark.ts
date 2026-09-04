@@ -1,5 +1,6 @@
 import { performance } from "node:perf_hooks";
 
+import type { ProjectLoadMeasurement } from "../cli/projectLoader.js";
 import type { ArchitectureGraph } from "../domain/architectureGraph.js";
 import { createVerifiedSnapshotGraphLoader } from "../mcp/verifiedSnapshotGraphLoader.js";
 import type { TypeScriptProject } from "../scanner/projectSymbolResolver.js";
@@ -7,6 +8,7 @@ import type { TypeScriptProject } from "../scanner/projectSymbolResolver.js";
 type LoadedTypeScriptProject = {
   name: string;
   project: TypeScriptProject;
+  loadMeasurements?: readonly ProjectLoadMeasurement[];
 };
 
 type BenchmarkOptions = {
@@ -39,10 +41,36 @@ export const runVerifiedSnapshotBenchmark = async ({
   }
 
   let scans = 0;
-  const loadGraph = createVerifiedSnapshotGraphLoader(loadProject, (project) => {
-    scans += 1;
-    return scanProject(project);
-  });
+  const phases = {
+    configReadMs: [] as number[],
+    fileDiscoveryMs: [] as number[],
+    sourceReadMs: [] as number[],
+    canonicalizationMs: [] as number[],
+    fingerprintMs: [] as number[],
+    scanMs: [] as number[],
+  };
+  const measuredLoadProject = async (path: string): Promise<LoadedTypeScriptProject> => {
+    const loaded = await loadProject(path);
+    for (const measurement of loaded.loadMeasurements ?? []) {
+      const value = round(measurement.durationMs);
+      if (measurement.phase === "config-read") phases.configReadMs.push(value);
+      if (measurement.phase === "file-discovery") phases.fileDiscoveryMs.push(value);
+      if (measurement.phase === "source-read") phases.sourceReadMs.push(value);
+    }
+    return loaded;
+  };
+  const loadGraph = createVerifiedSnapshotGraphLoader(
+    measuredLoadProject,
+    (project) => {
+      scans += 1;
+      return scanProject(project);
+    },
+    {
+      onPhase: ({ phase, durationMs }) => {
+        phases[`${phase}Ms`].push(round(durationMs));
+      },
+    },
+  );
   const samples: number[] = [];
   let graph: ArchitectureGraph | undefined;
 
@@ -75,5 +103,6 @@ export const runVerifiedSnapshotBenchmark = async ({
       nodes: graph?.nodes.length ?? 0,
       edges: graph?.edges.length ?? 0,
     },
+    phases,
   };
 };
