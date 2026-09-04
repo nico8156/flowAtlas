@@ -19,9 +19,13 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 7. Visualizer MVP                          | ACTIVE: CLI/TUI pivot                     |
 | 7A. Terminal Map CLI                       | DELIVERED: absorbed into M7               |
 | 7B. Agent context interfaces               | DELIVERED: autonomous CLI and MCP         |
-| 8. Broader validation                      | PROPOSED                                  |
-| 9. Diagnostics                             | LONG TERM                                 |
-| 10. Runtime overlay                        | LONG TERM                                 |
+| 8. MCP hardening                           | DELIVERED                                 |
+| 9. Multi-codebase validation               | DELIVERED                                 |
+| 10. Reproducible technical benchmark       | DELIVERED                                 |
+| 11. Justified optimizations                | DELIVERED                                 |
+| 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
+| 13. Diagnostics                            | LONG TERM                                 |
+| 14. Runtime overlay                        | LONG TERM                                 |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -980,7 +984,7 @@ without weakening freshness guarantees.
 
 ## Milestone 11 - Justified Optimizations
 
-**Status: ACTIVE**
+**Status: DELIVERED**
 
 ### Goal
 
@@ -1073,7 +1077,64 @@ unnecessary discovery and reading in an explicitly selected mode; content,
 creation, deletion and `tsconfig` changes invalidate as promised; and real
 corpus measurements demonstrate the trade-off without changing graph meaning.
 
-## Milestone 12 - Diagnostics
+## Milestone 12 - Agent Value Validation
+
+**Status: DELIVERED — first paired Fragments observation**
+
+### Goal
+
+Measure whether a bounded FlowAtlas MCP context reduces coding-agent
+exploration on a real Redux architecture while preserving source-backed
+architectural conclusions and explicit static gaps.
+
+### Acceptance driver
+
+Two fresh, read-only Codex processes analyze the same Fragments Like-to-outbox
+task on the same commit. The control uses ordinary repository exploration; the
+treatment starts from FlowAtlas MCP and then reads referenced sources. Both
+report their files, searches, tool calls, hypotheses and verification result.
+
+### Decisions
+
+- The first comparison measures tool value when used, not autonomous MCP
+  selection; the treatment prompt therefore names FlowAtlas explicitly.
+- Raw traces remain temporary because they contain Fragments source excerpts.
+- Token and exploration counts are paired observations, not universal
+  performance guarantees.
+- Source inspection remains mandatory and may narrow a broad static External
+  relation without changing the graph.
+
+### Discovered micro-cycles
+
+- The MCP treatment used 350,270 input tokens versus 694,360 for the control,
+  a 49.6% reduction in this run.
+- It opened 18 files versus 26, issued 3 searches versus 6 and made 11 tool
+  calls versus 15.
+- Two complete MCP projections totaled 9,230 serialized bytes and oriented the
+  agent from the Like intent through optimistic state and outbox processing to
+  `LikeWlGateway`.
+- Both runs found the same missing queued-retry wake-up and the same
+  business-rejection policy conflict without inventing runtime causality.
+- The treatment correctly reported that auth-token access is absent from the
+  graph and that generic outbox routing requires source inspection to select
+  the Like gateway.
+
+### Known gaps
+
+- This is one stochastic pair with an exact node id; discovery and repeated
+  statistical confidence remain unmeasured.
+- The control ran tests while the treatment did not, so verification effort is
+  not directly comparable.
+- The Codex trace did not record its configured model.
+
+### Completion criteria
+
+The protocol, pinned commits, quantitative observations, architectural
+agreement, scanner limits and benchmark limitations are recorded in
+`docs/evaluations/fragments-agent-value-validation.md` without altering the
+canonical graph or claiming statistical proof.
+
+## Milestone 13 - Diagnostics
 
 **Status: LONG TERM**
 
@@ -1081,7 +1142,7 @@ Potential areas include orphan Events, Handlers without observable outcomes,
 cycles, highly connected States, unresolved architectural relations and
 hotspots. Do not invent metrics before real cases justify them.
 
-## Milestone 13 - Runtime Overlay
+## Milestone 14 - Runtime Overlay
 
 **Status: LONG TERM**
 
