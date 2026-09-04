@@ -864,7 +864,7 @@ clean and has deterministic behavior under concurrent requests.
 
 ## Milestone 9 - Broader Validation
 
-**Status: PROPOSED**
+**Status: ACTIVE**
 
 ### Goal
 
@@ -872,12 +872,40 @@ Separate generic FlowAtlas capabilities from Fragments-specific conventions.
 
 ### Acceptance driver
 
-An official Redux Toolkit application independent of Fragments.
+The official `reduxjs/redux-essentials-example-app` tutorial implementation,
+pinned at the evaluated commit and supplied through an optional local checkout.
+
+### Decisions
+
+- The Redux Essentials default branch is not a valid corpus because it is only
+  a non-Redux tutorial scaffold; validation uses `tutorial-steps-ts`.
+- The first projection is limited to an explicit `createAction`, its registered
+  State and a statically visible reducer matcher.
+- RTK Query lifecycle callbacks and WebSocket boundaries are not assigned new
+  graph meaning during this validation.
+
+### Discovered micro-cycles
+
+- A reducer imported from `export default slice.reducer` now resolves to its
+  slice declaration, allowing the State to use its `configureStore` key.
+
+### Known gaps
+
+- `builder.addMatcher(isAnyOf(...))` does not yet produce statically resolvable
+  `UPDATES` relations for the explicit Events inside the matcher;
+- async thunks, RTK Query endpoints and listener middleware still need separate
+  projections before the corpus can be considered broadly validated.
+
+### Open design questions
+
+- Which RTK Query lifecycle constructs are architecture rather than generated
+  implementation detail under the existing V1 vocabulary?
 
 ### Completion criteria
 
 The scanner's reusable assumptions are documented before considering other
-framework adapters.
+framework adapters, and several independent Redux Essentials projections pass
+without inventing causality for generated RTK Query behavior.
 
 ## Milestone 10 - Diagnostics
 

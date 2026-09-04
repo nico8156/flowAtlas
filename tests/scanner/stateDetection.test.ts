@@ -125,4 +125,22 @@ describe("State detection", () => {
       kind: "State",
     });
   });
+
+  it("uses the store name for a reducer imported through a default export", async () => {
+    const files = [
+      "tests/fixtures/defaultExportReducer.ts",
+      "tests/fixtures/defaultExportReducerStore.ts",
+    ];
+    const graph = scanTypeScriptProject({
+      files: await Promise.all(
+        files.map(async (file) => ({
+          file,
+          source: await readFixture(file.split("/").pop() ?? ""),
+        })),
+      ),
+    });
+
+    expect(graph.nodes).toContainEqual({ id: "notifications", kind: "State" });
+    expect(graph.nodes).not.toContainEqual({ id: "notificationsSlice", kind: "State" });
+  });
 });

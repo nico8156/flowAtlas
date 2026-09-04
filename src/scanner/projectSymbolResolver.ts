@@ -119,7 +119,8 @@ const dirname = (file: string): string => {
 
 const resolveFile = (candidate: string, files: ReadonlySet<string>): string | undefined => {
   const normalized = normalizePath(candidate);
-  const candidates = [normalized, `${normalized}.ts`, `${normalized}/index.ts`];
+  const sourcePath = normalized.endsWith(".js") ? normalized.slice(0, -3) : normalized;
+  const candidates = [normalized, `${sourcePath}.ts`, `${sourcePath}/index.ts`];
   return candidates.find((file) => files.has(file));
 };
 
@@ -247,6 +248,7 @@ const getSymbolBindings = (
   resolveImportFile: ImportFileResolver,
   eventIds: EventIds,
   checker: ts.TypeChecker,
+  sourceFilesByPath: ReadonlyMap<string, ProjectSourceFile>,
   sourceFilePaths: ReadonlyMap<ts.SourceFile, string>,
 ): Map<string, string> => {
   const bindings = new Map<string, string>();
@@ -255,14 +257,34 @@ const getSymbolBindings = (
     if (
       !ts.isImportDeclaration(statement) ||
       !statement.importClause ||
-      !statement.importClause.namedBindings ||
-      !ts.isNamedImports(statement.importClause.namedBindings) ||
       !ts.isStringLiteral(statement.moduleSpecifier)
     ) {
       continue;
     }
 
     const importedFile = resolveImportFile(file.file, statement.moduleSpecifier.text);
+    if (statement.importClause.name && importedFile) {
+      const importedSourceFile = sourceFilesByPath.get(normalizePath(importedFile))?.sourceFile;
+      const defaultExport = importedSourceFile?.statements.find(
+        (candidate): candidate is ts.ExportAssignment =>
+          ts.isExportAssignment(candidate) && !candidate.isExportEquals,
+      );
+      let exportedExpression = defaultExport?.expression;
+      while (exportedExpression && ts.isPropertyAccessExpression(exportedExpression)) {
+        exportedExpression = exportedExpression.expression;
+      }
+      if (exportedExpression && ts.isIdentifier(exportedExpression)) {
+        bindings.set(statement.importClause.name.text, exportedExpression.text);
+      }
+    }
+
+    if (
+      !statement.importClause.namedBindings ||
+      !ts.isNamedImports(statement.importClause.namedBindings)
+    ) {
+      continue;
+    }
+
     for (const element of statement.importClause.namedBindings.elements) {
       const importedName = element.propertyName?.text ?? element.name.text;
       const importedSymbol = checker.getSymbolAtLocation(element.name);
@@ -325,6 +347,7 @@ export const resolveProjectSymbols = (project: TypeScriptProject): ProjectSymbol
           resolveImportFile,
           eventIds,
           compilerContext.checker,
+          sourceFilesByPath,
           sourceFilePaths,
         ),
       );
