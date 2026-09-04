@@ -1,3 +1,7 @@
+import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it, vi } from "vitest";
 
 import { createArchitectureGraph } from "../../src/domain/architectureGraph.js";
@@ -24,6 +28,29 @@ describe("verified MCP graph snapshot", () => {
     expect(second).toBe(graph);
     expect(loadProject).toHaveBeenCalledTimes(2);
     expect(scanProject).toHaveBeenCalledTimes(1);
+  });
+
+  it("reuses the graph through two filesystem paths to the same project", async () => {
+    const temporaryRoot = await mkdtemp(join(tmpdir(), "flowatlas-mcp-root-"));
+    const projectRoot = join(temporaryRoot, "project");
+    const projectAlias = join(temporaryRoot, "project-alias");
+    const project = { files: [{ file: "events.ts", source: "export const requested = true;" }] };
+    const loadProject = vi.fn(async () => ({ name: "project", project }));
+    const graph = createArchitectureGraph();
+    const scanProject = vi.fn(() => graph);
+    const loadGraph = createVerifiedSnapshotGraphLoader(loadProject, scanProject);
+
+    try {
+      await mkdir(projectRoot);
+      await symlink(projectRoot, projectAlias, "dir");
+
+      await loadGraph(projectRoot);
+      await loadGraph(projectAlias);
+
+      expect(scanProject).toHaveBeenCalledTimes(1);
+    } finally {
+      await rm(temporaryRoot, { recursive: true, force: true });
+    }
   });
 
   it("rebuilds the graph when the project content changes", async () => {

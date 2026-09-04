@@ -821,7 +821,48 @@ results; the agent reads referenced sources before editing; and measured tasks
 show a useful exploration benefit without changing graph vocabulary,
 inventing causality or serving stale architectural truth.
 
-## Milestone 8 - Broader Validation
+## Milestone 8 - MCP Hardening
+
+**Status: ACTIVE**
+
+### Goal
+
+Make the validated MCP vertical robust under filesystem aliases, source
+changes, failures, concurrent requests and protocol errors without changing
+the canonical graph or adding speculative caching.
+
+### Acceptance driver
+
+A long-lived local MCP session repeatedly queries a temporary TypeScript
+checkout while its identity, contents and availability change.
+
+### Decisions
+
+- Hardening preserves the content-verified snapshot contract selected after
+  the MCP evaluation.
+- Equivalent filesystem paths must identify the same physical checkout.
+- Errors must never be hidden by a previously retained graph.
+
+### Discovered micro-cycles
+
+- Physical project roots are resolved before snapshot comparison, so a direct
+  path and a symbolic link to the same checkout reuse one verified graph.
+
+### Known gaps
+
+- same-session creation, deletion and `tsconfig.json` changes are not yet
+  covered through the complete MCP protocol;
+- concurrent request behavior has not been stress-tested;
+- protocol-level failures need explicit acceptance coverage;
+- stdout/stderr separation is not verified at process level.
+
+### Completion criteria
+
+The server preserves fresh static truth across project mutations and failures,
+avoids redundant work for equivalent checkout identities, remains protocol
+clean and has deterministic behavior under concurrent requests.
+
+## Milestone 9 - Broader Validation
 
 **Status: PROPOSED**
 
@@ -831,14 +872,14 @@ Separate generic FlowAtlas capabilities from Fragments-specific conventions.
 
 ### Acceptance driver
 
-Another real Fragments flow, followed by a second Redux Toolkit application.
+An official Redux Toolkit application independent of Fragments.
 
 ### Completion criteria
 
 The scanner's reusable assumptions are documented before considering other
 framework adapters.
 
-## Milestone 9 - Diagnostics
+## Milestone 10 - Diagnostics
 
 **Status: LONG TERM**
 
@@ -846,7 +887,7 @@ Potential areas include orphan Events, Handlers without observable outcomes,
 cycles, highly connected States, unresolved architectural relations and
 hotspots. Do not invent metrics before real cases justify them.
 
-## Milestone 10 - Runtime Overlay
+## Milestone 11 - Runtime Overlay
 
 **Status: LONG TERM**
 

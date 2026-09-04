@@ -84,10 +84,11 @@ node dist/mcp.js
 
 The server writes MCP protocol messages only to `stdout`; diagnostics belong on
 `stderr`. Each tool call reloads the requested `projectPath` and computes a
-deterministic fingerprint from the scanner inputs. The process reuses its last
-`ArchitectureGraph` only when the canonical project root and fingerprint are
-unchanged; otherwise it rebuilds the graph before answering. A failed reload or
-rebuild returns an error instead of serving the previous graph.
+deterministic fingerprint from the scanner inputs. The process resolves
+filesystem aliases and reuses its last `ArchitectureGraph` only when the
+physical project root and fingerprint are unchanged; otherwise it rebuilds the
+graph before answering. A failed reload or rebuild returns an error instead of
+serving the previous graph.
 
 This verified snapshot is session-local. It is not persisted to disk, governed
 by a TTL or maintained by a watcher. The MCP adapter still receives an

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { realpath } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import type { ArchitectureGraph } from "../domain/architectureGraph.js";
@@ -32,6 +33,16 @@ const fingerprintProject = (project: TypeScriptProject): string =>
     )
     .digest("hex");
 
+const canonicalizeProjectRoot = async (projectPath: string): Promise<string> => {
+  const resolvedPath = resolve(projectPath);
+  try {
+    return await realpath(resolvedPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return resolvedPath;
+    throw error;
+  }
+};
+
 export const createVerifiedSnapshotGraphLoader = (
   loadProject: TypeScriptProjectLoader,
   scanProject: TypeScriptProjectScanner,
@@ -39,7 +50,7 @@ export const createVerifiedSnapshotGraphLoader = (
   let snapshot: VerifiedGraphSnapshot | undefined;
 
   return async (projectPath) => {
-    const projectRoot = resolve(projectPath);
+    const projectRoot = await canonicalizeProjectRoot(projectPath);
     const loadedProject = await loadProject(projectRoot);
     const fingerprint = fingerprintProject(loadedProject.project);
 
