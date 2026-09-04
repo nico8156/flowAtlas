@@ -44,7 +44,7 @@ describeFragments("FlowAtlas CLI focused JSON context", () => {
     };
 
     expect(context).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       focus: { id: "uiLikeToggleRequested", kind: "Event" },
       request: { direction: "both", maxDepth: 2 },
     });

@@ -15,7 +15,10 @@ export type ArchitectureContextDirection = "upstream" | "downstream" | "both";
 export type ArchitectureContextLimits = {
   readonly maxNodes: number;
   readonly maxEdges: number;
+  readonly maxBytes?: number;
 };
+
+export type ArchitectureContextLimit = "maxNodes" | "maxEdges" | "maxBytes";
 
 export type ArchitectureContextFrontier = {
   readonly nodeId: string;
@@ -24,18 +27,23 @@ export type ArchitectureContextFrontier = {
 };
 
 export type ArchitectureContext = {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
   readonly focus: NonNullable<ReturnType<ArchitectureGraph["findNode"]>>;
   readonly request: {
     readonly direction: ArchitectureContextDirection;
     readonly maxDepth: number;
     readonly maxNodes?: number;
     readonly maxEdges?: number;
+    readonly maxBytes?: number;
   };
   readonly complete: boolean;
+  readonly frontierComplete: boolean;
+  readonly omittedFrontierCount: number;
+  readonly limitsReached: readonly ArchitectureContextLimit[];
   readonly returned: { readonly nodes: number; readonly edges: number };
   readonly frontier: readonly ArchitectureContextFrontier[];
   readonly projection: GraphProjection;
+  readonly serializedBytes: number;
 };
 
 const downstreamTarget = (edge: ArchitectureEdge, nodeId: string): string | undefined =>
@@ -107,12 +115,14 @@ const boundProjection = (
   projection: GraphProjection;
   complete: boolean;
   frontier: readonly ArchitectureContextFrontier[];
+  limitsReached: readonly ArchitectureContextLimit[];
 } => {
   const allowedNodeIds = new Set(projection.nodes.map(({ id }) => id));
   const includedNodeIds = new Set([focusNode.id]);
   const selectedNodeIds = [focusNode.id];
   let currentLayer = [focusNode.id];
   let stopped = false;
+  const limitsReached = new Set<ArchitectureContextLimit>();
 
   while (currentLayer.length > 0 && !stopped) {
     const candidateNodeIds = new Set<string>();
@@ -131,6 +141,8 @@ const boundProjection = (
       const prospectiveNodeIds = new Set(includedNodeIds).add(candidateNodeId);
       const prospectiveEdges = inducedEdges(projection, prospectiveNodeIds);
       if (prospectiveNodeIds.size > limits.maxNodes || prospectiveEdges.length > limits.maxEdges) {
+        if (prospectiveNodeIds.size > limits.maxNodes) limitsReached.add("maxNodes");
+        if (prospectiveEdges.length > limits.maxEdges) limitsReached.add("maxEdges");
         stopped = true;
         break;
       }
@@ -172,7 +184,90 @@ const boundProjection = (
             compareIds(left.via.target, right.via.target),
         );
 
-  return { projection: boundedProjection, complete, frontier };
+  return { projection: boundedProjection, complete, frontier, limitsReached: [...limitsReached] };
+};
+
+type ArchitectureContextWithoutSize = Omit<ArchitectureContext, "serializedBytes">;
+
+const withSerializedSize = (context: ArchitectureContextWithoutSize): ArchitectureContext => {
+  let serializedBytes = 0;
+  while (true) {
+    const candidate = { ...context, serializedBytes };
+    const measuredBytes = Buffer.byteLength(JSON.stringify(candidate, null, 2), "utf8");
+    if (measuredBytes === serializedBytes) return candidate;
+    serializedBytes = measuredBytes;
+  }
+};
+
+const contextEnvelope = (
+  focus: ArchitectureNode,
+  request: ArchitectureContext["request"],
+  bounded: ReturnType<typeof boundProjection>,
+  frontier: readonly ArchitectureContextFrontier[] = bounded.frontier,
+  omittedFrontierCount = bounded.frontier.length - frontier.length,
+  extraLimits: readonly ArchitectureContextLimit[] = [],
+): ArchitectureContext =>
+  withSerializedSize({
+    schemaVersion: 2,
+    focus,
+    request,
+    complete: bounded.complete,
+    frontierComplete: omittedFrontierCount === 0,
+    omittedFrontierCount,
+    limitsReached: [...new Set([...bounded.limitsReached, ...extraLimits])],
+    returned: {
+      nodes: bounded.projection.nodes.length,
+      edges: bounded.projection.edges.length,
+    },
+    frontier,
+    projection: bounded.projection,
+  });
+
+const fitContextToByteBudget = (
+  fullProjection: GraphProjection,
+  focus: ArchitectureNode,
+  direction: ArchitectureContextDirection,
+  limits: ArchitectureContextLimits,
+  request: ArchitectureContext["request"],
+  initiallyBounded: ReturnType<typeof boundProjection>,
+): ArchitectureContext => {
+  const untrimmed = contextEnvelope(focus, request, initiallyBounded);
+  if (untrimmed.serializedBytes <= (limits.maxBytes ?? Number.POSITIVE_INFINITY)) {
+    return untrimmed;
+  }
+
+  let maxNodes = Math.min(limits.maxNodes, fullProjection.nodes.length);
+
+  while (maxNodes >= 1) {
+    const byteBounded = boundProjection(fullProjection, focus, direction, {
+      maxNodes,
+      maxEdges: limits.maxEdges,
+    });
+    const bounded = {
+      ...byteBounded,
+      limitsReached: initiallyBounded.limitsReached,
+    };
+    for (
+      let frontierLength = bounded.frontier.length - 1;
+      frontierLength >= 0;
+      frontierLength -= 1
+    ) {
+      const candidate = contextEnvelope(
+        focus,
+        request,
+        bounded,
+        bounded.frontier.slice(0, frontierLength),
+        bounded.frontier.length - frontierLength,
+        ["maxBytes"],
+      );
+      if (candidate.serializedBytes <= (limits.maxBytes ?? Number.POSITIVE_INFINITY)) {
+        return candidate;
+      }
+    }
+    maxNodes -= 1;
+  }
+
+  throw new Error(`Context maxBytes is too small for the irreducible envelope: ${limits.maxBytes}`);
 };
 
 export const buildArchitectureContext = (
@@ -191,9 +286,11 @@ export const buildArchitectureContext = (
     (!Number.isInteger(limits.maxNodes) ||
       limits.maxNodes <= 0 ||
       !Number.isInteger(limits.maxEdges) ||
-      limits.maxEdges < 0)
+      limits.maxEdges < 0 ||
+      (limits.maxBytes !== undefined &&
+        (!Number.isInteger(limits.maxBytes) || limits.maxBytes <= 0)))
   ) {
-    throw new Error("Context limits require maxNodes > 0 and maxEdges >= 0");
+    throw new Error("Context limits require maxNodes > 0, maxEdges >= 0 and maxBytes > 0");
   }
 
   const fullProjection =
@@ -202,22 +299,18 @@ export const buildArchitectureContext = (
       : direction === "upstream"
         ? projectUpstream(graph, nodeId, { maxDepth })
         : projectFocusedTerritory(graph, nodeId, maxDepth);
+  const structuralLimits = limits ?? {
+    maxNodes: fullProjection.nodes.length,
+    maxEdges: fullProjection.edges.length,
+  };
   const bounded = limits
     ? boundProjection(fullProjection, focus, direction, limits)
-    : { projection: fullProjection, complete: true, frontier: [] };
+    : boundProjection(fullProjection, focus, direction, structuralLimits);
+  const request = { direction, maxDepth, ...limits };
 
-  return {
-    schemaVersion: 1,
-    focus,
-    request: { direction, maxDepth, ...limits },
-    complete: bounded.complete,
-    returned: {
-      nodes: bounded.projection.nodes.length,
-      edges: bounded.projection.edges.length,
-    },
-    frontier: bounded.frontier,
-    projection: bounded.projection,
-  };
+  return limits?.maxBytes === undefined
+    ? contextEnvelope(focus, request, bounded)
+    : fitContextToByteBudget(fullProjection, focus, direction, limits, request, bounded);
 };
 
 export const serializeArchitectureContext = (context: ArchitectureContext): string =>

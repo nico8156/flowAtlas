@@ -32,6 +32,7 @@ describe("FlowAtlas MCP server", () => {
         maxDepth: 1,
         maxNodes: 10,
         maxEdges: 10,
+        maxBytes: 900,
       },
     });
 
@@ -42,8 +43,9 @@ describe("FlowAtlas MCP server", () => {
       },
     ]);
     expect(result.structuredContent).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       focus: { id: "requested", kind: "Event" },
+      request: { maxBytes: 900 },
     });
   });
 });

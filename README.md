@@ -49,7 +49,7 @@ npx flowatlas downstream <nodeId> .
 npx flowatlas upstream <nodeId> .
 npx flowatlas scan --json .
 npx flowatlas find <query> . --kind Event --limit 10 --json
-npx flowatlas context <nodeId> . --direction both --depth 2 --max-nodes 40 --max-edges 80 --json
+npx flowatlas context <nodeId> . --direction both --depth 2 --max-nodes 40 --max-edges 80 --max-bytes 16384 --json
 npx flowatlas focus <nodeId> .
 npx flowatlas tui <nodeId> .
 ```
@@ -62,6 +62,15 @@ Optional node and edge budgets stop before the first deterministic breadth-first
 addition that would exceed either limit. The result reports whether traversal
 completed, its returned counts and each known relation crossing the unexplored
 frontier; relations between returned nodes are never silently removed.
+
+An optional `--max-bytes` limit bounds the complete indented UTF-8 JSON
+document. The schema-v2 envelope reports `serializedBytes`, `limitsReached`,
+`frontierComplete` and `omittedFrontierCount`. FlowAtlas first truncates the
+deterministically ordered frontier, then reduces the breadth-first projection
+if necessary; it always retains the focus and rejects a budget too small for
+that irreducible envelope. When used alone, `--max-bytes` applies the standard
+40-node and 80-edge limits. The MCP context tool applies a default 16 KiB
+budget.
 
 `find` returns a limited, deterministic list of architectural node candidates.
 It searches existing node identifiers, kinds, provenance and source paths; it

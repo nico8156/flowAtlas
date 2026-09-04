@@ -84,16 +84,18 @@ describeFragments("FlowAtlas MCP agent context", () => {
       buildArchitectureContext(graph, "uiLikeToggleRequested", "both", 1, {
         maxNodes: 10,
         maxEdges: 10,
+        maxBytes: 16_384,
       }),
     );
     expect(contextResult.structuredContent).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       focus: { id: "uiLikeToggleRequested", kind: "Event" },
       request: {
         direction: "both",
         maxDepth: 1,
         maxNodes: 10,
         maxEdges: 10,
+        maxBytes: 16_384,
       },
       complete: true,
       returned: { nodes: 2, edges: 1 },

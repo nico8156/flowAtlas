@@ -51,12 +51,17 @@ export const createFlowAtlasMcpServer = (loadGraph: ArchitectureGraphLoader): Mc
         maxDepth: z.number().int().nonnegative().default(3),
         maxNodes: z.number().int().positive().default(40),
         maxEdges: z.number().int().nonnegative().default(80),
+        maxBytes: z.number().int().positive().default(16_384),
       },
     },
-    async ({ nodeId, projectPath, direction, maxDepth, maxNodes, maxEdges }) => {
+    async ({ nodeId, projectPath, direction, maxDepth, maxNodes, maxEdges, maxBytes }) => {
       const graph = await loadGraph(projectPath);
       return toolResult(
-        buildArchitectureContext(graph, nodeId, direction, maxDepth, { maxNodes, maxEdges }),
+        buildArchitectureContext(graph, nodeId, direction, maxDepth, {
+          maxNodes,
+          maxEdges,
+          maxBytes,
+        }),
       );
     },
   );

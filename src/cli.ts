@@ -29,7 +29,7 @@ import {
 } from "./tui/TerminalTui.js";
 
 const usage =
-  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas find <query> [path] --kind <Event|Handler|State|External> --limit <count> --json | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> [--max-nodes <count> --max-edges <count>] --json | flowatlas tui <nodeId> [path]";
+  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas find <query> [path] --kind <Event|Handler|State|External> --limit <count> --json | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> [--max-nodes <count> --max-edges <count>] [--max-bytes <count>] --json | flowatlas tui <nodeId> [path]";
 
 const nodeKinds: readonly NodeKind[] = ["Event", "Handler", "State", "External"];
 
@@ -86,6 +86,7 @@ const parseContextArguments = (
   maxDepth: number;
   maxNodes?: number;
   maxEdges?: number;
+  maxBytes?: number;
 } => {
   const [nodeId, possiblePath, ...remainingArguments] = arguments_;
   if (!nodeId) throw new Error(usage);
@@ -101,6 +102,7 @@ const parseContextArguments = (
   let maxDepth: number | undefined;
   let maxNodes: number | undefined;
   let maxEdges: number | undefined;
+  let maxBytes: number | undefined;
   let json = false;
 
   for (let index = 0; index < options.length; index += 1) {
@@ -139,6 +141,13 @@ const parseContextArguments = (
       index += 1;
       continue;
     }
+    if (option === "--max-bytes") {
+      const value = Number(options[index + 1]);
+      if (!Number.isInteger(value) || value <= 0) throw new Error(usage);
+      maxBytes = value;
+      index += 1;
+      continue;
+    }
     throw new Error(usage);
   }
 
@@ -157,6 +166,7 @@ const parseContextArguments = (
     direction,
     maxDepth,
     ...(maxNodes !== undefined && maxEdges !== undefined ? { maxNodes, maxEdges } : {}),
+    ...(maxBytes !== undefined ? { maxBytes } : {}),
   };
 };
 
@@ -173,13 +183,16 @@ export const runCli = async (
   }
 
   if (arguments_[0] === "context") {
-    const { nodeId, projectPath, direction, maxDepth, maxNodes, maxEdges } = parseContextArguments(
-      arguments_.slice(1),
-    );
+    const { nodeId, projectPath, direction, maxDepth, maxNodes, maxEdges, maxBytes } =
+      parseContextArguments(arguments_.slice(1));
     const loadedProject = await loadTypeScriptProject(projectPath);
     const graph = scanTypeScriptProject(loadedProject.project);
     const limits =
-      maxNodes !== undefined && maxEdges !== undefined ? { maxNodes, maxEdges } : undefined;
+      maxNodes !== undefined && maxEdges !== undefined
+        ? { maxNodes, maxEdges, ...(maxBytes !== undefined ? { maxBytes } : {}) }
+        : maxBytes !== undefined
+          ? { maxNodes: 40, maxEdges: 80, maxBytes }
+          : undefined;
     const context = buildArchitectureContext(graph, nodeId, direction, maxDepth, limits);
     process.stdout.write(`${serializeArchitectureContext(context)}\n`);
     return;

@@ -53,7 +53,10 @@ describeFragments("FlowAtlas CLI bounded context", () => {
     };
 
     expect(context).toMatchObject({
+      schemaVersion: 2,
       complete: false,
+      frontierComplete: true,
+      omittedFrontierCount: 0,
       request: { maxNodes: 6, maxEdges: 4 },
       returned: { nodes: 5, edges: 4 },
     });

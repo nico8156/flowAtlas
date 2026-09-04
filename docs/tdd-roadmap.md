@@ -1045,6 +1045,14 @@ without returning stale architectural truth.
 - Adjacency indexes are deliberately not introduced: the measured operations
   are negligible beside loading and scanning, so changing the canonical graph
   representation would add complexity without demonstrated benefit.
+- Architecture context schema v2 can bound the complete indented UTF-8 JSON
+  envelope with `maxBytes`. It reports the measured `serializedBytes`, every
+  reached limit, whether its returned frontier is exhaustive and how many
+  deterministic frontier entries were omitted.
+- Byte fitting preserves the focus, truncates the ordered frontier before
+  reducing the breadth-first projection and fails explicitly when the
+  irreducible envelope cannot fit. MCP applies a 16 KiB default; CLI users may
+  opt in with `--max-bytes`.
 
 ### Known gaps
 

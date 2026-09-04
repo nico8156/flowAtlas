@@ -33,7 +33,7 @@ from directory proximity alone. Then request a bounded context:
 
 ```text
 node dist/index.js context <nodeId> [path] --direction both --depth 3 \
-  --max-nodes 40 --max-edges 80 --json
+  --max-nodes 40 --max-edges 80 --max-bytes 16384 --json
 ```
 
 These commands are for the FlowAtlas source checkout. A consuming repository
@@ -51,10 +51,12 @@ implementation details that are intentionally absent from the graph.
 Do not run a broad symbol search merely to reconfirm nodes and relations that a
 successful projection and its referenced source already establish.
 
-If `complete` is false and an omitted frontier can affect the task, deepen the
+If `complete` is false and a returned frontier can affect the task, deepen the
 exploration from the relevant frontier node rather than exporting the complete
-graph. An absent relation is not equivalent to a frontier relation omitted by
-the requested budget.
+graph. If `frontierComplete` is false, treat `omittedFrontierCount` as an
+explicit warning that additional boundary relations were removed to respect
+the byte budget. An absent relation is not equivalent to a frontier relation
+omitted by the requested budget.
 
 If the projection is complete but the task explicitly requires territory past
 its depth boundary, issue one new bounded `context` request from the nearest
