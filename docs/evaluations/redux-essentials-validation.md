@@ -48,3 +48,14 @@ no relation to the unrelated `auth` State is invented.
 The RTK Query lifecycle callback and WebSocket boundary are deliberately out of
 scope for this Redux-only validation and are not promoted to Handler or External
 concepts.
+
+## Handwritten thunk slice
+
+`fetchNotificationsWebsocket` is a handwritten Redux thunk factory. FlowAtlas
+recognizes it as a `Handler` and now records its exact declaration at
+`src/features/notifications/notificationsSlice.ts:78`. The thunk body does not
+dispatch an Event, so the acceptance requires no outgoing Redux relation. Its
+call to the mock notification server remains outside this Redux-only slice.
+
+This second acceptance is GREEN and demonstrates that an isolated Handler can
+still orient source exploration without invented causality.

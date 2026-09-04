@@ -894,11 +894,15 @@ pinned at the evaluated commit and supplied through an optional local checkout.
 - `extraReducers` object methods are traversed like equivalent property
   callbacks, making the first official notification projection GREEN without
   changing State or Event semantics.
+- Handwritten thunk factories now retain their exact source location; the
+  official notification thunk is found as an isolated Handler without inventing
+  a dispatch relation absent from its body.
 
 ### Known gaps
 
-- async thunks and listener middleware still need separate Redux projections
-  before the corpus can be considered broadly validated.
+- typed `createAsyncThunk` declarations and listener middleware still need
+  separate Redux projections before the corpus can be considered broadly
+  validated.
 
 ### Completion criteria
 

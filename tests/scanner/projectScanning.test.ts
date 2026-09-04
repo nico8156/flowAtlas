@@ -176,7 +176,11 @@ describe("Project scanning", () => {
       ],
     });
 
-    expect(graph.nodes).toContainEqual({ id: "retrieve", kind: "Handler" });
+    expect(graph.nodes).toContainEqual({
+      id: "retrieve",
+      kind: "Handler",
+      sourceLocation: { file: "src/feature/handler.ts", line: 10 },
+    });
     expect(graph.nodes).toContainEqual({ id: "LikeWlGateway", kind: "External" });
     expect(graph.edges).toContainEqual({
       source: "retrieve",

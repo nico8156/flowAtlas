@@ -35,4 +35,21 @@ describeReduxEssentials("Redux Essentials notifications acceptance", () => {
       kind: "UPDATES",
     });
   }, 60_000);
+
+  it("locates the handwritten notification thunk without inventing Redux relations", async () => {
+    const loadedProject = await loadTypeScriptProject(reduxEssentialsRoot);
+    const graph = scanTypeScriptProject(loadedProject.project);
+
+    expect(graph.nodes).toContainEqual({
+      id: "fetchNotificationsWebsocket",
+      kind: "Handler",
+      sourceLocation: {
+        file: "src/features/notifications/notificationsSlice.ts",
+        line: 78,
+      },
+    });
+    expect(graph.edges).not.toContainEqual(
+      expect.objectContaining({ source: "fetchNotificationsWebsocket" }),
+    );
+  }, 60_000);
 });

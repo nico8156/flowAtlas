@@ -460,7 +460,12 @@ export const detectListeners = ({
       (ts.isArrowFunction(node.initializer.body) || ts.isFunctionExpression(node.initializer.body))
     ) {
       const handlerId = node.name.text;
-      graph.addNode({ id: handlerId, kind: "Handler" });
+      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+      graph.addNode({
+        id: handlerId,
+        kind: "Handler",
+        sourceLocation: { file: sourceFile.fileName, line },
+      });
       if (collectRelationships) {
         let returnedFunction: ReturnType<typeof findReturnedFunctionLike>;
         measureListenerPhase("listener-thunk", () => {

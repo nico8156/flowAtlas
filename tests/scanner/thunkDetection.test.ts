@@ -13,12 +13,14 @@ describe("Thunk Handler detection", () => {
       source,
     });
 
-    expect(graph.nodes).toContainEqual(
-      expect.objectContaining({
-        id: "likesRetrieval",
-        kind: "Handler",
-      }),
-    );
+    expect(graph.nodes).toContainEqual({
+      id: "likesRetrieval",
+      kind: "Handler",
+      sourceLocation: {
+        file: "tests/fixtures/thunkHandler.ts",
+        line: 1,
+      },
+    });
   });
 
   it("detects an Event dispatched by a thunk Handler", async () => {
