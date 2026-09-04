@@ -1026,6 +1026,9 @@ without returning stale architectural truth.
 - Concurrent requests for the same canonical project root now share one
   in-flight load and scan. A shared failure reaches every waiter, is never
   cached and leaves the next request free to retry.
+- The MCP composition retains up to four independently verified project graphs
+  in deterministic least-recently-used order. Revalidation refreshes recency;
+  exceeding the bound evicts the least recently queried root.
 
 ### Known gaps
 

@@ -17,6 +17,7 @@ export type VerifiedSnapshotPhase = "canonicalization" | "fingerprint" | "scan";
 
 type VerifiedSnapshotGraphLoaderOptions = {
   onPhase?: (measurement: { phase: VerifiedSnapshotPhase; durationMs: number }) => void;
+  maxSnapshots?: number;
 };
 
 type VerifiedGraphSnapshot = {
@@ -54,7 +55,11 @@ export const createVerifiedSnapshotGraphLoader = (
   scanProject: TypeScriptProjectScanner,
   options: VerifiedSnapshotGraphLoaderOptions = {},
 ): ((projectPath: string) => Promise<ArchitectureGraph>) => {
-  let snapshot: VerifiedGraphSnapshot | undefined;
+  const maxSnapshots = options.maxSnapshots ?? 1;
+  if (!Number.isInteger(maxSnapshots) || maxSnapshots < 1) {
+    throw new Error("Verified snapshot capacity must be a positive integer.");
+  }
+  const snapshotsByProjectRoot = new Map<string, VerifiedGraphSnapshot>();
   const inFlightByProjectRoot = new Map<string, Promise<ArchitectureGraph>>();
 
   return async (projectPath) => {
@@ -76,14 +81,24 @@ export const createVerifiedSnapshotGraphLoader = (
         durationMs: performance.now() - phaseStartedAt,
       });
 
-      if (snapshot?.projectRoot === projectRoot && snapshot.fingerprint === fingerprint) {
+      const snapshot = snapshotsByProjectRoot.get(projectRoot);
+      if (snapshot?.fingerprint === fingerprint) {
+        snapshotsByProjectRoot.delete(projectRoot);
+        snapshotsByProjectRoot.set(projectRoot, snapshot);
         return snapshot.graph;
       }
 
       phaseStartedAt = performance.now();
       const graph = scanProject(loadedProject.project);
       options.onPhase?.({ phase: "scan", durationMs: performance.now() - phaseStartedAt });
-      snapshot = { projectRoot, fingerprint, graph };
+      snapshotsByProjectRoot.delete(projectRoot);
+      snapshotsByProjectRoot.set(projectRoot, { projectRoot, fingerprint, graph });
+      while (snapshotsByProjectRoot.size > maxSnapshots) {
+        const leastRecentlyUsedRoot = snapshotsByProjectRoot.keys().next().value as
+          string | undefined;
+        if (leastRecentlyUsedRoot === undefined) break;
+        snapshotsByProjectRoot.delete(leastRecentlyUsedRoot);
+      }
       return graph;
     })();
     inFlightByProjectRoot.set(projectRoot, request);

@@ -22,7 +22,7 @@ const projectLoader =
     : loadTypeScriptProject;
 
 const server = createFlowAtlasMcpServer(
-  createVerifiedSnapshotGraphLoader(projectLoader, scanTypeScriptProject),
+  createVerifiedSnapshotGraphLoader(projectLoader, scanTypeScriptProject, { maxSnapshots: 4 }),
 );
 
 server.connect(new StdioServerTransport()).catch((error: unknown) => {

@@ -136,6 +136,41 @@ describe("verified MCP graph snapshot", () => {
     expect(scanProject).toHaveBeenCalledTimes(2);
   });
 
+  it("reuses graphs across a bounded set of project roots", async () => {
+    const loadProject = vi.fn(async (projectPath: string) => ({
+      name: "project",
+      project: { files: [{ file: "events.ts", source: projectPath }] },
+    }));
+    const scanProject = vi.fn(() => createArchitectureGraph());
+    const loadGraph = createVerifiedSnapshotGraphLoader(loadProject, scanProject, {
+      maxSnapshots: 2,
+    });
+
+    await loadGraph("/workspace/first");
+    await loadGraph("/workspace/second");
+    await loadGraph("/workspace/first");
+
+    expect(scanProject).toHaveBeenCalledTimes(2);
+  });
+
+  it("evicts the least recently used project graph when the bound is reached", async () => {
+    const loadProject = vi.fn(async (projectPath: string) => ({
+      name: "project",
+      project: { files: [{ file: "events.ts", source: projectPath }] },
+    }));
+    const scanProject = vi.fn(() => createArchitectureGraph());
+    const loadGraph = createVerifiedSnapshotGraphLoader(loadProject, scanProject, {
+      maxSnapshots: 2,
+    });
+
+    await loadGraph("/workspace/first");
+    await loadGraph("/workspace/second");
+    await loadGraph("/workspace/third");
+    await loadGraph("/workspace/first");
+
+    expect(scanProject).toHaveBeenCalledTimes(4);
+  });
+
   it("returns a rebuild failure instead of the previously retained graph", async () => {
     let source = "export const requested = createAction('requested');";
     const loadProject = vi.fn(async () => ({

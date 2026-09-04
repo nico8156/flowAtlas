@@ -95,6 +95,11 @@ by a TTL or maintained by a watcher. The MCP adapter still receives an
 `ArchitectureGraph` loader and delegates discovery and projection to the same
 application functions as the CLI.
 
+The server retains at most four project graphs in a deterministic least
+recently used cache. Switching between a small set of worktrees therefore does
+not force an avoidable rescan; a fifth distinct root evicts the least recently
+queried graph. Every retained graph is still revalidated before use.
+
 Content verification remains the default. An explicitly weaker metadata mode
 can be enabled for measured local sessions:
 
