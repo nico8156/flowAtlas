@@ -59,6 +59,19 @@ describe("State detection", () => {
     });
   });
 
+  it("detects an explicit Event inside an isAnyOf reducer matcher", async () => {
+    const file = "tests/fixtures/matcherUpdates.ts";
+    const source = await readFixture("matcherUpdates.ts");
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    expect(graph.edges).toContainEqual({
+      source: "notificationsReceived",
+      target: "notificationsSlice",
+      kind: "UPDATES",
+    });
+  });
+
   it("ignores an unresolved reducer Event without failing the scan", async () => {
     const file = "tests/fixtures/unresolvedReducerCase.ts";
     const source = await readFixture("unresolvedReducerCase.ts");

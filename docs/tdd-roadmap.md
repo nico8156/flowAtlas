@@ -881,25 +881,23 @@ pinned at the evaluated commit and supplied through an optional local checkout.
   a non-Redux tutorial scaffold; validation uses `tutorial-steps-ts`.
 - The first projection is limited to an explicit `createAction`, its registered
   State and a statically visible reducer matcher.
-- RTK Query lifecycle callbacks and WebSocket boundaries are not assigned new
-  graph meaning during this validation.
+- RTK Query lifecycle callbacks and WebSocket boundaries are outside the scope
+  of this Redux-only validation and are not assigned new graph meaning.
 
 ### Discovered micro-cycles
 
 - A reducer imported from `export default slice.reducer` now resolves to its
   slice declaration, allowing the State to use its `configureStore` key.
+- A local `isAnyOf` matcher passed to `addMatcher` now contributes only its
+  explicitly resolved Events to `UPDATES`; generated matcher expressions remain
+  omitted.
 
 ### Known gaps
 
-- `builder.addMatcher(isAnyOf(...))` does not yet produce statically resolvable
-  `UPDATES` relations for the explicit Events inside the matcher;
-- async thunks, RTK Query endpoints and listener middleware still need separate
-  projections before the corpus can be considered broadly validated.
-
-### Open design questions
-
-- Which RTK Query lifecycle constructs are architecture rather than generated
-  implementation detail under the existing V1 vocabulary?
+- the official object-method form `extraReducers(builder) { ... }` still needs
+  an acceptance replay and a focused syntax cycle if confirmed;
+- async thunks and listener middleware still need separate Redux projections
+  before the corpus can be considered broadly validated.
 
 ### Completion criteria
 

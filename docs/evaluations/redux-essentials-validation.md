@@ -35,8 +35,12 @@ default export under the local name `notificationsReducer`; the existing import
 resolver handled named imports only. Resolving that statically visible default
 export now gives the State its registered identity, `notifications`.
 
-The acceptance remains RED because state relationship detection supports
-`addCase` but not the official `addMatcher(isAnyOf(...))` form. This is recorded
-as the next local detector gap. The RTK Query lifecycle callback and WebSocket
-boundary are deliberately not promoted to Handler or External concepts by this
-acceptance; doing so would require separate evidence and review.
+State relationship detection now resolves local `isAnyOf` declarations passed
+to `addMatcher` and retains only arguments that already resolve to canonical
+Events. Generated RTK Query matchers therefore remain absent. The official
+slice also declares `extraReducers` with object-method syntax; support for that
+syntax is a separate local detector gap to verify on the next acceptance replay.
+
+The RTK Query lifecycle callback and WebSocket boundary are deliberately out of
+scope for this Redux-only validation and are not promoted to Handler or External
+concepts.

@@ -6,6 +6,29 @@ import { createTypeScriptSourceFile, getVariableCall } from "./typeScriptAst.js"
 
 export type StateIds = ReadonlyMap<string, string>;
 
+const getIsAnyOfMatchers = (sourceFile: ts.SourceFile): ReadonlyMap<string, readonly string[]> => {
+  const matchers = new Map<string, readonly string[]>();
+  const visit = (node: ts.Node): void => {
+    const variableCall = getVariableCall(node);
+    if (
+      variableCall &&
+      ts.isIdentifier(variableCall.call.expression) &&
+      variableCall.call.expression.text === "isAnyOf"
+    ) {
+      matchers.set(
+        variableCall.id,
+        variableCall.call.arguments
+          .filter((argument): argument is ts.Identifier => ts.isIdentifier(argument))
+          .map((argument) => argument.text),
+      );
+    }
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  return matchers;
+};
+
 export const getStoreStateIds = (
   project: TypeScriptProject,
   bindingsByFile: ReadonlyMap<string, SymbolBindings>,
@@ -70,6 +93,7 @@ export const detectStates = (
   getResolvedEventId: (localName: string) => string | undefined,
   collectRelationships: boolean,
 ): void => {
+  const isAnyOfMatchers = getIsAnyOfMatchers(sourceFile);
   const visit = (node: ts.Node): void => {
     const variableCall = getVariableCall(node);
     if (
@@ -103,12 +127,22 @@ export const detectStates = (
       const visitReducerBuilder = (reducerNode: ts.Node): void => {
         if (
           ts.isCallExpression(reducerNode) &&
-          ts.isPropertyAccessExpression(reducerNode.expression) &&
-          reducerNode.expression.name.text === "addCase"
+          ts.isPropertyAccessExpression(reducerNode.expression)
         ) {
           const handledEvent = reducerNode.arguments[0];
-          if (handledEvent && ts.isIdentifier(handledEvent)) {
-            const source = getResolvedEventId(handledEvent.text);
+          const handledEventNames =
+            reducerNode.expression.name.text === "addCase" &&
+            handledEvent &&
+            ts.isIdentifier(handledEvent)
+              ? [handledEvent.text]
+              : reducerNode.expression.name.text === "addMatcher" &&
+                  handledEvent &&
+                  ts.isIdentifier(handledEvent)
+                ? (isAnyOfMatchers.get(handledEvent.text) ?? [])
+                : [];
+
+          for (const handledEventName of handledEventNames) {
+            const source = getResolvedEventId(handledEventName);
             if (source) {
               graph.addEdge({ source, target: stateId, kind: "UPDATES" });
             }
