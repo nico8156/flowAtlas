@@ -152,6 +152,7 @@ const createImportFileResolver = (project: TypeScriptProject): ImportFileResolve
 
 const createCompilerContext = (project: TypeScriptProject): CompilerContext => {
   const projectFiles = getProjectFiles(project);
+  const resolveImportFile = createImportFileResolver(project);
   const sourcesByPath = new Map(
     projectFiles.map(({ file, source }) => [normalizePath(file), source]),
   );
@@ -190,6 +191,14 @@ const createCompilerContext = (project: TypeScriptProject): CompilerContext => {
     },
     resolveModuleNames: (moduleNames, containingFile) =>
       moduleNames.map((moduleName) => {
+        const projectFile = resolveImportFile(normalizePath(containingFile), moduleName);
+        if (projectFile) {
+          return {
+            resolvedFileName: projectFile,
+            extension: projectFile.endsWith(".tsx") ? ts.Extension.Tsx : ts.Extension.Ts,
+            isExternalLibraryImport: false,
+          };
+        }
         const result = ts.resolveModuleName(
           moduleName,
           containingFile,

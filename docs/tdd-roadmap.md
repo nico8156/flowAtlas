@@ -905,6 +905,9 @@ pinned at the evaluated commit and supplied through an optional local checkout.
 - Typed async thunk factories are resolved through their imported symbol back
   to an exact `createAsyncThunk.withTypes()` declaration, without name-based
   inference.
+- Project-local `tsconfig` path aliases are resolved against the loaded virtual
+  sources before external TypeScript resolution, allowing the official typed
+  thunk factory import to preserve its declaration identity.
 
 ### Known gaps
 

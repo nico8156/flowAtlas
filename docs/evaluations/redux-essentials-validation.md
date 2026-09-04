@@ -81,3 +81,9 @@ by the payload creator stay outside this Redux-only slice.
 The remaining acceptance expectation is the State relation expressed as
 `builder.addCase(login.fulfilled, ...)`, whose Event reference is a property
 access rather than the identifier form currently handled by state detection.
+
+The official import uses the `@/*` mapping from `tsconfig.json`. The compiler
+host now resolves project-local path aliases through the same deterministic
+module resolver used by import bindings before falling back to TypeScript's
+external resolution. This preserves module identity without matching factory
+names globally.

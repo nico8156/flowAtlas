@@ -51,4 +51,26 @@ describe("Redux async thunk detection", () => {
       kind: "DISPATCHES",
     });
   });
+
+  it("resolves a typed async thunk factory through a tsconfig path alias", async () => {
+    const factorySource = await readFixture("typedAsyncThunkFactory.ts");
+    const usageSource = (await readFixture("typedAsyncThunkUsage.ts")).replace(
+      "./typedAsyncThunkFactory.js",
+      "@/app/typedAsyncThunkFactory",
+    );
+    const graph = scanTypeScriptProject({
+      files: [
+        { file: "src/app/typedAsyncThunkFactory.ts", source: factorySource },
+        { file: "src/features/auth/typedAsyncThunkUsage.ts", source: usageSource },
+      ],
+      tsconfig: {
+        compilerOptions: {
+          baseUrl: ".",
+          paths: { "@/*": ["src/*"] },
+        },
+      },
+    });
+
+    expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "login", kind: "Handler" }));
+  });
 });
