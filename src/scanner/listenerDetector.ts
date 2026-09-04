@@ -425,6 +425,29 @@ export const detectListeners = ({
       node.initializer &&
       ts.isCallExpression(node.initializer) &&
       ts.isIdentifier(node.initializer.expression) &&
+      node.initializer.expression.text === "createAsyncThunk"
+    ) {
+      const handlerId = node.name.text;
+      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+      const sourceLocation = { file: sourceFile.fileName, line };
+      graph.addNode({ id: handlerId, kind: "Handler", sourceLocation });
+
+      for (const lifecycle of ["pending", "fulfilled", "rejected"] as const) {
+        const eventId = `${handlerId}.${lifecycle}`;
+        graph.addNode({ id: eventId, kind: "Event", sourceLocation });
+        if (collectRelationships) {
+          graph.addEdge({ source: handlerId, target: eventId, kind: "DISPATCHES" });
+        }
+      }
+    }
+
+    if (
+      !isNestedFunctionLike(node) &&
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      ts.isIdentifier(node.initializer.expression) &&
       node.initializer.expression.text === "startListening"
     ) {
       const handlerId = node.name.text;

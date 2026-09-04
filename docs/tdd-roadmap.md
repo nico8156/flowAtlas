@@ -883,6 +883,9 @@ pinned at the evaluated commit and supplied through an optional local checkout.
   State and a statically visible reducer matcher.
 - RTK Query lifecycle callbacks and WebSocket boundaries are outside the scope
   of this Redux-only validation and are not assigned new graph meaning.
+- A Redux async thunk is modeled as a Handler dispatching its statically
+  guaranteed `pending`, `fulfilled` and `rejected` lifecycle Events. Payload
+  creator calls are outside this Redux-only decision.
 
 ### Discovered micro-cycles
 
@@ -897,12 +900,15 @@ pinned at the evaluated commit and supplied through an optional local checkout.
 - Handwritten thunk factories now retain their exact source location; the
   official notification thunk is found as an isolated Handler without inventing
   a dispatch relation absent from its body.
+- Direct `createAsyncThunk` declarations now produce one Handler, three
+  lifecycle Events and their canonical `DISPATCHES` relations.
 
 ### Known gaps
 
-- typed `createAsyncThunk` declarations and listener middleware still need
-  separate Redux projections before the corpus can be considered broadly
-  validated.
+- the official `createAsyncThunk.withTypes()` factory alias is not yet resolved
+  across its import boundary;
+- listener middleware still needs a separate Redux projection before the corpus
+  can be considered broadly validated.
 
 ### Completion criteria
 

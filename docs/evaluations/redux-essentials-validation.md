@@ -59,3 +59,21 @@ call to the mock notification server remains outside this Redux-only slice.
 
 This second acceptance is GREEN and demonstrates that an isolated Handler can
 still orient source exploration without invented causality.
+
+## Async thunk slice
+
+The reviewed Redux contract represents a `createAsyncThunk` declaration as a
+Handler that can dispatch the three lifecycle Events guaranteed by Redux
+Toolkit:
+
+```text
+login --DISPATCHES--> login.pending
+login --DISPATCHES--> login.fulfilled
+login --DISPATCHES--> login.rejected
+```
+
+Direct `createAsyncThunk` declarations now produce this topology with source
+locations. The official application wraps the factory through
+`createAsyncThunk.withTypes()` and imports the resulting `createAppAsyncThunk`;
+resolving that typed alias remains the next acceptance gap. Calls performed by
+the payload creator stay outside this Redux-only slice.
