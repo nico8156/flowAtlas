@@ -8,6 +8,50 @@ import { createArchitectureGraph } from "../../src/domain/architectureGraph.js";
 import { createVerifiedSnapshotGraphLoader } from "../../src/mcp/verifiedSnapshotGraphLoader.js";
 
 describe("verified MCP graph snapshot", () => {
+  it("shares one in-flight load and scan between concurrent requests for the same project", async () => {
+    let resolveProject:
+      ((value: { name: string; project: { files: never[] } }) => void) | undefined;
+    const pendingProject = new Promise<{ name: string; project: { files: never[] } }>((resolve) => {
+      resolveProject = resolve;
+    });
+    const loadProject = vi.fn(() => pendingProject);
+    const graph = createArchitectureGraph();
+    const scanProject = vi.fn(() => graph);
+    const loadGraph = createVerifiedSnapshotGraphLoader(loadProject, scanProject);
+
+    const first = loadGraph("/workspace/project");
+    const second = loadGraph("/workspace/project");
+    await vi.waitFor(() => expect(loadProject).toHaveBeenCalledTimes(1));
+    resolveProject?.({ name: "project", project: { files: [] } });
+
+    await expect(Promise.all([first, second])).resolves.toEqual([graph, graph]);
+    expect(scanProject).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows a new attempt after a shared in-flight failure", async () => {
+    const project = { files: [] };
+    let rejectProject: ((reason: Error) => void) | undefined;
+    const failedProject = new Promise<never>((_resolve, reject) => {
+      rejectProject = reject;
+    });
+    const loadProject = vi
+      .fn()
+      .mockReturnValueOnce(failedProject)
+      .mockResolvedValueOnce({ name: "project", project });
+    const graph = createArchitectureGraph();
+    const scanProject = vi.fn(() => graph);
+    const loadGraph = createVerifiedSnapshotGraphLoader(loadProject, scanProject);
+
+    const first = loadGraph("/workspace/project");
+    const second = loadGraph("/workspace/project");
+    await vi.waitFor(() => expect(loadProject).toHaveBeenCalledTimes(1));
+    rejectProject?.(new Error("load failed"));
+    const failed = await Promise.allSettled([first, second]);
+    expect(failed.map(({ status }) => status)).toEqual(["rejected", "rejected"]);
+    await expect(loadGraph("/workspace/project")).resolves.toBe(graph);
+    expect(loadProject).toHaveBeenCalledTimes(2);
+  });
+
   it("reuses the graph when the verified project content is unchanged", async () => {
     const project = {
       files: [{ file: "events.ts", source: "export const requested = createAction('requested');" }],

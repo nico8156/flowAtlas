@@ -55,27 +55,44 @@ export const createVerifiedSnapshotGraphLoader = (
   options: VerifiedSnapshotGraphLoaderOptions = {},
 ): ((projectPath: string) => Promise<ArchitectureGraph>) => {
   let snapshot: VerifiedGraphSnapshot | undefined;
+  const inFlightByProjectRoot = new Map<string, Promise<ArchitectureGraph>>();
 
   return async (projectPath) => {
-    let startedAt = performance.now();
+    const startedAt = performance.now();
     const projectRoot = await canonicalizeProjectRoot(projectPath);
     options.onPhase?.({
       phase: "canonicalization",
       durationMs: performance.now() - startedAt,
     });
-    const loadedProject = await loadProject(projectRoot);
-    startedAt = performance.now();
-    const fingerprint = fingerprintProject(loadedProject.project);
-    options.onPhase?.({ phase: "fingerprint", durationMs: performance.now() - startedAt });
+    const existingRequest = inFlightByProjectRoot.get(projectRoot);
+    if (existingRequest) return existingRequest;
 
-    if (snapshot?.projectRoot === projectRoot && snapshot.fingerprint === fingerprint) {
-      return snapshot.graph;
+    const request = (async () => {
+      const loadedProject = await loadProject(projectRoot);
+      let phaseStartedAt = performance.now();
+      const fingerprint = fingerprintProject(loadedProject.project);
+      options.onPhase?.({
+        phase: "fingerprint",
+        durationMs: performance.now() - phaseStartedAt,
+      });
+
+      if (snapshot?.projectRoot === projectRoot && snapshot.fingerprint === fingerprint) {
+        return snapshot.graph;
+      }
+
+      phaseStartedAt = performance.now();
+      const graph = scanProject(loadedProject.project);
+      options.onPhase?.({ phase: "scan", durationMs: performance.now() - phaseStartedAt });
+      snapshot = { projectRoot, fingerprint, graph };
+      return graph;
+    })();
+    inFlightByProjectRoot.set(projectRoot, request);
+    try {
+      return await request;
+    } finally {
+      if (inFlightByProjectRoot.get(projectRoot) === request) {
+        inFlightByProjectRoot.delete(projectRoot);
+      }
     }
-
-    startedAt = performance.now();
-    const graph = scanProject(loadedProject.project);
-    options.onPhase?.({ phase: "scan", durationMs: performance.now() - startedAt });
-    snapshot = { projectRoot, fingerprint, graph };
-    return graph;
   };
 };

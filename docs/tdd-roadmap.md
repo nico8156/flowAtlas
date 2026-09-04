@@ -1023,6 +1023,9 @@ without returning stale architectural truth.
 - A seven-request Fragments comparison observed a repeated median of
   `1621.78 ms` in content mode versus `552.13 ms` in metadata mode, about 66%
   lower on the recorded machine.
+- Concurrent requests for the same canonical project root now share one
+  in-flight load and scan. A shared failure reaches every waiter, is never
+  cached and leaves the next request free to retry.
 
 ### Known gaps
 
