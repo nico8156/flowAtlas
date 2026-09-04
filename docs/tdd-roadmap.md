@@ -823,7 +823,7 @@ inventing causality or serving stale architectural truth.
 
 ## Milestone 8 - MCP Hardening
 
-**Status: ACTIVE**
+**Status: DELIVERED**
 
 ### Goal
 
@@ -864,7 +864,7 @@ clean and has deterministic behavior under concurrent requests.
 
 ## Milestone 9 - Broader Validation
 
-**Status: ACTIVE**
+**Status: DELIVERED**
 
 ### Goal
 
@@ -908,13 +908,15 @@ pinned at the evaluated commit and supplied through an optional local checkout.
 - Project-local `tsconfig` path aliases are resolved against the loaded virtual
   sources before external TypeScript resolution, allowing the official typed
   thunk factory import to preserve its declaration identity.
+- Exact async thunk lifecycle property accesses passed to `addCase` resolve to
+  an existing canonical Event, completing the official auth State projection
+  without accepting unresolved property names.
 
 ### Known gaps
 
-- `addCase(asyncThunk.fulfilled, ...)` still needs to resolve the lifecycle
-  property access to its canonical Event before the auth slice is complete;
-- listener middleware still needs a separate Redux projection before the corpus
-  can be considered broadly validated.
+- The corpus listener middleware is triggered only by a generated RTK Query
+  endpoint matcher. It is intentionally excluded from this Redux-only
+  milestone because no explicit Event exists to justify `LISTENS_TO`.
 
 ### Completion criteria
 

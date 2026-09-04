@@ -6,6 +6,16 @@ import { createTypeScriptSourceFile, getVariableCall } from "./typeScriptAst.js"
 
 export type StateIds = ReadonlyMap<string, string>;
 
+const getHandledEventName = (node: ts.Expression): string | undefined => {
+  if (ts.isIdentifier(node)) {
+    return node.text;
+  }
+  if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression)) {
+    return `${node.expression.text}.${node.name.text}`;
+  }
+  return undefined;
+};
+
 const getIsAnyOfMatchers = (sourceFile: ts.SourceFile): ReadonlyMap<string, readonly string[]> => {
   const matchers = new Map<string, readonly string[]>();
   const visit = (node: ts.Node): void => {
@@ -135,10 +145,10 @@ export const detectStates = (
         ) {
           const handledEvent = reducerNode.arguments[0];
           const handledEventNames =
-            reducerNode.expression.name.text === "addCase" &&
-            handledEvent &&
-            ts.isIdentifier(handledEvent)
-              ? [handledEvent.text]
+            reducerNode.expression.name.text === "addCase" && handledEvent
+              ? [getHandledEventName(handledEvent)].filter(
+                  (eventName): eventName is string => eventName !== undefined,
+                )
               : reducerNode.expression.name.text === "addMatcher" &&
                   handledEvent &&
                   ts.isIdentifier(handledEvent)

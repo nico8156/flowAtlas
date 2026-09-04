@@ -85,6 +85,32 @@ describe("State detection", () => {
     });
   });
 
+  it("detects an async thunk lifecycle Event updating a State", () => {
+    const graph = scanTypeScriptSource({
+      file: "tests/fixtures/asyncThunkState.ts",
+      source: `
+        declare function createAsyncThunk(type: string, payloadCreator: unknown): unknown;
+        declare function createSlice(configuration: unknown): unknown;
+
+        const login = createAsyncThunk("auth/login", async () => undefined);
+        const authSlice = createSlice({
+          name: "auth",
+          initialState: {},
+          reducers: {},
+          extraReducers: (builder) => {
+            builder.addCase(login.fulfilled, (state) => state);
+          },
+        });
+      `,
+    });
+
+    expect(graph.edges).toContainEqual({
+      source: "login.fulfilled",
+      target: "authSlice",
+      kind: "UPDATES",
+    });
+  });
+
   it("ignores an unresolved reducer Event without failing the scan", async () => {
     const file = "tests/fixtures/unresolvedReducerCase.ts";
     const source = await readFixture("unresolvedReducerCase.ts");
