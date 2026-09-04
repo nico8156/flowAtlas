@@ -924,7 +924,61 @@ The scanner's reusable assumptions are documented before considering other
 framework adapters, and several independent Redux Essentials projections pass
 without inventing causality for generated RTK Query behavior.
 
-## Milestone 10 - Diagnostics
+## Milestone 10 - Reproducible Technical Benchmark
+
+**Status: DELIVERED**
+
+### Goal
+
+Measure the effective cost reduction of the verified MCP snapshot on real,
+pinned TypeScript corpora without conflating it with agent token usage or task
+quality.
+
+### Acceptance driver
+
+A repository command runs several graph requests against one unchanged
+checkout and emits a machine-readable report that distinguishes the first
+scan from repeated content verification.
+
+### Decisions
+
+- The benchmark exercises the same project loader, scanner and verified
+  snapshot composition used by the MCP server.
+- Every request reloads and fingerprints the current sources; repeated
+  requests may skip only the architecture scan.
+- Wall-clock results include environment and graph-size metadata and are
+  observations, not universal performance guarantees.
+- Agent effectiveness, token consumption and MCP transport overhead remain
+  separate evaluations.
+
+### Known gaps
+
+- The FlowAtlas repository root cannot serve as one application corpus because
+  its test fixtures intentionally contain contradictory source fragments. This
+  failure remains visible rather than weakening graph invariants.
+
+### Discovered micro-cycles
+
+- The repository-owned `benchmark:mcp` command now runs the exact
+  verified-snapshot composition and
+  emits a versioned JSON report with raw samples, environment, graph size and
+  scan count.
+- The runner rejects fewer than two iterations, separating the first request
+  from a median over repeated verified loads.
+- On the recorded machine, five requests performed one scan for both Fragments
+  and Redux Essentials. The observed first-to-repeated-median ratios were
+  17.45x and 165.01x respectively.
+- Fragments replaces the invalid FlowAtlas self-scan as the second real corpus;
+  the reason and the failed invariant are documented rather than hidden.
+
+### Completion criteria
+
+The benchmark is test-driven, emits deterministic JSON fields, runs on both
+Fragments and the pinned Redux Essentials corpus, records reproducible commands
+and raw samples, and verifies that unchanged repeated requests perform one scan
+without weakening freshness guarantees.
+
+## Milestone 11 - Diagnostics
 
 **Status: LONG TERM**
 
@@ -932,7 +986,7 @@ Potential areas include orphan Events, Handlers without observable outcomes,
 cycles, highly connected States, unresolved architectural relations and
 hotspots. Do not invent metrics before real cases justify them.
 
-## Milestone 11 - Runtime Overlay
+## Milestone 12 - Runtime Overlay
 
 **Status: LONG TERM**
 

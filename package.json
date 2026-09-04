@@ -28,6 +28,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
+    "benchmark:mcp": "npm run build && node dist/benchmark.js",
     "spike:typescript": "node scripts/typeScriptProgramSpike.mjs",
     "lint": "eslint .",
     "format": "prettier --check .",
