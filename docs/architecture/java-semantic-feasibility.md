@@ -131,7 +131,7 @@ to make the first acceptance appear complete.
 | 02  | DELIVERED | Load a Java project with full resolution context and bounded architectural scan scope.                            |
 | 03  | DELIVERED | Detect domain events, typed local handlers and statically proven publication.                                     |
 | 04  | DELIVERED | Add the shared scanner port, HTTP protocol signals, commands and typed command handlers.                          |
-| 05  | PROPOSED  | Reconstruct outbox mapping, public integration identities, destinations, SQS routes and inbox-backed consumers.   |
+| 05  | DELIVERED | Reconstruct outbox mapping, public integration identities, destinations, SQS routes and inbox-backed consumers.   |
 | 06  | PROPOSED  | Detect event-fed projection State and Projection Sync signals.                                                    |
 | 07  | PROPOSED  | Detect resolved external execution, communication and persistence boundaries.                                     |
 | 08  | PROPOSED  | Validate bounded Fragments projections and expose Java through the existing CLI and MCP application capabilities. |
@@ -173,9 +173,9 @@ TicketVerificationProcessManager implements EventHandler<TicketVerifyAcceptedEve
 TicketVerificationProcessManager#handle(...) -> TicketVerificationProvider#verify(...)
 ```
 
-The acceptance baseline remains commit `c5319de`; the same source identities
-and direct publication were revalidated through Lot 04 on descendant commit
-`cc82485` without changing this slice.
+The acceptance baseline remains commit `c5319de`; the same source identities,
+direct publication and integration routes were revalidated through Lot 05 on
+descendant commit `a5ba73b` without changing this slice.
 
 This last arrow is a Java symbol-resolution fact only. It does not yet emit
 `CALLS_EXTERNAL`: proving that the injected port reaches a meaningful external
@@ -237,20 +237,18 @@ reactors, profiles and generated source roots need later real evidence.
 
 ## Known gaps
 
-- The selected JDK compiler API has not entered the production scanner.
-- Maven/classpath loading and architectural scan scope are proven only in the
-  isolated spike, not the production scanner.
-- The exact representation of the domain-event-to-integration-event mapping
-  must be derived from the outbox acceptance without inventing Event-to-Event
-  causality.
+- The selected JDK compiler API and Maven loader remain an isolated adapter
+  script; the Java graph detectors are composed behind the application port,
+  but not yet selected by public CLI/MCP composition.
+- The domain-event-to-integration-event mapping intentionally remains a graph
+  discontinuity because the approved vocabulary has no Event-to-Event
+  relation.
 - The first trustworthy State granularity must come from a projection
   acceptance; discovering a SQL table is not sufficient.
-- The current scanner facade is TypeScript-specific. A new structural adapter
-  boundary will be proposed only if the feasibility acceptance demonstrates a
-  real need.
-- Spring configuration can create handlers through factories, lambdas and
-  collections. These forms are required Fragments evidence, not permission to
-  build a general dependency-injection simulator.
+- The current public scanner composition remains TypeScript-specific.
+- One route-specific Spring factory shape is supported. Downstream ACL/lambda
+  propagation, collections and dynamic bean selection remain gaps, not
+  permission to build a general dependency-injection simulator.
 
 ## Lot 04 result
 
@@ -273,12 +271,37 @@ produce a protocol Event, a controller Handler and a Command Event.
 listener. Both branches meet at the same Command identity without simulating
 the runtime `CommandBus` registry.
 
+## Lot 05 result
+
+The `TicketVerifyAcceptedEvent` acceptance composes five independent static
+proofs: outbox aggregate metadata, the selected destination-resolver branch,
+the stable type catalog, the constant version and the sender's resolved
+destination/envelope/publisher loop. It yields:
+
+```text
+integration:ticket-events:ticket.verify.accepted:v1
+integration:ticket-verification-requested:ticket.verify.accepted:v1
+```
+
+Both are dispatched by the stable-envelope sender and listened to by the
+matching route-specific Spring factory handler. Destination remains part of
+identity even when type and version are equal. Consumer emission additionally
+requires a resolved route path from `InboxMessageRepository.claim` through the
+router's delegated dispatch to `SqsIntegrationEventHandler.handle`.
+
+The detector requires every mapping proof and emitted handler to belong to
+scan scope. The generic SQS router, inbox persistence and publisher interfaces
+are not promoted to nodes. There is no edge between
+`java-domain-event:...TicketVerifyAcceptedEvent` and either integration Event:
+the outbox serialization boundary is real, but the approved graph has no
+Event-to-Event relation and this lot does not disguise it as one.
+
 ## Next investigation
 
-Lot 05 may investigate the outbox boundary from one real producer domain event
-to destination/version-specific integration events and SQS or inbox handlers.
-It must preserve any gap that cannot be justified from mappings, envelopes and
-routes.
+Lot 06 may investigate one route-specific consumer through its ACL/lambda into
+a projection handler, repository mutation and directly published projection
+sync signal. State granularity must be justified by the projection boundary;
+SQL table names alone are insufficient.
 
 Direct publication is not general interprocedural propagation. Helpers that
 capture publishers, injected gateway calls and discriminated branches remain

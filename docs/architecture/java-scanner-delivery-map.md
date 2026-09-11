@@ -4,7 +4,7 @@ Last updated: 11 September 2026.
 
 ## Current position
 
-**Lots 00 to 04 are delivered. Lot 05 is next and has not started.**
+**Lots 00 to 05 are delivered. Lot 06 is next and has not started.**
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
@@ -14,7 +14,7 @@ Last updated: 11 September 2026.
                                      DONE
 
 -> [04 HTTP/commands] -> [05 outbox/SQS] -> [06 projections]
-          DONE                 NEXT               LATER
+          DONE                 DONE               NEXT
 
 -> [07 externals] -> [08 CLI/MCP] -> [09 more corpora]
         LATER             LATER            LONG TERM
@@ -91,7 +91,7 @@ in `ArchitectureGraph`.
 | 02  | DELIVERED | Load a Maven project with complete resolution context and bounded scan scope.                          | Out-of-scope sources resolve symbols without entering scope; diagnostics retain source and scope information.                  |
 | 03  | DELIVERED | Detect domain events, typed local handlers and proven publication.                                     | First `ArchitectureGraph` projection for the ticket-verification event slice, including important absent edges.                |
 | 04  | DELIVERED | Add the shared scanner port, HTTP protocol signals, commands and typed command handlers.               | Controller-to-command entry is proven without changing the meaning of Event or the public MCP protocol.                        |
-| 05  | PROPOSED  | Reconstruct outbox mappings, destination/versioned integration events, SQS routes and inbox consumers. | Producer and consumer identities remain distinct; unsupported causal gaps remain explicit.                                     |
+| 05  | DELIVERED | Reconstruct outbox mappings, destination/versioned integration events, SQS routes and inbox consumers. | Two destination-specific Ticket identities and their configured consumers are proven without Event-to-Event causality.         |
 | 06  | PROPOSED  | Detect event-fed projection State and projection-sync signals.                                         | State granularity comes from a real projection acceptance, not table-name guessing.                                            |
 | 07  | PROPOSED  | Detect meaningful external boundaries through resolved adapters.                                       | A port call becomes `CALLS_EXTERNAL` only when adapter resolution proves HTTP, SQS, storage, process or persistence execution. |
 | 08  | PROPOSED  | Expose Java projects through the existing CLI and MCP capabilities.                                    | Bounded Fragments projections are deterministic and preserve current TypeScript behavior.                                      |
@@ -163,8 +163,8 @@ in `ArchitectureGraph`.
 - The discriminated `switch` is not converted into graph branches. In this
   slice, javac proves only that the value ultimately passed to `publish` has
   the completed-event type.
-- The Java detector is not wired into the public CLI or MCP and no shared
-  scanner port has been introduced.
+- The Java adapter composes this detector behind the shared scanner port, but
+  the public CLI and MCP still select only the TypeScript adapter.
 
 ### Lot 04 — shared port and HTTP/Command
 
@@ -196,6 +196,38 @@ in `ArchitectureGraph`.
   path crosses aggregate registration and `forEach(eventPublisher::publish)`,
   which Lot 04 does not prove interprocedurally.
 
+### Lot 05 — outbox identities and SQS routes
+
+- The selected producer is `TicketVerifyAcceptedEvent`. Its outbox metadata,
+  destination resolver branch, stable type catalog, constant version and exact
+  sender loop are all resolved before an integration Event is emitted.
+- The same stable type/version sent to two destinations produces two distinct
+  identities:
+
+  ```text
+  StableEnvelopeOutboxEventSender#send(...)
+    --DISPATCHES--> integration:ticket-events:ticket.verify.accepted:v1
+    --DISPATCHES--> integration:ticket-verification-requested:ticket.verify.accepted:v1
+
+  ticketVerifyAcceptedReadSqsIntegrationEventHandler(...)
+    --LISTENS_TO--> integration:ticket-events:ticket.verify.accepted:v1
+
+  ticketVerificationRequestedSqsIntegrationEventHandler(...)
+    --LISTENS_TO--> integration:ticket-verification-requested:ticket.verify.accepted:v1
+  ```
+
+- Route-specific Spring factory methods identify the configured consumers.
+  Their `LISTENS_TO` relations are emitted only when the generic router proves
+  `inbox.claim -> delegated dispatch -> SqsIntegrationEventHandler.handle`.
+  The router, inbox repository and message publisher remain implementation
+  details; SQS and persistence do not become graph nodes.
+- There is deliberately no edge from the internal Domain Event to either
+  integration Event. Serialization through an outbox row does not justify an
+  Event-to-Event relation, and none exists in the approved vocabulary.
+- Every contributing source location must be in scan scope. Maven resolution
+  may remain broader, but an out-of-scope catalog or resolver cannot create an
+  integration node.
+
 ## Fragments feedback loop
 
 The App Store audit currently identifies two distinct opportunities:
@@ -212,12 +244,19 @@ but are not one generic call-graph feature. Each adapter must first resolve the
 language-specific call and type evidence; FlowAtlas may then propagate only a
 bounded architectural relation to a proven Event or External endpoint.
 
+A later avatar-flow replay produced a complete Redux projection with 23 nodes
+and 30 relations through listener, optimistic UI, outbox, retry and watchdog.
+It also exposed a focused TypeScript gap: the polymorphic outbox dispatch finds
+Experience, Comments, Like and Tickets gateways but does not classify
+`UserRepo` as an External. This remains evidence for injected gateway and
+discriminated-branch analysis; it does not widen the Java integration lot.
+
 The first opportunity improves the existing Redux adapter. The second drives
 this roadmap. They may share graph vocabulary, but they must not be merged into
 one implementation cycle: their semantic engines and proof mechanisms differ.
 
 The Java reference source was first pinned at Fragments commit `c5319de` and
-revalidated through Lot 04 at descendant commit `cc82485`, after the later App
+revalidated through Lot 05 at descendant commit `a5ba73b`, after the later App
 Store lots described in `docs/audits/app-store-readiness-2026-09-11.md` in the
 Fragments repository.
 
@@ -251,8 +290,8 @@ framework. Additional shared inputs require evidence from another real caller.
 
 ## Next acceptance boundary
 
-Lot 05 should start from one producer event and prove only the outbox mappings,
-public integration identities and routes that are statically connected. A
-domain event and each destination/version-specific integration event remain
-separate Event nodes. Serialization or table proximity alone cannot bridge a
-causal gap.
+Lot 06 should start from one real route-specific consumer and prove a projection
+State mutation plus any projection-sync Event that is directly published. The
+State identity must come from the application projection boundary, not from a
+table name or repository suffix. ACL conversion, lambdas and inbox routing may
+remain explicit gaps when their connection is not statically proven.

@@ -26,7 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
-| 15. Java semantic feasibility              | ACTIVE: HTTP/Command graph delivered      |
+| 15. Java semantic feasibility              | ACTIVE: integration-event graph delivered |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1153,7 +1153,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — lots 00 to 04 delivered, outbox/SQS next**
+**Status: ACTIVE — lots 00 to 05 delivered, projections next**
 
 ### Goal
 
@@ -1214,24 +1214,27 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 - Lot 04 introduces the shared application scanner port, routes MCP through its
   TypeScript adapter without changing the MCP protocol, and adds the Java HTTP
   signal, Command and typed command-handler projection.
+- Lot 05 resolves one real outbox mapping into two destination-specific,
+  versioned integration Events, proves the exact sender pipeline and binds the
+  matching Spring-created SQS consumers without inventing Event-to-Event
+  causality.
 
 ### Probable next behaviors
 
-1. Select one real producer event for the Lot 05 outbox/SQS acceptance.
-2. Prove destination and versioned integration identities without collapsing
-   them into their source domain event.
-3. Preserve gaps where serialization or runtime routing prevents static proof.
+1. Select one real route-specific consumer for the Lot 06 projection
+   acceptance.
+2. Derive State identity from its application projection boundary.
+3. Prove only direct projection-sync publication and preserve ACL/lambda gaps.
 
 ### Known gaps
 
 - The JDK compiler API remains behind the Java adapter and is not yet wired to
   the public CLI/MCP composition.
-- Maven/classpath loading and scan-scope separation remain isolated from the
-  production scanner.
-- Spring-created handlers, destination-specific integration mappings,
-  projection State and port-to-adapter External resolution are later acceptance
-  territory.
-- The current public scanner facade remains TypeScript-specific.
+- Maven/classpath loading and scan-scope separation remain in the isolated Java
+  adapter script, outside the public CLI/MCP composition.
+- Projection State and port-to-adapter External resolution are later
+  acceptance territory.
+- The public CLI/MCP composition still selects only the TypeScript adapter.
 
 ### Discovered micro-cycles
 
@@ -1262,6 +1265,15 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   `CommandHandler<C>` produce the first HTTP/Command Java graph.
 - The command handler does not dispatch a domain event in Lot 04 because the
   real source crosses aggregate registration and a method reference.
+- Outbox metadata, resolver branches, stable type/version and the sender loop
+  produce destination-specific integration Event identities in Lot 05.
+- Spring factory methods whose returned handler has a constant route listen to
+  the matching integration Event only after the router proves inbox claim,
+  delegated dispatch and handler invocation. Generic SQS router and inbox
+  infrastructure remain absent from the graph.
+- A complete 23-node/30-relation avatar replay still misses `UserRepo` as an
+  External behind a polymorphic outbox dispatch. This remains a separate
+  TypeScript gateway/branch resolution acceptance candidate.
 
 ### Open design questions
 
