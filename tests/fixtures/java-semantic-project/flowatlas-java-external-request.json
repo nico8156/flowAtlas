@@ -1,0 +1,31 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": [
+    "fixture/adapters/ProcessVerificationProvider.java",
+    "fixture/application/TicketVerificationProcessManager.java",
+    "fixture/configuration/Dependencies.java"
+  ],
+  "resolutionSources": [
+    "fixture/events/TicketVerificationCompletedEvent.java",
+    "fixture/events/TicketVerifyAcceptedEvent.java",
+    "fixture/ports/TicketVerificationProvider.java",
+    "fixture/shared/DomainEvent.java",
+    "fixture/shared/DomainEventPublisher.java",
+    "fixture/shared/EventHandler.java"
+  ],
+  "domainEvent": "fixture.shared.DomainEvent",
+  "eventHandler": "fixture.shared.EventHandler",
+  "handler": "fixture.application.TicketVerificationProcessManager",
+  "provider": "fixture.ports.TicketVerificationProvider",
+  "providerMethod": "verify",
+  "events": [
+    "fixture.events.TicketVerifyAcceptedEvent",
+    "fixture.events.TicketVerificationCompletedEvent"
+  ],
+  "externalConfiguration": "fixture.configuration.Dependencies",
+  "externalFactoryMethod": "verificationProvider",
+  "externalAdapter": "fixture.adapters.ProcessVerificationProvider",
+  "externalAdapterMethod": "verify",
+  "externalProcessBuilder": "java.lang.ProcessBuilder",
+  "externalProcessStartMethod": "start"
+}

@@ -102,6 +102,18 @@ describe("Architecture scanner port", () => {
           syncSource: { file: "fixture/AcceptedProjection.java", line: 13, inScanScope: true },
         },
       ],
+      externalCalls: [
+        {
+          handler: "fixture.AcceptedHandler",
+          port: "fixture.Provider",
+          adapter: "fixture.ProcessProvider",
+          external: "local-process:java.lang.ProcessBuilder",
+          handlerSource: { file: "fixture/AcceptedHandler.java", line: 8, inScanScope: true },
+          factorySource: { file: "fixture/Dependencies.java", line: 10, inScanScope: true },
+          adapterSource: { file: "fixture/ProcessProvider.java", line: 4, inScanScope: true },
+          externalSource: { file: "fixture/ProcessProvider.java", line: 12, inScanScope: true },
+        },
+      ],
       diagnostics: [
         {
           kind: "WARNING",
@@ -124,6 +136,9 @@ describe("Architecture scanner port", () => {
       javaResult.graph.findNode("integration:fixture-events:fixture.accepted:v1"),
     ).toBeDefined();
     expect(javaResult.graph.findNode("fixtures")).toMatchObject({ kind: "State" });
+    expect(javaResult.graph.findNode("local-process:java.lang.ProcessBuilder")).toMatchObject({
+      kind: "External",
+    });
     expect(javaResult.diagnostics).toEqual([
       {
         severity: "warning",

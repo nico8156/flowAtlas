@@ -26,7 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
-| 15. Java semantic feasibility              | ACTIVE: projection State graph delivered  |
+| 15. Java semantic feasibility              | ACTIVE: External boundary graph delivered |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1153,7 +1153,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — lots 00 to 06 delivered, external boundary next**
+**Status: ACTIVE — lots 00 to 07 delivered, CLI/MCP composition next**
 
 ### Goal
 
@@ -1221,14 +1221,16 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 - Lot 06 proves a ticket application projection mutation and direct sync
   signal. `tickets` is taken from the projection-sync contract, while the SQS
   lambda/ACL connection remains deliberately discontinuous.
+- Lot 07 resolves the ticket verification port through its configured concrete
+  adapter to `ProcessBuilder.start()`, producing a local-process External
+  without treating the port interface as an External.
 
 ### Probable next behaviors
 
-1. Select one injected port and its concrete adapter for the Lot 07 External
+1. Define explicit Java project and request inputs for the Lot 08 CLI/MCP
    acceptance.
-2. Prove the adapter's meaningful execution, communication or persistence
-   boundary through resolved method calls.
-3. Preserve unresolved adapter selection and delegation as explicit gaps.
+2. Preserve existing TypeScript behavior and bounded diagnostic output.
+3. Keep Maven/classpath configuration out of ambient process state.
 
 ### Known gaps
 
@@ -1236,7 +1238,6 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   the public CLI/MCP composition.
 - Maven/classpath loading and scan-scope separation remain in the isolated Java
   adapter script, outside the public CLI/MCP composition.
-- Port-to-adapter External resolution is later acceptance territory.
 - The public CLI/MCP composition still selects only the TypeScript adapter.
 
 ### Discovered micro-cycles
@@ -1282,6 +1283,10 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   independently proves `Handler --DISPATCHES--> sync:<projection>:<scope>`.
   `tickets` comes from the projection contract, not from the SQL table name;
   lambda/ACL propagation from the SQS consumer remains absent.
+- A port call becomes `CALLS_EXTERNAL` only after its configured factory, the
+  adapter implementation and `ProcessBuilder.start()` are all resolved. The
+  graph records `local-process:java.lang.ProcessBuilder`, not a dynamic binary
+  path; alternative beans, profiles and adapter delegation remain gaps.
 
 ### Open design questions
 

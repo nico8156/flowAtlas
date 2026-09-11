@@ -154,6 +154,14 @@ public final class JavaSemanticSpike {
                     diagnostics,
                     config);
 
+            ExternalSliceEvidence externalSlice = analyzeExternalSlice(
+                    trees,
+                    elements,
+                    types,
+                    diagnostics,
+                    config,
+                    invocations);
+
             return new ProbeResult(
                     typeEvidence,
                     handlerEvidence,
@@ -162,6 +170,7 @@ public final class JavaSemanticSpike {
                     commandSlice,
                     integrationSlice,
                     projectionSlice,
+                    externalSlice,
                     diagnosticEvidence(diagnostics, config));
         }
     }
@@ -975,6 +984,78 @@ public final class JavaSemanticSpike {
                 sync.source())));
     }
 
+    private static ExternalSliceEvidence analyzeExternalSlice(
+            Trees trees,
+            Elements elements,
+            Types types,
+            DiagnosticCollector<JavaFileObject> diagnostics,
+            Config config,
+            List<InvocationEvidence> providerInvocations) {
+        if (config.externalConfiguration() == null) return null;
+
+        TypeElement port = requiredType(elements, config.provider(), diagnostics);
+        TypeElement configuration = requiredType(elements, config.externalConfiguration(), diagnostics);
+        ExecutableElement factory = requiredMethod(configuration, config.externalFactoryMethod());
+        TypeElement adapter = requiredType(elements, config.externalAdapter(), diagnostics);
+        if (!types.isAssignable(types.erasure(adapter.asType()), types.erasure(port.asType()))) {
+            throw new IllegalStateException("Configured external adapter must implement the configured port");
+        }
+        if (!types.isAssignable(types.erasure(factory.getReturnType()), types.erasure(port.asType()))) {
+            throw new IllegalStateException("Configured external factory must return the configured port");
+        }
+
+        final boolean[] constructsAdapter = { false };
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitNewClass(NewClassTree newClass, Void unused) {
+                TypeMirror constructed = trees.getTypeMirror(new TreePath(getCurrentPath(), newClass.getIdentifier()));
+                if (constructed != null && constructed.toString().equals(adapter.getQualifiedName().toString())) {
+                    constructsAdapter[0] = true;
+                }
+                return super.visitNewClass(newClass, unused);
+            }
+        }.scan(trees.getPath(factory), null);
+        if (!constructsAdapter[0]) {
+            throw new IllegalStateException("Configured external factory must construct the configured adapter");
+        }
+
+        TypeElement processBuilder = requiredType(elements, config.externalProcessBuilder(), diagnostics);
+        ExecutableElement adapterMethod = requiredMethod(adapter, config.externalAdapterMethod());
+        List<SourceLocation> starts = new ArrayList<>();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                ExecutableElement invoked = executableAt(trees, getCurrentPath());
+                if (invoked != null
+                        && ownerName(invoked).equals(processBuilder.getQualifiedName().toString())
+                        && invoked.getSimpleName().contentEquals(config.externalProcessStartMethod())) {
+                    starts.add(locationOf(trees, getCurrentPath(), config));
+                }
+                return super.visitMethodInvocation(invocation, unused);
+            }
+        }.scan(trees.getPath(adapterMethod), null);
+        if (starts.size() != 1) {
+            throw new IllegalStateException("Could not prove one configured local-process execution boundary");
+        }
+
+        List<InvocationEvidence> calls = providerInvocations.stream()
+                .filter(invocation -> invocation.caller().startsWith(config.handler() + "#"))
+                .toList();
+        if (calls.size() != 1) {
+            throw new IllegalStateException("Could not prove one configured handler port invocation");
+        }
+        InvocationEvidence call = calls.getFirst();
+        return new ExternalSliceEvidence(List.of(new ExternalCallEvidence(
+                call.caller(),
+                port.getQualifiedName().toString(),
+                adapter.getQualifiedName().toString(),
+                "local-process:" + processBuilder.getQualifiedName(),
+                call.source(),
+                locationOf(trees, factory, config),
+                locationOf(trees, adapter, config),
+                starts.getFirst())));
+    }
+
     private static List<DestinationEvidence> returnedStringConstants(
             Trees trees,
             TreePath statementPath,
@@ -1281,6 +1362,12 @@ public final class JavaSemanticSpike {
             String projectionSyncPublishMethod,
             String projectionSyncEvent,
             String projectionSyncFactoryMethod,
+            String externalConfiguration,
+            String externalFactoryMethod,
+            String externalAdapter,
+            String externalAdapterMethod,
+            String externalProcessBuilder,
+            String externalProcessStartMethod,
             List<Path> sources,
             List<Path> scanSources,
             List<String> events) {
@@ -1353,6 +1440,12 @@ public final class JavaSemanticSpike {
                     optional(options, "--projection-sync-publish-method"),
                     optional(options, "--projection-sync-event"),
                     optional(options, "--projection-sync-factory-method"),
+                    optional(options, "--external-configuration"),
+                    optional(options, "--external-factory-method"),
+                    optional(options, "--external-adapter"),
+                    optional(options, "--external-adapter-method"),
+                    optional(options, "--external-process-builder"),
+                    optional(options, "--external-process-start-method"),
                     sources,
                     scanSources,
                     many(options, "--event"));
@@ -1599,6 +1692,31 @@ public final class JavaSemanticSpike {
     private record ProjectionSliceEvidence(List<ProjectionUpdateEvidence> updates) {
     }
 
+    private record ExternalCallEvidence(
+            String handler,
+            String port,
+            String adapter,
+            String external,
+            SourceLocation handlerSource,
+            SourceLocation factorySource,
+            SourceLocation adapterSource,
+            SourceLocation externalSource) {
+        private String toJson() {
+            return "{\"handler\":" + quote(handler)
+                    + ",\"port\":" + quote(port)
+                    + ",\"adapter\":" + quote(adapter)
+                    + ",\"external\":" + quote(external)
+                    + ",\"handlerSource\":" + handlerSource.toJson()
+                    + ",\"factorySource\":" + factorySource.toJson()
+                    + ",\"adapterSource\":" + adapterSource.toJson()
+                    + ",\"externalSource\":" + externalSource.toJson()
+                    + "}";
+        }
+    }
+
+    private record ExternalSliceEvidence(List<ExternalCallEvidence> calls) {
+    }
+
     private record ProbeResult(
             List<TypeEvidence> types,
             HandlerEvidence handler,
@@ -1607,6 +1725,7 @@ public final class JavaSemanticSpike {
             CommandSliceEvidence commandSlice,
             IntegrationSliceEvidence integrationSlice,
             ProjectionSliceEvidence projectionSlice,
+            ExternalSliceEvidence externalSlice,
             List<DiagnosticEvidence> diagnostics) {
         private String toJson() {
             return "{\"engine\":\"jdk-compiler-api\",\"types\":"
@@ -1634,6 +1753,10 @@ public final class JavaSemanticSpike {
                             ? "[]"
                             : jsonArray(projectionSlice.updates().stream()
                                     .map(ProjectionUpdateEvidence::toJson).toList()))
+                    + ",\"externalCalls\":" + (externalSlice == null
+                            ? "[]"
+                            : jsonArray(externalSlice.calls().stream()
+                                    .map(ExternalCallEvidence::toJson).toList()))
                     + ",\"diagnostics\":" + jsonArray(diagnostics.stream().map(DiagnosticEvidence::toJson).toList())
                     + "}";
         }

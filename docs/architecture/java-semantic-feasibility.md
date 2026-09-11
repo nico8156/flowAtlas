@@ -133,7 +133,7 @@ to make the first acceptance appear complete.
 | 04  | DELIVERED | Add the shared scanner port, HTTP protocol signals, commands and typed command handlers.                          |
 | 05  | DELIVERED | Reconstruct outbox mapping, public integration identities, destinations, SQS routes and inbox-backed consumers.   |
 | 06  | DELIVERED | Detect event-fed projection State and Projection Sync signals.                                                    |
-| 07  | PROPOSED  | Detect resolved external execution, communication and persistence boundaries.                                     |
+| 07  | DELIVERED | Detect resolved external execution, communication and persistence boundaries.                                     |
 | 08  | PROPOSED  | Validate bounded Fragments projections and expose Java through the existing CLI and MCP application capabilities. |
 | 09  | LONG TERM | Generalize only from additional real corpora and repeated evidence.                                               |
 
@@ -298,10 +298,9 @@ Event-to-Event relation and this lot does not disguise it as one.
 
 ## Next investigation
 
-Lot 07 may investigate the resolved adapter behind one injected port. It must
-prove an execution, communication or persistence boundary through the concrete
-adapter, rather than treating the port interface or a `Repository` suffix as an
-External.
+Lot 08 may expose the Java adapter through the existing CLI and MCP
+composition, preserving TypeScript behavior and explicit Java project/request
+selection.
 
 ## Lot 06 result
 
@@ -322,6 +321,23 @@ the `ticket_status_projection` table name. The repository and sync publisher
 remain implementation details. The SQS factory-to-ACL-to-handler chain is not
 joined to this result: the lambda conversion is a real static gap, not an
 excuse to infer a listener relation.
+
+## Lot 07 result
+
+The ticket verification port is not an External by itself. The detector proves
+the configured `ticketVerificationProvider` factory constructs
+`ProcessBuilderTicketVerificationProvider`, verifies that adapter implements
+the port, and resolves `ProcessBuilder.start()` inside its `verify` method.
+Together with the exact process-manager invocation, this yields:
+
+```text
+TicketVerificationProcessManager#handle(...)
+  --CALLS_EXTERNAL--> local-process:java.lang.ProcessBuilder
+```
+
+The External identifies the statically proven process-spawn boundary, not a
+binary name: the configured binary path is runtime-configurable. Alternative
+beans, profiles and delegating adapters remain unsupported selection gaps.
 
 Direct publication is not general interprocedural propagation. Helpers that
 capture publishers, injected gateway calls and discriminated branches remain

@@ -210,6 +210,24 @@ const loadRequest = async (projectRoot, requestPath) => {
     fail("all projection request properties must be provided together");
   }
 
+  const externalConfiguration = {
+    externalConfiguration: optionalString(request, "externalConfiguration"),
+    externalFactoryMethod: optionalString(request, "externalFactoryMethod"),
+    externalAdapter: optionalString(request, "externalAdapter"),
+    externalAdapterMethod: optionalString(request, "externalAdapterMethod"),
+    externalProcessBuilder: optionalString(request, "externalProcessBuilder"),
+    externalProcessStartMethod: optionalString(request, "externalProcessStartMethod"),
+  };
+  const configuredExternalProperties = Object.values(externalConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    configuredExternalProperties.length > 0 &&
+    configuredExternalProperties.length !== Object.keys(externalConfiguration).length
+  ) {
+    fail("all external request properties must be provided together");
+  }
+
   return {
     sourceRootName,
     sourceRoot,
@@ -225,6 +243,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     ...commandConfiguration,
     ...integrationConfiguration,
     ...projectionConfiguration,
+    ...externalConfiguration,
     events: requireStringArray(request, "events"),
   };
 };
@@ -366,6 +385,22 @@ const run = async () => {
             request.projectionSyncEvent,
             "--projection-sync-factory-method",
             request.projectionSyncFactoryMethod,
+          ]
+        : []),
+      ...(request.externalConfiguration
+        ? [
+            "--external-configuration",
+            request.externalConfiguration,
+            "--external-factory-method",
+            request.externalFactoryMethod,
+            "--external-adapter",
+            request.externalAdapter,
+            "--external-adapter-method",
+            request.externalAdapterMethod,
+            "--external-process-builder",
+            request.externalProcessBuilder,
+            "--external-process-start-method",
+            request.externalProcessStartMethod,
           ]
         : []),
       ...[...new Set([...request.scanSources, ...request.resolutionSources])].flatMap((source) => [
