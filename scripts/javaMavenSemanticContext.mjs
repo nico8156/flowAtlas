@@ -42,6 +42,14 @@ const optionalStringArray = (object, property) => {
   return value;
 };
 
+const optionalString = (object, property) => {
+  const value = object[property];
+  if (value !== undefined && (typeof value !== "string" || value.length === 0)) {
+    fail(`request property ${property} must be a non-empty string when present`);
+  }
+  return value;
+};
+
 const assertInside = (root, candidate, label) => {
   const relativePath = relative(root, candidate);
   if (relativePath === ".." || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) {
@@ -118,6 +126,12 @@ const loadRequest = async (projectRoot, requestPath) => {
     if (!existsSync(source)) fail(`missing source ${source}`);
   }
 
+  const domainEventPublisher = optionalString(request, "domainEventPublisher");
+  const domainEventPublishMethod = optionalString(request, "domainEventPublishMethod");
+  if ((domainEventPublisher === undefined) !== (domainEventPublishMethod === undefined)) {
+    fail("domainEventPublisher and domainEventPublishMethod must be provided together");
+  }
+
   return {
     sourceRootName,
     sourceRoot,
@@ -128,6 +142,8 @@ const loadRequest = async (projectRoot, requestPath) => {
     handler: requireString(request, "handler"),
     provider: requireString(request, "provider"),
     providerMethod: requireString(request, "providerMethod"),
+    domainEventPublisher,
+    domainEventPublishMethod,
     events: requireStringArray(request, "events"),
   };
 };
@@ -167,6 +183,14 @@ const run = async () => {
       request.provider,
       "--provider-method",
       request.providerMethod,
+      ...(request.domainEventPublisher
+        ? [
+            "--domain-event-publisher",
+            request.domainEventPublisher,
+            "--domain-event-publish-method",
+            request.domainEventPublishMethod,
+          ]
+        : []),
       ...[...new Set([...request.scanSources, ...request.resolutionSources])].flatMap((source) => [
         "--source",
         source,

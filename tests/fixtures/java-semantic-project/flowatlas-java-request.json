@@ -9,6 +9,8 @@
   "handler": "fixture.application.TicketVerificationProcessManager",
   "provider": "fixture.ports.TicketVerificationProvider",
   "providerMethod": "verify",
+  "domainEventPublisher": "fixture.shared.DomainEventPublisher",
+  "domainEventPublishMethod": "publish",
   "events": [
     "fixture.events.TicketVerifyAcceptedEvent",
     "fixture.events.TicketVerificationCompletedEvent",

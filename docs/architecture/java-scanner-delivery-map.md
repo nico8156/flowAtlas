@@ -4,11 +4,14 @@ Last updated: 11 September 2026.
 
 ## Current position
 
-**Lots 00, 01 and 02 are delivered. Lot 03 is next and has not started.**
+**Lots 00 to 03 are delivered. The shared scanner port review is now required.**
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
-      DONE             DONE              DONE                  NEXT
+      DONE             DONE              DONE                  DONE
+
+                         -> [shared scanner port review]
+                                      NOW
 
 -> [04 HTTP/commands] -> [05 outbox/SQS] -> [06 projections]
           LATER                LATER              LATER
@@ -86,7 +89,7 @@ in `ArchitectureGraph`.
 | 00  | DELIVERED | Freeze the four node kinds, four relation kinds and Java Event identities.                             | Human-approved decision; no graph vocabulary change.                                                                           |
 | 01  | DELIVERED | Select a Java semantic engine.                                                                         | Controlled Java 21 fixture and real Fragments Maven slice resolve types, generics, methods and locations.                      |
 | 02  | DELIVERED | Load a Maven project with complete resolution context and bounded scan scope.                          | Out-of-scope sources resolve symbols without entering scope; diagnostics retain source and scope information.                  |
-| 03  | NEXT      | Detect domain events, typed local handlers and proven publication.                                     | First `ArchitectureGraph` projection for the ticket-verification event slice, including important absent edges.                |
+| 03  | DELIVERED | Detect domain events, typed local handlers and proven publication.                                     | First `ArchitectureGraph` projection for the ticket-verification event slice, including important absent edges.                |
 | 04  | PROPOSED  | Add HTTP protocol signals, commands and typed command handlers.                                        | Controller-to-command entry is proven without changing the meaning of Event.                                                   |
 | 05  | PROPOSED  | Reconstruct outbox mappings, destination/versioned integration events, SQS routes and inbox consumers. | Producer and consumer identities remain distinct; unsupported causal gaps remain explicit.                                     |
 | 06  | PROPOSED  | Detect event-fed projection State and projection-sync signals.                                         | State granularity comes from a real projection acceptance, not table-name guessing.                                            |
@@ -139,6 +142,30 @@ in `ArchitectureGraph`.
 - The capability remains an isolated spike. It does not change the TypeScript
   scanner, CLI, MCP interface or `ArchitectureGraph`.
 
+### Lot 03 — first Java ArchitectureGraph
+
+- The compiler resolves direct calls to the configured
+  `DomainEventPublisher.publish` method and records the static type of its
+  argument, caller and exact source location.
+- A focused Java detector maps only concrete `DomainEvent` types, a typed
+  `EventHandler<E>` and in-scope resolved publications into the canonical
+  graph.
+- The real Fragments slice now yields:
+
+  ```text
+  TicketVerificationProcessManager
+    --LISTENS_TO--> java-domain-event:...TicketVerifyAcceptedEvent
+    --DISPATCHES--> java-domain-event:...TicketVerificationCompletedEvent
+  ```
+
+- `TicketVerificationProvider` remains absent because an injected port is not
+  itself proof of an external execution boundary.
+- The discriminated `switch` is not converted into graph branches. In this
+  slice, javac proves only that the value ultimately passed to `publish` has
+  the completed-event type.
+- The Java detector is not wired into the public CLI or MCP and no shared
+  scanner port has been introduced.
+
 ## Fragments feedback loop
 
 The App Store audit currently identifies two distinct opportunities:
@@ -148,13 +175,21 @@ The App Store audit currently identifies two distinct opportunities:
 2. Java: reconstruct the vertical from controller and command through domain
    events, outbox and projection.
 
+The latest Fragments feedback adds three recurring proof problems: dispatches
+through helpers that capture infrastructure, calls to injected gateways and
+discriminated branches. They are useful cross-language acceptance territory,
+but are not one generic call-graph feature. Each adapter must first resolve the
+language-specific call and type evidence; FlowAtlas may then propagate only a
+bounded architectural relation to a proven Event or External endpoint.
+
 The first opportunity improves the existing Redux adapter. The second drives
 this roadmap. They may share graph vocabulary, but they must not be merged into
 one implementation cycle: their semantic engines and proof mechanisms differ.
 
 The Java reference source was first pinned at Fragments commit `c5319de` and
-revalidated at descendant commit `7f8c588`, after the moderation lot described
-in `docs/audits/app-store-readiness-2026-09-11.md` in the Fragments repository.
+revalidated for Lot 03 at descendant commit `cc82485`, after the later App
+Store lots described in `docs/audits/app-store-readiness-2026-09-11.md` in the
+Fragments repository.
 
 ## Invariants for every lot
 
@@ -168,28 +203,25 @@ in `docs/audits/app-store-readiness-2026-09-11.md` in the Fragments repository.
   commit, push and a clean worktree.
 - Stop before starting the following lot.
 
-## Next acceptance boundary
+## Required architecture review
 
-Lot 03 may introduce the first Java detector and `ArchitectureGraph` projection
-for the domain-event slice. Its minimum observable contract is:
+The first real Java graph now provides the evidence requested before deciding
+the shared port:
 
 ```text
-TicketVerificationProcessManager.java in scan scope
-            + Maven resolution context
-                         |
-                         v
-TicketVerifyAcceptedEvent                    Event
-TicketVerificationProcessManager             Handler
-Handler --LISTENS_TO--> accepted Event
-Handler --DISPATCHES--> completed Event       only if exact publication is proven
+TypeScript loader/scanner ----> ArchitectureGraph
+Java Maven context/detector --> ArchitectureGraph
 ```
 
-The provider call remains semantic evidence, not an `External`, until the
-adapter resolution lot proves the boundary. A name-only event and unresolved
-publication must remain absent.
+The repository already contains an `ArchitectureGraphLoader` function type at
+the MCP boundary, but it is owned by MCP, accepts only a project path and is
+backed exclusively by the TypeScript loader. The Java path additionally needs
+an explicit source scope and returns diagnostics before graph projection.
 
-After this first real Java graph is available, work must pause for an explicit
-review of the shared scanner port. The agreed direction is a stable
-language-neutral architectural port with independent TypeScript and Java
-adapters—not a port that accumulates compiler-specific options. No such port
-is authorized by Lots 00–03 alone.
+The recommendation is to promote a minimal asynchronous graph-loading port to
+the application boundary before Lot 04, with independent TypeScript and Java
+adapters. Its stable contract should express project identity, optional file
+scope, canonical graph and language-neutral diagnostics. Maven, javac,
+`tsconfig`, compiler programs and Redux configuration must remain adapter
+details. This is a proposed structural boundary and still requires explicit
+human approval before implementation.

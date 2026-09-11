@@ -26,7 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
-| 15. Java semantic feasibility              | ACTIVE: Java context proven               |
+| 15. Java semantic feasibility              | ACTIVE: first Java graph delivered        |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1153,7 +1153,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — lots 00 to 02 delivered, domain-event graph next**
+**Status: ACTIVE — lots 00 to 03 delivered, shared-port review required**
 
 ### Goal
 
@@ -1203,15 +1203,17 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   resolution sources. It derives the Java release and classpath, preserves
   source locations, marks scope membership and returns structured compiler
   diagnostics. It changes no production scanner behavior.
+- Lot 03 adds the first Java `ArchitectureGraph` projection. It resolves direct
+  domain-event publication by argument type and maps typed listening and
+  publication into `LISTENS_TO` and `DISPATCHES` without exposing Java concepts
+  in the graph.
 
 ### Probable next behaviors
 
-1. Detect concrete `DomainEvent` types and typed `EventHandler<E>` listening
-   inside an explicitly bounded Java scan scope.
-2. Prove the completed-event publication from exact compiler-resolved source
-   evidence without constructing a general call graph.
-3. Produce the first Fragments Java `ArchitectureGraph` projection, including
-   important absent nodes and edges, then stop for the shared-port review.
+1. Complete the human review of the smallest stable scanner port shared by the
+   TypeScript and Java adapters.
+2. Only after that decision, define the Lot 04 HTTP/command acceptance without
+   changing Event semantics.
 
 ### Known gaps
 
@@ -1242,11 +1244,18 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 - On Fragments, the process manager resolves its out-of-scope events, generic
   handler interface and provider against the full Maven context with no
   diagnostics.
+- Direct `DomainEventPublisher.publish(completed)` resolves the exact completed
+  event argument, caller and location on both the fixture and Fragments.
+- The Java detector produces the canonical Event/Handler nodes and
+  `LISTENS_TO`/`DISPATCHES` edges while keeping the injected provider absent.
+- Helper-captured dispatches, injected gateways and discriminated branches are
+  recorded as future proof problems, not inferred graph relations.
 
 ### Open design questions
 
-- After the first Java graph in Lot 03, what is the smallest stable scanner port
-  shared by TypeScript and Java adapters?
+- Should the existing MCP-local graph-loader seam be promoted now into a
+  language-neutral application port with independent TypeScript and Java
+  adapters?
 - Which second real Maven shape would justify multiple source roots,
   multi-module reactors or generated-source support?
 

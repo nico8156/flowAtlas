@@ -129,7 +129,7 @@ to make the first acceptance appear complete.
 | 00  | DELIVERED | Record the graph vocabulary, Event roles, identities and investigation boundary.                                  |
 | 01  | DELIVERED | Compare Java semantic engines on one fixture and the pinned acceptance source, then select one with evidence.     |
 | 02  | DELIVERED | Load a Java project with full resolution context and bounded architectural scan scope.                            |
-| 03  | PROPOSED  | Detect domain events, typed local handlers and statically proven publication.                                     |
+| 03  | DELIVERED | Detect domain events, typed local handlers and statically proven publication.                                     |
 | 04  | PROPOSED  | Add HTTP protocol signals, commands and typed command handlers after replaying the first event acceptance.        |
 | 05  | PROPOSED  | Reconstruct outbox mapping, public integration identities, destinations, SQS routes and inbox-backed consumers.   |
 | 06  | PROPOSED  | Detect event-fed projection State and Projection Sync signals.                                                    |
@@ -174,8 +174,8 @@ TicketVerificationProcessManager#handle(...) -> TicketVerificationProvider#verif
 ```
 
 The acceptance baseline remains commit `c5319de`; the same source identities
-were revalidated on descendant commit `7f8c588`, which closes the moderation
-lot described by the updated App Store audit.
+and direct publication were revalidated for Lot 03 on descendant commit
+`cc82485` without changing this slice.
 
 This last arrow is a Java symbol-resolution fact only. It does not yet emit
 `CALLS_EXTERNAL`: proving that the injected port reaches a meaningful external
@@ -254,16 +254,24 @@ reactors, profiles and generated source roots need later real evidence.
 
 ## Next investigation
 
-Lot 03 may translate the proven Java semantic evidence into the first bounded
-domain-event `ArchitectureGraph` projection. It must detect concrete
-`DomainEvent` identities and typed `EventHandler<E>` listening, then prove
-publication without interpreting every method call as graph causality.
+Lot 03 translates the proven Java semantic evidence into the first bounded
+domain-event `ArchitectureGraph` projection. Concrete `DomainEvent` identity
+proves Event nodes, `EventHandler<E>` proves `LISTENS_TO`, and the resolved
+argument of `DomainEventPublisher.publish` proves `DISPATCHES`. A direct
+provider invocation remains evidence only and does not create an External.
 
-The language-neutral scanner port remains deferred by explicit human decision.
-It must be reviewed immediately after the first Java graph results, before
-broader Java or HTTP integration. The intended port would remain stable around
-architectural scan input, diagnostics and graph output; Maven, javac,
-TypeScript and Redux details would stay inside their adapters.
+The language-neutral scanner port review is now due. The observed common
+boundary is an asynchronous request producing an `ArchitectureGraph` and
+language-neutral diagnostics from an optional bounded file scope. The
+repository's current MCP-owned `ArchitectureGraphLoader` is evidence for this
+shape, but it is not yet an application port and must not accumulate Maven,
+javac, TypeScript or Redux options. No port change is authorized until the
+review is explicitly accepted.
+
+Direct publication is not general interprocedural propagation. Helpers that
+capture publishers, injected gateway calls and discriminated branches remain
+future acceptance cases. Branches may enrich evidence or diagnostics, but do
+not justify new graph kinds or speculative causal edges.
 
 ## Engine references
 

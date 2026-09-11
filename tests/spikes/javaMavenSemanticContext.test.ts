@@ -41,6 +41,13 @@ describe("Java Maven semantic context", () => {
       }>;
       handler: { qualifiedName: string; eventType: string; source: SourceLocation };
       providerInvocations: Array<{ source: SourceLocation }>;
+      domainEventPublications: Array<{
+        owner: string;
+        method: string;
+        caller: string;
+        argumentType: string;
+        source: SourceLocation;
+      }>;
       diagnostics: Array<{
         kind: string;
         message: string;
@@ -63,6 +70,16 @@ describe("Java Maven semantic context", () => {
 
     expect(result.handler.source.inScanScope).toBe(true);
     expect(result.providerInvocations[0]?.source.inScanScope).toBe(true);
+    expect(result.domainEventPublications).toEqual([
+      expect.objectContaining({
+        owner: "fixture.shared.DomainEventPublisher",
+        method: "publish(fixture.shared.DomainEvent)",
+        caller:
+          "fixture.application.TicketVerificationProcessManager#handle(fixture.events.TicketVerifyAcceptedEvent)",
+        argumentType: "fixture.events.TicketVerificationCompletedEvent",
+        source: expect.objectContaining({ inScanScope: true }),
+      }),
+    ]);
     expect(result.types).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

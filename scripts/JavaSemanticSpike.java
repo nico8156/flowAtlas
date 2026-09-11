@@ -108,7 +108,19 @@ public final class JavaSemanticSpike {
                     config.providerMethod(),
                     config);
 
-            return new ProbeResult(typeEvidence, handlerEvidence, invocations, diagnosticEvidence(diagnostics, config));
+            List<PublicationEvidence> publications = findDomainEventPublications(
+                    units,
+                    trees,
+                    config.domainEventPublisher(),
+                    config.domainEventPublishMethod(),
+                    config);
+
+            return new ProbeResult(
+                    typeEvidence,
+                    handlerEvidence,
+                    invocations,
+                    publications,
+                    diagnosticEvidence(diagnostics, config));
         }
     }
 
@@ -194,6 +206,62 @@ public final class JavaSemanticSpike {
         return result;
     }
 
+    private static List<PublicationEvidence> findDomainEventPublications(
+            List<? extends CompilationUnitTree> units,
+            Trees trees,
+            String publisher,
+            String publishMethod,
+            Config config) {
+        if (publisher == null || publishMethod == null) return List.of();
+
+        List<PublicationEvidence> result = new ArrayList<>();
+        for (CompilationUnitTree unit : units) {
+            new TreePathScanner<Void, Void>() {
+                private final Deque<ExecutableElement> callers = new ArrayDeque<>();
+
+                @Override
+                public Void visitMethod(MethodTree method, Void unused) {
+                    Element element = trees.getElement(getCurrentPath());
+                    if (!(element instanceof ExecutableElement executable)) {
+                        return super.visitMethod(method, unused);
+                    }
+                    callers.push(executable);
+                    try {
+                        return super.visitMethod(method, unused);
+                    } finally {
+                        callers.pop();
+                    }
+                }
+
+                @Override
+                public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                    Element element = trees.getElement(getCurrentPath());
+                    if (element instanceof ExecutableElement executable
+                            && executable.getEnclosingElement() instanceof TypeElement owner
+                            && owner.getQualifiedName().contentEquals(publisher)
+                            && executable.getSimpleName().contentEquals(publishMethod)
+                            && invocation.getArguments().size() == 1
+                            && !callers.isEmpty()) {
+                        TreePath argumentPath = new TreePath(
+                                getCurrentPath(),
+                                invocation.getArguments().getFirst());
+                        TypeMirror argumentType = trees.getTypeMirror(argumentPath);
+                        if (argumentType != null) {
+                            result.add(new PublicationEvidence(
+                                    owner.getQualifiedName().toString(),
+                                    executableSignature(executable),
+                                    callerSignature(callers.peek()),
+                                    argumentType.toString(),
+                                    locationOf(trees, getCurrentPath(), config)));
+                        }
+                    }
+                    return super.visitMethodInvocation(invocation, unused);
+                }
+            }.scan(unit, null);
+        }
+        return result;
+    }
+
     private static String executableSignature(ExecutableElement executable) {
         return executable.getSimpleName() + "(" + executable.getParameters().stream()
                 .map(parameter -> parameter.asType().toString())
@@ -269,6 +337,8 @@ public final class JavaSemanticSpike {
             String handler,
             String provider,
             String providerMethod,
+            String domainEventPublisher,
+            String domainEventPublishMethod,
             List<Path> sources,
             List<Path> scanSources,
             List<String> events) {
@@ -297,6 +367,8 @@ public final class JavaSemanticSpike {
                     single(options, "--handler"),
                     single(options, "--provider"),
                     single(options, "--provider-method"),
+                    optional(options, "--domain-event-publisher"),
+                    optional(options, "--domain-event-publish-method"),
                     sources,
                     scanSources,
                     many(options, "--event"));
@@ -374,10 +446,26 @@ public final class JavaSemanticSpike {
         }
     }
 
+    private record PublicationEvidence(
+            String owner,
+            String method,
+            String caller,
+            String argumentType,
+            SourceLocation source) {
+        private String toJson() {
+            return "{\"owner\":" + quote(owner)
+                    + ",\"method\":" + quote(method)
+                    + ",\"caller\":" + quote(caller)
+                    + ",\"argumentType\":" + quote(argumentType)
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
     private record ProbeResult(
             List<TypeEvidence> types,
             HandlerEvidence handler,
             List<InvocationEvidence> providerInvocations,
+            List<PublicationEvidence> domainEventPublications,
             List<DiagnosticEvidence> diagnostics) {
         private String toJson() {
             return "{\"engine\":\"jdk-compiler-api\",\"types\":"
@@ -385,6 +473,8 @@ public final class JavaSemanticSpike {
                     + ",\"handler\":" + handler.toJson()
                     + ",\"providerInvocations\":"
                     + jsonArray(providerInvocations.stream().map(InvocationEvidence::toJson).toList())
+                    + ",\"domainEventPublications\":"
+                    + jsonArray(domainEventPublications.stream().map(PublicationEvidence::toJson).toList())
                     + ",\"diagnostics\":" + jsonArray(diagnostics.stream().map(DiagnosticEvidence::toJson).toList())
                     + "}";
         }
