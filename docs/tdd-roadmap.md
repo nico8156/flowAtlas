@@ -26,6 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
+| 15. Java semantic feasibility              | ACTIVE: graph decision recorded           |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1149,6 +1150,87 @@ hotspots. Do not invent metrics before real cases justify them.
 The static graph answers "What can happen?". A separate runtime layer may
 answer "What actually happened?" through correlation IDs, executed edges and
 branches not taken. Runtime evidence must never hide static limitations.
+
+## Milestone 15 - Java Semantic Feasibility
+
+**Status: ACTIVE — graph decision recorded, engine investigation next**
+
+### Goal
+
+Determine whether a Java semantic context and focused infrastructure detectors
+can translate one real Fragments backend event flow into the existing
+framework-independent `ArchitectureGraph` without becoming a generic Java
+analyzer or call graph.
+
+### Acceptance driver
+
+Use the pinned `fragmentsClean` commit `c5319de` and the ticket verification
+flow from `TicketVerifyAcceptedEvent` through
+`TicketVerificationProcessManager`, `TicketVerificationProvider` and
+`TicketVerificationCompletedEvent`.
+
+The first acceptance is deliberately smaller than the complete backend flow.
+It checks expected Events, the typed Handler, the statically supported
+relations and important absent relations for unresolved or name-only matches.
+
+### Decisions
+
+- Keep the four V1 `NodeKind` values and four V1 `RelationKind` values.
+- Represent Java Command, Domain Event, Integration Event and protocol signal
+  as distinct Event identities; FlowAtlas Event already means something was
+  requested or happened.
+- Keep internal domain events distinct from public integration events.
+- Identify integration events by destination, stable event type and version.
+- Keep Java, Spring, messaging and persistence types outside
+  `ArchitectureGraph`.
+- Do not introduce an intermediate facts model for the initial work.
+- Keep full project resolution context separate from architectural scan scope.
+
+The complete decision and staged destination are recorded in
+`docs/architecture/java-semantic-feasibility.md`.
+
+### Delivered lot
+
+- Lot 00 records the approved graph semantics, initial identities, first real
+  acceptance and scope guardrails. It changes no production scanner behavior.
+
+### Probable next behaviors
+
+1. An isolated Java 21 fixture demonstrates assignability and generic handler
+   type recovery with candidate semantic engines.
+2. The same semantic queries resolve against the pinned real Fragments source
+   with exact source locations and fully qualified identities.
+3. The observed evidence selects one engine and records unsupported cases
+   before a production detector is proposed.
+
+### Known gaps
+
+- No Java semantic engine has been selected.
+- Source-only versus bounded bytecode assistance remains open.
+- Spring-created handlers, destination-specific integration mappings,
+  projection State and port-to-adapter External resolution are later acceptance
+  territory.
+- The current public scanner facade remains TypeScript-specific.
+
+### Discovered micro-cycles
+
+- None. Lot 00 is an architecture and roadmap decision only.
+
+### Open design questions
+
+- Which Java engine supplies the required Java 21/Maven semantics with the
+  smallest adapter surface?
+- Can the first acceptance remain source-based, or is limited compiled-type
+  information required?
+- Does the first production behavior justify a language-neutral scanner port,
+  or can that boundary wait for repeated evidence?
+
+### Completion criteria
+
+The feasibility spike is reproducible; one engine is selected from observed
+fixture and real-corpus evidence; unsupported relationships remain absent; and
+the next production milestone can start from one reviewed acceptance RED
+without changing the canonical graph vocabulary.
 
 ## Escalation Rules
 
