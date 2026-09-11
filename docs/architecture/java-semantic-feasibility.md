@@ -130,7 +130,7 @@ to make the first acceptance appear complete.
 | 01  | DELIVERED | Compare Java semantic engines on one fixture and the pinned acceptance source, then select one with evidence.     |
 | 02  | DELIVERED | Load a Java project with full resolution context and bounded architectural scan scope.                            |
 | 03  | DELIVERED | Detect domain events, typed local handlers and statically proven publication.                                     |
-| 04  | PROPOSED  | Add HTTP protocol signals, commands and typed command handlers after replaying the first event acceptance.        |
+| 04  | DELIVERED | Add the shared scanner port, HTTP protocol signals, commands and typed command handlers.                          |
 | 05  | PROPOSED  | Reconstruct outbox mapping, public integration identities, destinations, SQS routes and inbox-backed consumers.   |
 | 06  | PROPOSED  | Detect event-fed projection State and Projection Sync signals.                                                    |
 | 07  | PROPOSED  | Detect resolved external execution, communication and persistence boundaries.                                     |
@@ -174,7 +174,7 @@ TicketVerificationProcessManager#handle(...) -> TicketVerificationProvider#verif
 ```
 
 The acceptance baseline remains commit `c5319de`; the same source identities
-and direct publication were revalidated for Lot 03 on descendant commit
+and direct publication were revalidated through Lot 04 on descendant commit
 `cc82485` without changing this slice.
 
 This last arrow is a Java symbol-resolution fact only. It does not yet emit
@@ -252,21 +252,33 @@ reactors, profiles and generated source roots need later real evidence.
   collections. These forms are required Fragments evidence, not permission to
   build a general dependency-injection simulator.
 
+## Lot 04 result
+
+The explicitly approved option A promotes scanning to an application port:
+
+```text
+ArchitectureScanner.scan({ projectPath })
+  -> ArchitectureGraph
+  -> language-neutral diagnostics
+```
+
+The TypeScript and Java adapters remain independent. Scan-scope configuration,
+Maven, javac, `tsconfig`, compiler caches and Redux conventions do not enter the
+port. The MCP consumes the port without a public protocol change; Java remains
+unexposed through CLI/MCP until the dedicated integration lot.
+
+The Fragments `WriteTicketController#verify` mapping and resolved dispatch
+produce a protocol Event, a controller Handler and a Command Event.
+`CommandHandler<VerifyTicketCommand>` independently proves the command-handler
+listener. Both branches meet at the same Command identity without simulating
+the runtime `CommandBus` registry.
+
 ## Next investigation
 
-Lot 03 translates the proven Java semantic evidence into the first bounded
-domain-event `ArchitectureGraph` projection. Concrete `DomainEvent` identity
-proves Event nodes, `EventHandler<E>` proves `LISTENS_TO`, and the resolved
-argument of `DomainEventPublisher.publish` proves `DISPATCHES`. A direct
-provider invocation remains evidence only and does not create an External.
-
-The language-neutral scanner port review is now due. The observed common
-boundary is an asynchronous request producing an `ArchitectureGraph` and
-language-neutral diagnostics from an optional bounded file scope. The
-repository's current MCP-owned `ArchitectureGraphLoader` is evidence for this
-shape, but it is not yet an application port and must not accumulate Maven,
-javac, TypeScript or Redux options. No port change is authorized until the
-review is explicitly accepted.
+Lot 05 may investigate the outbox boundary from one real producer domain event
+to destination/version-specific integration events and SQS or inbox handlers.
+It must preserve any gap that cannot be justified from mappings, envelopes and
+routes.
 
 Direct publication is not general interprocedural propagation. Helpers that
 capture publishers, injected gateway calls and discriminated branches remain

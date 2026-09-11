@@ -26,7 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
-| 15. Java semantic feasibility              | ACTIVE: first Java graph delivered        |
+| 15. Java semantic feasibility              | ACTIVE: HTTP/Command graph delivered      |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1153,7 +1153,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — lots 00 to 03 delivered, shared-port review required**
+**Status: ACTIVE — lots 00 to 04 delivered, outbox/SQS next**
 
 ### Goal
 
@@ -1185,6 +1185,10 @@ relations and important absent relations for unresolved or name-only matches.
   `ArchitectureGraph`.
 - Do not introduce an intermediate facts model for the initial work.
 - Keep full project resolution context separate from architectural scan scope.
+- Use the human-approved language-neutral `ArchitectureScanner` application
+  port with independent TypeScript and Java adapters.
+- Keep language-specific scan scope and compiler configuration out of the port
+  until another real caller proves a shared input.
 
 The complete decision and staged destination are recorded in
 `docs/architecture/java-semantic-feasibility.md`. The visual objective and lot
@@ -1207,17 +1211,21 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   domain-event publication by argument type and maps typed listening and
   publication into `LISTENS_TO` and `DISPATCHES` without exposing Java concepts
   in the graph.
+- Lot 04 introduces the shared application scanner port, routes MCP through its
+  TypeScript adapter without changing the MCP protocol, and adds the Java HTTP
+  signal, Command and typed command-handler projection.
 
 ### Probable next behaviors
 
-1. Complete the human review of the smallest stable scanner port shared by the
-   TypeScript and Java adapters.
-2. Only after that decision, define the Lot 04 HTTP/command acceptance without
-   changing Event semantics.
+1. Select one real producer event for the Lot 05 outbox/SQS acceptance.
+2. Prove destination and versioned integration identities without collapsing
+   them into their source domain event.
+3. Preserve gaps where serialization or runtime routing prevents static proof.
 
 ### Known gaps
 
-- The JDK compiler API is selected but has not entered the production scanner.
+- The JDK compiler API remains behind the Java adapter and is not yet wired to
+  the public CLI/MCP composition.
 - Maven/classpath loading and scan-scope separation remain isolated from the
   production scanner.
 - Spring-created handlers, destination-specific integration mappings,
@@ -1250,12 +1258,13 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   `LISTENS_TO`/`DISPATCHES` edges while keeping the injected provider absent.
 - Helper-captured dispatches, injected gateways and discriminated branches are
   recorded as future proof problems, not inferred graph relations.
+- Configured Spring mappings, the resolved `CommandBus.dispatch` argument and
+  `CommandHandler<C>` produce the first HTTP/Command Java graph.
+- The command handler does not dispatch a domain event in Lot 04 because the
+  real source crosses aggregate registration and a method reference.
 
 ### Open design questions
 
-- Should the existing MCP-local graph-loader seam be promoted now into a
-  language-neutral application port with independent TypeScript and Java
-  adapters?
 - Which second real Maven shape would justify multiple source roots,
   multi-module reactors or generated-source support?
 

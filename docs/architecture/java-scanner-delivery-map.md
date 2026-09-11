@@ -4,17 +4,17 @@ Last updated: 11 September 2026.
 
 ## Current position
 
-**Lots 00 to 03 are delivered. The shared scanner port review is now required.**
+**Lots 00 to 04 are delivered. Lot 05 is next and has not started.**
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
       DONE             DONE              DONE                  DONE
 
-                         -> [shared scanner port review]
-                                      NOW
+                         -> [shared scanner port]
+                                     DONE
 
 -> [04 HTTP/commands] -> [05 outbox/SQS] -> [06 projections]
-          LATER                LATER              LATER
+          DONE                 NEXT               LATER
 
 -> [07 externals] -> [08 CLI/MCP] -> [09 more corpora]
         LATER             LATER            LONG TERM
@@ -90,7 +90,7 @@ in `ArchitectureGraph`.
 | 01  | DELIVERED | Select a Java semantic engine.                                                                         | Controlled Java 21 fixture and real Fragments Maven slice resolve types, generics, methods and locations.                      |
 | 02  | DELIVERED | Load a Maven project with complete resolution context and bounded scan scope.                          | Out-of-scope sources resolve symbols without entering scope; diagnostics retain source and scope information.                  |
 | 03  | DELIVERED | Detect domain events, typed local handlers and proven publication.                                     | First `ArchitectureGraph` projection for the ticket-verification event slice, including important absent edges.                |
-| 04  | PROPOSED  | Add HTTP protocol signals, commands and typed command handlers.                                        | Controller-to-command entry is proven without changing the meaning of Event.                                                   |
+| 04  | DELIVERED | Add the shared scanner port, HTTP protocol signals, commands and typed command handlers.               | Controller-to-command entry is proven without changing the meaning of Event or the public MCP protocol.                        |
 | 05  | PROPOSED  | Reconstruct outbox mappings, destination/versioned integration events, SQS routes and inbox consumers. | Producer and consumer identities remain distinct; unsupported causal gaps remain explicit.                                     |
 | 06  | PROPOSED  | Detect event-fed projection State and projection-sync signals.                                         | State granularity comes from a real projection acceptance, not table-name guessing.                                            |
 | 07  | PROPOSED  | Detect meaningful external boundaries through resolved adapters.                                       | A port call becomes `CALLS_EXTERNAL` only when adapter resolution proves HTTP, SQS, storage, process or persistence execution. |
@@ -166,6 +166,36 @@ in `ArchitectureGraph`.
 - The Java detector is not wired into the public CLI or MCP and no shared
   scanner port has been introduced.
 
+### Lot 04 — shared port and HTTP/Command
+
+- The human-approved `ArchitectureScanner` port lives at the application
+  boundary. Its asynchronous contract accepts a project path and returns the
+  canonical graph plus language-neutral diagnostics.
+- TypeScript and Java adapters implement that port independently. Maven,
+  javac, `tsconfig`, compiler reuse and Redux remain adapter details.
+- The MCP now depends on `ArchitectureScanner`; its tools and wire protocol are
+  unchanged. The deployed composition still selects the TypeScript adapter.
+- Java scan scope remains configuration of the Java evidence loader. It was
+  not added to the shared port without a second cross-language consumer.
+- Configured Spring annotation identities prove the HTTP mapping. The resolved
+  `CommandBus.dispatch` argument proves the dispatched command, and
+  `CommandHandler<C>` proves the command listener.
+- The real Fragments slice yields:
+
+  ```text
+  WriteTicketController#verify(...)
+    --LISTENS_TO--> protocol:http:POST:/api/tickets/verify
+    --DISPATCHES--> java-command:...VerifyTicketCommand
+
+  VerifyTicketCommandHandler
+    --LISTENS_TO--> java-command:...VerifyTicketCommand
+  ```
+
+- `CommandBus` remains an implementation detail. No `DISPATCHES` relation is
+  emitted from the command handler to `TicketVerifyAcceptedEvent`: the current
+  path crosses aggregate registration and `forEach(eventPublisher::publish)`,
+  which Lot 04 does not prove interprocedurally.
+
 ## Fragments feedback loop
 
 The App Store audit currently identifies two distinct opportunities:
@@ -187,7 +217,7 @@ this roadmap. They may share graph vocabulary, but they must not be merged into
 one implementation cycle: their semantic engines and proof mechanisms differ.
 
 The Java reference source was first pinned at Fragments commit `c5319de` and
-revalidated for Lot 03 at descendant commit `cc82485`, after the later App
+revalidated through Lot 04 at descendant commit `cc82485`, after the later App
 Store lots described in `docs/audits/app-store-readiness-2026-09-11.md` in the
 Fragments repository.
 
@@ -203,25 +233,26 @@ Fragments repository.
   commit, push and a clean worktree.
 - Stop before starting the following lot.
 
-## Required architecture review
+## Shared scanner port decision
 
-The first real Java graph now provides the evidence requested before deciding
-the shared port:
+The first real Java graph provided the evidence requested before deciding the
+shared port:
 
 ```text
 TypeScript loader/scanner ----> ArchitectureGraph
 Java Maven context/detector --> ArchitectureGraph
 ```
 
-The repository already contains an `ArchitectureGraphLoader` function type at
-the MCP boundary, but it is owned by MCP, accepts only a project path and is
-backed exclusively by the TypeScript loader. The Java path additionally needs
-an explicit source scope and returns diagnostics before graph projection.
+Option A was explicitly approved before Lot 04. The former MCP-local
+`ArchitectureGraphLoader` seam is now an application-owned
+`ArchitectureScanner`; TypeScript and Java adapters converge only on its graph
+and diagnostic result. The port does not grow one field per compiler or
+framework. Additional shared inputs require evidence from another real caller.
 
-The recommendation is to promote a minimal asynchronous graph-loading port to
-the application boundary before Lot 04, with independent TypeScript and Java
-adapters. Its stable contract should express project identity, optional file
-scope, canonical graph and language-neutral diagnostics. Maven, javac,
-`tsconfig`, compiler programs and Redux configuration must remain adapter
-details. This is a proposed structural boundary and still requires explicit
-human approval before implementation.
+## Next acceptance boundary
+
+Lot 05 should start from one producer event and prove only the outbox mappings,
+public integration identities and routes that are statically connected. A
+domain event and each destination/version-specific integration event remain
+separate Event nodes. Serialization or table proximity alone cannot bridge a
+causal gap.
