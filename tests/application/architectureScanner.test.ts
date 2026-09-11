@@ -32,6 +32,32 @@ describe("Architecture scanner port", () => {
         source: { file: "fixture/AcceptedHandler.java", line: 5, inScanScope: true },
       },
       domainEventPublications: [],
+      command: {
+        qualifiedName: "fixture.VerifyCommand",
+        assignableToCommand: true,
+        source: { file: "fixture/VerifyCommand.java", line: 3, inScanScope: false },
+      },
+      commandHandler: {
+        qualifiedName: "fixture.VerifyCommandHandler",
+        commandType: "fixture.VerifyCommand",
+        source: { file: "fixture/VerifyCommandHandler.java", line: 5, inScanScope: true },
+      },
+      httpEndpoint: {
+        controller: "fixture.VerifyController",
+        handler: "fixture.VerifyController#verify()",
+        httpMethod: "POST",
+        path: "/verify",
+        source: { file: "fixture/VerifyController.java", line: 7, inScanScope: true },
+      },
+      commandDispatches: [
+        {
+          owner: "fixture.CommandBus",
+          method: "dispatch(fixture.Command)",
+          caller: "fixture.VerifyController#verify()",
+          argumentType: "fixture.VerifyCommand",
+          source: { file: "fixture/VerifyController.java", line: 9, inScanScope: true },
+        },
+      ],
       diagnostics: [
         {
           kind: "WARNING",
@@ -49,6 +75,7 @@ describe("Architecture scanner port", () => {
     expect(typeScriptResult).toEqual({ graph: typeScriptGraph, diagnostics: [] });
     expect(loadJavaEvidence).toHaveBeenCalledWith("/workspace/backend");
     expect(javaResult.graph.findNode("java-domain-event:fixture.AcceptedEvent")).toBeDefined();
+    expect(javaResult.graph.findNode("protocol:http:POST:/verify")).toBeDefined();
     expect(javaResult.diagnostics).toEqual([
       {
         severity: "warning",
