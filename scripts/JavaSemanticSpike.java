@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -115,11 +117,20 @@ public final class JavaSemanticSpike {
                     config.domainEventPublishMethod(),
                     config);
 
+            CommandSliceEvidence commandSlice = analyzeCommandSlice(
+                    units,
+                    trees,
+                    elements,
+                    types,
+                    diagnostics,
+                    config);
+
             return new ProbeResult(
                     typeEvidence,
                     handlerEvidence,
                     invocations,
                     publications,
+                    commandSlice,
                     diagnosticEvidence(diagnostics, config));
         }
     }
@@ -262,6 +273,150 @@ public final class JavaSemanticSpike {
         return result;
     }
 
+    private static CommandSliceEvidence analyzeCommandSlice(
+            List<? extends CompilationUnitTree> units,
+            Trees trees,
+            Elements elements,
+            Types types,
+            DiagnosticCollector<JavaFileObject> diagnostics,
+            Config config) {
+        if (config.command() == null) return null;
+
+        TypeElement commandMarker = requiredType(elements, config.commandMarker(), diagnostics);
+        TypeElement command = requiredType(elements, config.command(), diagnostics);
+        CommandEvidence commandEvidence = new CommandEvidence(
+                config.command(),
+                types.isAssignable(types.erasure(command.asType()), types.erasure(commandMarker.asType())),
+                locationOf(trees, command, config));
+
+        TypeElement handler = requiredType(elements, config.commandHandler(), diagnostics);
+        TypeMirror commandType = findGenericArgument(
+                handler.asType(),
+                config.commandHandlerInterface(),
+                types,
+                new HashSet<>());
+        if (commandType == null) {
+            throw new IllegalStateException(
+                    config.commandHandler() + " does not implement " + config.commandHandlerInterface()
+                            + " with a resolvable type argument");
+        }
+        CommandHandlerEvidence handlerEvidence = new CommandHandlerEvidence(
+                config.commandHandler(),
+                commandType.toString(),
+                locationOf(trees, handler, config));
+
+        TypeElement controller = requiredType(elements, config.controller(), diagnostics);
+        List<ExecutableElement> controllerMethods = controller.getEnclosedElements().stream()
+                .filter(ExecutableElement.class::isInstance)
+                .map(ExecutableElement.class::cast)
+                .filter(method -> method.getSimpleName().contentEquals(config.controllerMethod()))
+                .toList();
+        if (controllerMethods.size() != 1) {
+            throw new IllegalStateException(
+                    "Expected exactly one " + config.controller() + "#" + config.controllerMethod());
+        }
+        ExecutableElement controllerMethod = controllerMethods.getFirst();
+        String basePath = annotationPath(controller, config.requestMappingAnnotation());
+        String methodPath = annotationPath(controllerMethod, config.httpMethodMappingAnnotation());
+        if (basePath == null || methodPath == null) {
+            throw new IllegalStateException("Could not resolve configured HTTP mapping annotations");
+        }
+        HttpEndpointEvidence endpoint = new HttpEndpointEvidence(
+                config.controller(),
+                callerSignature(controllerMethod),
+                config.httpMethod(),
+                combineHttpPaths(basePath, methodPath),
+                locationOf(trees, controllerMethod, config));
+
+        return new CommandSliceEvidence(
+                commandEvidence,
+                handlerEvidence,
+                endpoint,
+                findCommandDispatches(units, trees, config.commandBus(), config.commandDispatchMethod(), config));
+    }
+
+    private static String annotationPath(Element element, String annotationType) {
+        for (AnnotationMirror annotation : element.getAnnotationMirrors()) {
+            Element declaration = annotation.getAnnotationType().asElement();
+            if (!(declaration instanceof TypeElement type)
+                    || !type.getQualifiedName().contentEquals(annotationType)) {
+                continue;
+            }
+            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry
+                    : annotation.getElementValues().entrySet()) {
+                String property = entry.getKey().getSimpleName().toString();
+                if (!property.equals("value") && !property.equals("path")) continue;
+                Object raw = entry.getValue().getValue();
+                if (raw instanceof List<?> values && !values.isEmpty()
+                        && values.getFirst() instanceof AnnotationValue value
+                        && value.getValue() instanceof String path) {
+                    return path;
+                }
+                if (raw instanceof String path) return path;
+            }
+        }
+        return null;
+    }
+
+    private static String combineHttpPaths(String basePath, String methodPath) {
+        String combined = ("/" + basePath + "/" + methodPath).replaceAll("/{2,}", "/");
+        return combined.length() > 1 && combined.endsWith("/")
+                ? combined.substring(0, combined.length() - 1)
+                : combined;
+    }
+
+    private static List<CommandDispatchEvidence> findCommandDispatches(
+            List<? extends CompilationUnitTree> units,
+            Trees trees,
+            String commandBus,
+            String dispatchMethod,
+            Config config) {
+        List<CommandDispatchEvidence> result = new ArrayList<>();
+        for (CompilationUnitTree unit : units) {
+            new TreePathScanner<Void, Void>() {
+                private final Deque<ExecutableElement> callers = new ArrayDeque<>();
+
+                @Override
+                public Void visitMethod(MethodTree method, Void unused) {
+                    Element element = trees.getElement(getCurrentPath());
+                    if (!(element instanceof ExecutableElement executable)) {
+                        return super.visitMethod(method, unused);
+                    }
+                    callers.push(executable);
+                    try {
+                        return super.visitMethod(method, unused);
+                    } finally {
+                        callers.pop();
+                    }
+                }
+
+                @Override
+                public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                    Element element = trees.getElement(getCurrentPath());
+                    if (element instanceof ExecutableElement executable
+                            && executable.getEnclosingElement() instanceof TypeElement owner
+                            && owner.getQualifiedName().contentEquals(commandBus)
+                            && executable.getSimpleName().contentEquals(dispatchMethod)
+                            && invocation.getArguments().size() == 1
+                            && !callers.isEmpty()) {
+                        TypeMirror argumentType = trees.getTypeMirror(new TreePath(
+                                getCurrentPath(), invocation.getArguments().getFirst()));
+                        if (argumentType != null) {
+                            result.add(new CommandDispatchEvidence(
+                                    owner.getQualifiedName().toString(),
+                                    executableSignature(executable),
+                                    callerSignature(callers.peek()),
+                                    argumentType.toString(),
+                                    locationOf(trees, getCurrentPath(), config)));
+                        }
+                    }
+                    return super.visitMethodInvocation(invocation, unused);
+                }
+            }.scan(unit, null);
+        }
+        return result;
+    }
+
     private static String executableSignature(ExecutableElement executable) {
         return executable.getSimpleName() + "(" + executable.getParameters().stream()
                 .map(parameter -> parameter.asType().toString())
@@ -339,6 +494,17 @@ public final class JavaSemanticSpike {
             String providerMethod,
             String domainEventPublisher,
             String domainEventPublishMethod,
+            String command,
+            String commandMarker,
+            String commandHandlerInterface,
+            String commandHandler,
+            String controller,
+            String controllerMethod,
+            String requestMappingAnnotation,
+            String httpMethodMappingAnnotation,
+            String httpMethod,
+            String commandBus,
+            String commandDispatchMethod,
             List<Path> sources,
             List<Path> scanSources,
             List<String> events) {
@@ -369,6 +535,17 @@ public final class JavaSemanticSpike {
                     single(options, "--provider-method"),
                     optional(options, "--domain-event-publisher"),
                     optional(options, "--domain-event-publish-method"),
+                    optional(options, "--command"),
+                    optional(options, "--command-marker"),
+                    optional(options, "--command-handler-interface"),
+                    optional(options, "--command-handler"),
+                    optional(options, "--controller"),
+                    optional(options, "--controller-method"),
+                    optional(options, "--request-mapping-annotation"),
+                    optional(options, "--http-method-mapping-annotation"),
+                    optional(options, "--http-method"),
+                    optional(options, "--command-bus"),
+                    optional(options, "--command-dispatch-method"),
                     sources,
                     scanSources,
                     many(options, "--event"));
@@ -461,11 +638,71 @@ public final class JavaSemanticSpike {
         }
     }
 
+    private record CommandEvidence(
+            String qualifiedName,
+            boolean assignableToCommand,
+            SourceLocation source) {
+        private String toJson() {
+            return "{\"qualifiedName\":" + quote(qualifiedName)
+                    + ",\"assignableToCommand\":" + assignableToCommand
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
+    private record CommandHandlerEvidence(
+            String qualifiedName,
+            String commandType,
+            SourceLocation source) {
+        private String toJson() {
+            return "{\"qualifiedName\":" + quote(qualifiedName)
+                    + ",\"commandType\":" + quote(commandType)
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
+    private record HttpEndpointEvidence(
+            String controller,
+            String handler,
+            String httpMethod,
+            String path,
+            SourceLocation source) {
+        private String toJson() {
+            return "{\"controller\":" + quote(controller)
+                    + ",\"handler\":" + quote(handler)
+                    + ",\"httpMethod\":" + quote(httpMethod)
+                    + ",\"path\":" + quote(path)
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
+    private record CommandDispatchEvidence(
+            String owner,
+            String method,
+            String caller,
+            String argumentType,
+            SourceLocation source) {
+        private String toJson() {
+            return "{\"owner\":" + quote(owner)
+                    + ",\"method\":" + quote(method)
+                    + ",\"caller\":" + quote(caller)
+                    + ",\"argumentType\":" + quote(argumentType)
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
+    private record CommandSliceEvidence(
+            CommandEvidence command,
+            CommandHandlerEvidence handler,
+            HttpEndpointEvidence endpoint,
+            List<CommandDispatchEvidence> dispatches) {
+    }
+
     private record ProbeResult(
             List<TypeEvidence> types,
             HandlerEvidence handler,
             List<InvocationEvidence> providerInvocations,
             List<PublicationEvidence> domainEventPublications,
+            CommandSliceEvidence commandSlice,
             List<DiagnosticEvidence> diagnostics) {
         private String toJson() {
             return "{\"engine\":\"jdk-compiler-api\",\"types\":"
@@ -475,6 +712,12 @@ public final class JavaSemanticSpike {
                     + jsonArray(providerInvocations.stream().map(InvocationEvidence::toJson).toList())
                     + ",\"domainEventPublications\":"
                     + jsonArray(domainEventPublications.stream().map(PublicationEvidence::toJson).toList())
+                    + ",\"command\":" + (commandSlice == null ? "null" : commandSlice.command().toJson())
+                    + ",\"commandHandler\":" + (commandSlice == null ? "null" : commandSlice.handler().toJson())
+                    + ",\"httpEndpoint\":" + (commandSlice == null ? "null" : commandSlice.endpoint().toJson())
+                    + ",\"commandDispatches\":" + (commandSlice == null
+                            ? "[]"
+                            : jsonArray(commandSlice.dispatches().stream().map(CommandDispatchEvidence::toJson).toList()))
                     + ",\"diagnostics\":" + jsonArray(diagnostics.stream().map(DiagnosticEvidence::toJson).toList())
                     + "}";
         }

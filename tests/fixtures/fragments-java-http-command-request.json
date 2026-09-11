@@ -1,0 +1,42 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": [
+    "com/nm/fragmentsclean/ticketContext/write/adapters/primary/springboot/controllers/WriteTicketController.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/usecases/VerifyTicketCommandHandler.java"
+  ],
+  "resolutionSources": [
+    "com/nm/fragmentsclean/sharedKernel/adapters/primary/springboot/CommandBus.java",
+    "com/nm/fragmentsclean/sharedKernel/businesslogic/models/DomainEvent.java",
+    "com/nm/fragmentsclean/sharedKernel/businesslogic/models/DomainEventPublisher.java",
+    "com/nm/fragmentsclean/sharedKernel/businesslogic/models/command/Command.java",
+    "com/nm/fragmentsclean/sharedKernel/businesslogic/models/command/CommandHandler.java",
+    "com/nm/fragmentsclean/sharedKernel/businesslogic/models/event/EventHandler.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/gateways/TicketVerificationProvider.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/models/TicketVerificationCompletedEvent.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/models/TicketVerifyAcceptedEvent.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/processManagers/TicketVerificationProcessManager.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/usecases/VerifyTicketCommand.java"
+  ],
+  "domainEvent": "com.nm.fragmentsclean.sharedKernel.businesslogic.models.DomainEvent",
+  "eventHandler": "com.nm.fragmentsclean.sharedKernel.businesslogic.models.event.EventHandler",
+  "handler": "com.nm.fragmentsclean.ticketContext.write.businesslogic.processManagers.TicketVerificationProcessManager",
+  "provider": "com.nm.fragmentsclean.ticketContext.write.businesslogic.gateways.TicketVerificationProvider",
+  "providerMethod": "verify",
+  "domainEventPublisher": "com.nm.fragmentsclean.sharedKernel.businesslogic.models.DomainEventPublisher",
+  "domainEventPublishMethod": "publish",
+  "events": [
+    "com.nm.fragmentsclean.ticketContext.write.businesslogic.models.TicketVerifyAcceptedEvent",
+    "com.nm.fragmentsclean.ticketContext.write.businesslogic.models.TicketVerificationCompletedEvent"
+  ],
+  "command": "com.nm.fragmentsclean.ticketContext.write.businesslogic.usecases.VerifyTicketCommand",
+  "commandMarker": "com.nm.fragmentsclean.sharedKernel.businesslogic.models.command.Command",
+  "commandHandlerInterface": "com.nm.fragmentsclean.sharedKernel.businesslogic.models.command.CommandHandler",
+  "commandHandler": "com.nm.fragmentsclean.ticketContext.write.businesslogic.usecases.VerifyTicketCommandHandler",
+  "controller": "com.nm.fragmentsclean.ticketContext.write.adapters.primary.springboot.controllers.WriteTicketController",
+  "controllerMethod": "verify",
+  "requestMappingAnnotation": "org.springframework.web.bind.annotation.RequestMapping",
+  "httpMethodMappingAnnotation": "org.springframework.web.bind.annotation.PostMapping",
+  "httpMethod": "POST",
+  "commandBus": "com.nm.fragmentsclean.sharedKernel.adapters.primary.springboot.CommandBus",
+  "commandDispatchMethod": "dispatch"
+}

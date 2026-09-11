@@ -132,6 +132,29 @@ const loadRequest = async (projectRoot, requestPath) => {
     fail("domainEventPublisher and domainEventPublishMethod must be provided together");
   }
 
+  const commandConfiguration = {
+    command: optionalString(request, "command"),
+    commandMarker: optionalString(request, "commandMarker"),
+    commandHandlerInterface: optionalString(request, "commandHandlerInterface"),
+    commandHandler: optionalString(request, "commandHandler"),
+    controller: optionalString(request, "controller"),
+    controllerMethod: optionalString(request, "controllerMethod"),
+    requestMappingAnnotation: optionalString(request, "requestMappingAnnotation"),
+    httpMethodMappingAnnotation: optionalString(request, "httpMethodMappingAnnotation"),
+    httpMethod: optionalString(request, "httpMethod"),
+    commandBus: optionalString(request, "commandBus"),
+    commandDispatchMethod: optionalString(request, "commandDispatchMethod"),
+  };
+  const configuredCommandProperties = Object.values(commandConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    configuredCommandProperties.length > 0 &&
+    configuredCommandProperties.length !== Object.keys(commandConfiguration).length
+  ) {
+    fail("all HTTP command request properties must be provided together");
+  }
+
   return {
     sourceRootName,
     sourceRoot,
@@ -144,6 +167,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     providerMethod: requireString(request, "providerMethod"),
     domainEventPublisher,
     domainEventPublishMethod,
+    ...commandConfiguration,
     events: requireStringArray(request, "events"),
   };
 };
@@ -189,6 +213,32 @@ const run = async () => {
             request.domainEventPublisher,
             "--domain-event-publish-method",
             request.domainEventPublishMethod,
+          ]
+        : []),
+      ...(request.command
+        ? [
+            "--command",
+            request.command,
+            "--command-marker",
+            request.commandMarker,
+            "--command-handler-interface",
+            request.commandHandlerInterface,
+            "--command-handler",
+            request.commandHandler,
+            "--controller",
+            request.controller,
+            "--controller-method",
+            request.controllerMethod,
+            "--request-mapping-annotation",
+            request.requestMappingAnnotation,
+            "--http-method-mapping-annotation",
+            request.httpMethodMappingAnnotation,
+            "--http-method",
+            request.httpMethod,
+            "--command-bus",
+            request.commandBus,
+            "--command-dispatch-method",
+            request.commandDispatchMethod,
           ]
         : []),
       ...[...new Set([...request.scanSources, ...request.resolutionSources])].flatMap((source) => [

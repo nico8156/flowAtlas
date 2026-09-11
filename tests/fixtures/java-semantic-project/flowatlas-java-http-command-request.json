@@ -1,0 +1,44 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": [
+    "fixture/application/VerifyTicketCommandHandler.java",
+    "fixture/http/WriteTicketController.java"
+  ],
+  "resolutionSources": [
+    "fixture/application/TicketVerificationProcessManager.java",
+    "fixture/commands/VerifyTicketCommand.java",
+    "fixture/events/TicketVerificationCompletedEvent.java",
+    "fixture/events/TicketVerifyAcceptedEvent.java",
+    "fixture/http/PostMapping.java",
+    "fixture/http/RequestMapping.java",
+    "fixture/infrastructure/CommandBus.java",
+    "fixture/ports/TicketVerificationProvider.java",
+    "fixture/shared/Command.java",
+    "fixture/shared/CommandHandler.java",
+    "fixture/shared/DomainEvent.java",
+    "fixture/shared/DomainEventPublisher.java",
+    "fixture/shared/EventHandler.java"
+  ],
+  "domainEvent": "fixture.shared.DomainEvent",
+  "eventHandler": "fixture.shared.EventHandler",
+  "handler": "fixture.application.TicketVerificationProcessManager",
+  "provider": "fixture.ports.TicketVerificationProvider",
+  "providerMethod": "verify",
+  "domainEventPublisher": "fixture.shared.DomainEventPublisher",
+  "domainEventPublishMethod": "publish",
+  "events": [
+    "fixture.events.TicketVerifyAcceptedEvent",
+    "fixture.events.TicketVerificationCompletedEvent"
+  ],
+  "command": "fixture.commands.VerifyTicketCommand",
+  "commandMarker": "fixture.shared.Command",
+  "commandHandlerInterface": "fixture.shared.CommandHandler",
+  "commandHandler": "fixture.application.VerifyTicketCommandHandler",
+  "controller": "fixture.http.WriteTicketController",
+  "controllerMethod": "verify",
+  "requestMappingAnnotation": "fixture.http.RequestMapping",
+  "httpMethodMappingAnnotation": "fixture.http.PostMapping",
+  "httpMethod": "POST",
+  "commandBus": "fixture.infrastructure.CommandBus",
+  "commandDispatchMethod": "dispatch"
+}
