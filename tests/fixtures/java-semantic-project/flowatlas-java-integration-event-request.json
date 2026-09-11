@@ -3,6 +3,8 @@
   "scanSources": [
     "fixture/integration/IntegrationEventDestinationResolver.java",
     "fixture/integration/IntegrationEventTypeCatalog.java",
+    "fixture/integration/InboxMessageRepository.java",
+    "fixture/integration/SqsIntegrationEventRouter.java",
     "fixture/integration/StableEnvelopeOutboxEventSender.java",
     "fixture/integration/TicketOutboxEventMetadataContributor.java",
     "fixture/integration/TicketSqsIntegrationEventHandlers.java"
@@ -53,5 +55,10 @@
   "integrationMessagePublisher": "fixture.integration.IntegrationMessagePublisher",
   "integrationMessagePublishMethod": "publish",
   "sqsHandlerInterface": "fixture.integration.SqsIntegrationEventHandler",
-  "sqsConfiguration": "fixture.integration.TicketSqsIntegrationEventHandlers"
+  "sqsConfiguration": "fixture.integration.TicketSqsIntegrationEventHandlers",
+  "sqsRouter": "fixture.integration.SqsIntegrationEventRouter",
+  "sqsRouterMethod": "route",
+  "inboxRepository": "fixture.integration.InboxMessageRepository",
+  "inboxClaimMethod": "claim",
+  "sqsHandleMethod": "handle"
 }

@@ -86,6 +86,8 @@ describe("Architecture scanner port", () => {
           handler: "fixture.Routes#accepted()",
           destination: "fixture-events",
           eventType: "fixture.accepted",
+          inboxBacked: true,
+          inboxSource: { file: "fixture/Router.java", line: 20, inScanScope: true },
           source: { file: "fixture/Routes.java", line: 10, inScanScope: true },
         },
       ],

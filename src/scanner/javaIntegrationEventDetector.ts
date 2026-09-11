@@ -26,6 +26,8 @@ type JavaIntegrationEventConsumerEvidence = {
   handler: string;
   destination: string;
   eventType: string;
+  inboxBacked: boolean;
+  inboxSource: JavaSourceLocation;
   source: JavaSourceLocation;
 };
 
@@ -80,6 +82,8 @@ export const detectJavaIntegrationEventGraph = (
     for (const consumer of evidence.integrationEventConsumers) {
       if (
         !consumer.source.inScanScope ||
+        !consumer.inboxBacked ||
+        !consumer.inboxSource.inScanScope ||
         consumer.destination !== mapping.destination ||
         consumer.eventType !== mapping.eventType
       ) {

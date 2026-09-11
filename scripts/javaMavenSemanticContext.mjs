@@ -174,6 +174,11 @@ const loadRequest = async (projectRoot, requestPath) => {
     integrationMessagePublishMethod: optionalString(request, "integrationMessagePublishMethod"),
     sqsHandlerInterface: optionalString(request, "sqsHandlerInterface"),
     sqsConfiguration: optionalString(request, "sqsConfiguration"),
+    sqsRouter: optionalString(request, "sqsRouter"),
+    sqsRouterMethod: optionalString(request, "sqsRouterMethod"),
+    inboxRepository: optionalString(request, "inboxRepository"),
+    inboxClaimMethod: optionalString(request, "inboxClaimMethod"),
+    sqsHandleMethod: optionalString(request, "sqsHandleMethod"),
   };
   const configuredIntegrationProperties = Object.values(integrationConfiguration).filter(
     (value) => value !== undefined,
@@ -310,6 +315,16 @@ const run = async () => {
             request.sqsHandlerInterface,
             "--sqs-configuration",
             request.sqsConfiguration,
+            "--sqs-router",
+            request.sqsRouter,
+            "--sqs-router-method",
+            request.sqsRouterMethod,
+            "--inbox-repository",
+            request.inboxRepository,
+            "--inbox-claim-method",
+            request.inboxClaimMethod,
+            "--sqs-handle-method",
+            request.sqsHandleMethod,
           ]
         : []),
       ...[...new Set([...request.scanSources, ...request.resolutionSources])].flatMap((source) => [

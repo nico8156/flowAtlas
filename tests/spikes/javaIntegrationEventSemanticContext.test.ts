@@ -44,12 +44,14 @@ describe("Java integration-event semantic context", () => {
             "fixture.integration.TicketSqsIntegrationEventHandlers#ticketReadHandler(fixture.integration.TicketReadHandler)",
           destination: "ticket-events",
           eventType: "ticket.verify.accepted",
+          inboxBacked: true,
         }),
         expect.objectContaining({
           handler:
             "fixture.integration.TicketSqsIntegrationEventHandlers#verificationHandler(fixture.application.TicketVerificationProcessManager)",
           destination: "ticket-verification-requested",
           eventType: "ticket.verify.accepted",
+          inboxBacked: true,
         }),
       ]),
     );

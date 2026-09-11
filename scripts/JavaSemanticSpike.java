@@ -472,11 +472,13 @@ public final class JavaSemanticSpike {
                 producerSimpleName);
         VersionEvidence version = findIntegrationVersion(trees, elements, config);
         SenderEvidence sender = findIntegrationSender(trees, elements, config);
+        SourceLocation inboxSource = proveInboxRouting(trees, elements, config);
         List<IntegrationConsumerEvidence> consumers = findIntegrationConsumers(
                 trees,
                 elements,
                 types,
-                config);
+                config,
+                inboxSource);
 
         List<IntegrationMappingEvidence> mappings = destinations.stream()
                 .map(destination -> new IntegrationMappingEvidence(
@@ -782,11 +784,61 @@ public final class JavaSemanticSpike {
         return new SenderEvidence(callerSignature(method), publications.getFirst());
     }
 
+    private static SourceLocation proveInboxRouting(
+            Trees trees,
+            Elements elements,
+            Config config) {
+        TypeElement router = requiredType(elements, config.sqsRouter(), null);
+        ExecutableElement routeMethod = requiredMethod(router, config.sqsRouterMethod());
+        List<SourceLocation> claims = new ArrayList<>();
+        List<ExecutableElement> delegatedMethods = new ArrayList<>();
+
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                ExecutableElement invoked = executableAt(trees, getCurrentPath());
+                if (invoked != null
+                        && ownerName(invoked).equals(config.inboxRepository())
+                        && invoked.getSimpleName().contentEquals(config.inboxClaimMethod())) {
+                    claims.add(locationOf(trees, getCurrentPath(), config));
+                }
+                if (invoked != null
+                        && ownerName(invoked).equals(config.sqsRouter())
+                        && !invoked.equals(routeMethod)) {
+                    delegatedMethods.add(invoked);
+                }
+                return super.visitMethodInvocation(invocation, unused);
+            }
+        }.scan(trees.getPath(routeMethod), null);
+
+        boolean dispatchesToHandler = delegatedMethods.stream().distinct().anyMatch(method -> {
+            final boolean[] found = { false };
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                    ExecutableElement invoked = executableAt(trees, getCurrentPath());
+                    if (invoked != null
+                            && ownerName(invoked).equals(config.sqsHandlerInterface())
+                            && invoked.getSimpleName().contentEquals(config.sqsHandleMethod())) {
+                        found[0] = true;
+                    }
+                    return super.visitMethodInvocation(invocation, unused);
+                }
+            }.scan(trees.getPath(method), null);
+            return found[0];
+        });
+        if (claims.size() != 1 || !dispatchesToHandler) {
+            throw new IllegalStateException("Could not prove inbox-backed SQS routing");
+        }
+        return claims.getFirst();
+    }
+
     private static List<IntegrationConsumerEvidence> findIntegrationConsumers(
             Trees trees,
             Elements elements,
             Types types,
-            Config config) {
+            Config config,
+            SourceLocation inboxSource) {
         TypeElement configuration = requiredType(elements, config.sqsConfiguration(), null);
         TypeElement handlerInterface = requiredType(elements, config.sqsHandlerInterface(), null);
         List<IntegrationConsumerEvidence> consumers = new ArrayList<>();
@@ -816,6 +868,8 @@ public final class JavaSemanticSpike {
                                     callerSignature(method),
                                     destination,
                                     eventType,
+                                    true,
+                                    inboxSource,
                                     locationOf(trees, method, config)));
                         }
                     }
@@ -1119,6 +1173,11 @@ public final class JavaSemanticSpike {
             String integrationMessagePublishMethod,
             String sqsHandlerInterface,
             String sqsConfiguration,
+            String sqsRouter,
+            String sqsRouterMethod,
+            String inboxRepository,
+            String inboxClaimMethod,
+            String sqsHandleMethod,
             List<Path> sources,
             List<Path> scanSources,
             List<String> events) {
@@ -1178,6 +1237,11 @@ public final class JavaSemanticSpike {
                     optional(options, "--integration-message-publish-method"),
                     optional(options, "--sqs-handler-interface"),
                     optional(options, "--sqs-configuration"),
+                    optional(options, "--sqs-router"),
+                    optional(options, "--sqs-router-method"),
+                    optional(options, "--inbox-repository"),
+                    optional(options, "--inbox-claim-method"),
+                    optional(options, "--sqs-handle-method"),
                     sources,
                     scanSources,
                     many(options, "--event"));
@@ -1376,11 +1440,15 @@ public final class JavaSemanticSpike {
             String handler,
             String destination,
             String eventType,
+            boolean inboxBacked,
+            SourceLocation inboxSource,
             SourceLocation source) {
         private String toJson() {
             return "{\"handler\":" + quote(handler)
                     + ",\"destination\":" + quote(destination)
                     + ",\"eventType\":" + quote(eventType)
+                    + ",\"inboxBacked\":" + inboxBacked
+                    + ",\"inboxSource\":" + inboxSource.toJson()
                     + ",\"source\":" + source.toJson()
                     + "}";
         }

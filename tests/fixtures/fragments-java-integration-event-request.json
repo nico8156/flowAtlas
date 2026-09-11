@@ -3,6 +3,8 @@
   "scanSources": [
     "com/nm/fragmentsclean/platform/eventing/IntegrationEventDestinationResolver.java",
     "com/nm/fragmentsclean/platform/eventing/IntegrationEventTypeCatalog.java",
+    "com/nm/fragmentsclean/sharedKernel/adapters/primary/springboot/sqs/SqsIntegrationEventRouter.java",
+    "com/nm/fragmentsclean/sharedKernel/adapters/secondary/gateways/repositories/jdbc/InboxMessageRepository.java",
     "com/nm/fragmentsclean/platform/eventing/StableEnvelopeOutboxEventSender.java",
     "com/nm/fragmentsclean/ticketContext/read/adapters/primary/springboot/sqs/TicketSqsIntegrationEventHandlers.java",
     "com/nm/fragmentsclean/ticketContext/write/businesslogic/eventing/TicketOutboxEventMetadataContributor.java"
@@ -47,5 +49,10 @@
   "integrationMessagePublisher": "com.nm.fragmentsclean.sharedKernel.businesslogic.eventing.IntegrationMessagePublisher",
   "integrationMessagePublishMethod": "publish",
   "sqsHandlerInterface": "com.nm.fragmentsclean.sharedKernel.adapters.primary.springboot.sqs.SqsIntegrationEventHandler",
-  "sqsConfiguration": "com.nm.fragmentsclean.ticketContext.read.adapters.primary.springboot.sqs.TicketSqsIntegrationEventHandlers"
+  "sqsConfiguration": "com.nm.fragmentsclean.ticketContext.read.adapters.primary.springboot.sqs.TicketSqsIntegrationEventHandlers",
+  "sqsRouter": "com.nm.fragmentsclean.sharedKernel.adapters.primary.springboot.sqs.SqsIntegrationEventRouter",
+  "sqsRouterMethod": "route",
+  "inboxRepository": "com.nm.fragmentsclean.sharedKernel.adapters.secondary.gateways.repositories.jdbc.InboxMessageRepository",
+  "inboxClaimMethod": "claim",
+  "sqsHandleMethod": "handle"
 }
