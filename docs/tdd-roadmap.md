@@ -26,7 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
-| 15. Java semantic feasibility              | ACTIVE: graph decision recorded           |
+| 15. Java semantic feasibility              | ACTIVE: engine selected                   |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1153,7 +1153,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — graph decision recorded, engine investigation next**
+**Status: ACTIVE — lots 00 and 01 delivered, project loading next**
 
 ### Goal
 
@@ -1187,26 +1187,33 @@ relations and important absent relations for unresolved or name-only matches.
 - Keep full project resolution context separate from architectural scan scope.
 
 The complete decision and staged destination are recorded in
-`docs/architecture/java-semantic-feasibility.md`.
+`docs/architecture/java-semantic-feasibility.md`. The visual objective and lot
+tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 
-### Delivered lot
+### Delivered lots
 
 - Lot 00 records the approved graph semantics, initial identities, first real
   acceptance and scope guardrails. It changes no production scanner behavior.
+- Lot 01 selects the JDK compiler API from a documented candidate comparison.
+  An isolated probe resolves domain-event assignability, `EventHandler<E>`, an
+  injected provider method and exact source identities on both a controlled
+  fixture and the Fragments Maven Java 21 slice. It changes no production
+  scanner behavior.
 
 ### Probable next behaviors
 
-1. An isolated Java 21 fixture demonstrates assignability and generic handler
-   type recovery with candidate semantic engines.
-2. The same semantic queries resolve against the pinned real Fragments source
-   with exact source locations and fully qualified identities.
-3. The observed evidence selects one engine and records unsupported cases
-   before a production detector is proposed.
+1. Load Maven resolution context while keeping architectural scan scope
+   explicit and bounded.
+2. Surface diagnostics and unresolved symbols without creating dangling graph
+   edges or architecture inferred from compiler error types.
+3. Replay the Lot 01 probe through that context before proposing the first
+   domain-event detector.
 
 ### Known gaps
 
-- No Java semantic engine has been selected.
-- Source-only versus bounded bytecode assistance remains open.
+- The JDK compiler API is selected but has not entered the production scanner.
+- Maven/classpath loading and scan-scope separation exist only in the isolated
+  feasibility acceptance.
 - Spring-created handlers, destination-specific integration mappings,
   projection State and port-to-adapter External resolution are later acceptance
   territory.
@@ -1214,16 +1221,23 @@ The complete decision and staged destination are recorded in
 
 ### Discovered micro-cycles
 
-- None. Lot 00 is an architecture and roadmap decision only.
+- A controlled Java 21 fixture rejects a name-only `ConventionOnlyEvent` while
+  resolving two concrete `DomainEvent` implementations.
+- Generic supertype traversal recovers
+  `EventHandler<TicketVerifyAcceptedEvent>` by fully qualified type identity.
+- Compiler tree elements resolve the injected `verify` invocation to
+  `TicketVerificationProvider`, its exact signature and source location.
+- The same queries pass on the Fragments ticket-verification process manager
+  with a Maven-derived classpath and no diagnostics.
+- Source-only analysis exposed unresolved third-party/generated types, so
+  bytecode may assist resolution but cannot widen emitted scan scope.
 
 ### Open design questions
 
-- Which Java engine supplies the required Java 21/Maven semantics with the
-  smallest adapter surface?
-- Can the first acceptance remain source-based, or is limited compiled-type
-  information required?
 - Does the first production behavior justify a language-neutral scanner port,
   or can that boundary wait for repeated evidence?
+- What is the smallest explicit Java scan request that keeps Maven context out
+  of the canonical graph while supporting multiple source roots?
 
 ### Completion criteria
 

@@ -1,0 +1,360 @@
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.Trees;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.StreamSupport;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
+
+public final class JavaSemanticSpike {
+    private JavaSemanticSpike() {
+    }
+
+    public static void main(String[] arguments) throws Exception {
+        Config config = Config.parse(arguments);
+        ProbeResult result = analyze(config);
+        System.out.println(result.toJson());
+    }
+
+    private static ProbeResult analyze(Config config) throws IOException {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            throw new IllegalStateException("A JDK with the system Java compiler is required");
+        }
+
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null)) {
+            Iterable<? extends JavaFileObject> sourceFiles = fileManager.getJavaFileObjectsFromPaths(config.sources());
+            List<String> options = new ArrayList<>(List.of(
+                    "-proc:none",
+                    "--release", config.release(),
+                    "-sourcepath", config.sourceRoot().toString()));
+            if (config.classpath() != null) {
+                options.add("-classpath");
+                options.add(config.classpath());
+            }
+
+            JavacTask task = (JavacTask) compiler.getTask(
+                    null,
+                    fileManager,
+                    diagnostics,
+                    options,
+                    null,
+                    sourceFiles);
+            List<? extends CompilationUnitTree> units = StreamSupport.stream(
+                    task.parse().spliterator(), false).toList();
+            task.analyze();
+
+            Trees trees = Trees.instance(task);
+            Elements elements = task.getElements();
+            Types types = task.getTypes();
+
+            TypeElement domainEvent = requiredType(elements, config.domainEvent(), diagnostics);
+            List<TypeEvidence> typeEvidence = config.events().stream()
+                    .map(eventName -> {
+                        TypeElement event = requiredType(elements, eventName, diagnostics);
+                        boolean assignable = types.isAssignable(
+                                types.erasure(event.asType()),
+                                types.erasure(domainEvent.asType()));
+                        return new TypeEvidence(eventName, assignable, locationOf(trees, event, config.sourceRoot()));
+                    })
+                    .toList();
+
+            TypeElement handler = requiredType(elements, config.handler(), diagnostics);
+            TypeMirror eventType = findGenericArgument(
+                    handler.asType(),
+                    config.eventHandler(),
+                    types,
+                    new HashSet<>());
+            if (eventType == null) {
+                throw new IllegalStateException(
+                        config.handler() + " does not implement " + config.eventHandler() + " with a resolvable type argument");
+            }
+            HandlerEvidence handlerEvidence = new HandlerEvidence(
+                    config.handler(),
+                    eventType.toString(),
+                    locationOf(trees, handler, config.sourceRoot()));
+
+            List<InvocationEvidence> invocations = findProviderInvocations(
+                    units,
+                    trees,
+                    config.provider(),
+                    config.providerMethod(),
+                    config.sourceRoot());
+
+            return new ProbeResult(typeEvidence, handlerEvidence, invocations, diagnosticMessages(diagnostics));
+        }
+    }
+
+    private static TypeElement requiredType(
+            Elements elements,
+            String qualifiedName,
+            DiagnosticCollector<JavaFileObject> diagnostics) {
+        TypeElement result = elements.getTypeElement(qualifiedName);
+        if (result != null) return result;
+        throw new IllegalStateException(
+                "Could not resolve " + qualifiedName + ". Diagnostics: " + String.join(" | ", diagnosticMessages(diagnostics)));
+    }
+
+    private static TypeMirror findGenericArgument(
+            TypeMirror candidate,
+            String targetInterface,
+            Types types,
+            Set<String> visited) {
+        String identity = candidate.toString();
+        if (!visited.add(identity)) return null;
+
+        if (candidate instanceof DeclaredType declared) {
+            Element element = declared.asElement();
+            if (element instanceof TypeElement type
+                    && type.getQualifiedName().contentEquals(targetInterface)
+                    && declared.getTypeArguments().size() == 1) {
+                return declared.getTypeArguments().getFirst();
+            }
+        }
+
+        for (TypeMirror supertype : types.directSupertypes(candidate)) {
+            TypeMirror result = findGenericArgument(supertype, targetInterface, types, visited);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    private static List<InvocationEvidence> findProviderInvocations(
+            List<? extends CompilationUnitTree> units,
+            Trees trees,
+            String provider,
+            String providerMethod,
+            Path sourceRoot) {
+        List<InvocationEvidence> result = new ArrayList<>();
+
+        for (CompilationUnitTree unit : units) {
+            new TreePathScanner<Void, Void>() {
+                private final Deque<ExecutableElement> callers = new ArrayDeque<>();
+
+                @Override
+                public Void visitMethod(MethodTree method, Void unused) {
+                    Element element = trees.getElement(getCurrentPath());
+                    if (!(element instanceof ExecutableElement executable)) {
+                        return super.visitMethod(method, unused);
+                    }
+                    callers.push(executable);
+                    try {
+                        return super.visitMethod(method, unused);
+                    } finally {
+                        callers.pop();
+                    }
+                }
+
+                @Override
+                public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                    Element element = trees.getElement(getCurrentPath());
+                    if (element instanceof ExecutableElement executable
+                            && executable.getEnclosingElement() instanceof TypeElement owner
+                            && owner.getQualifiedName().contentEquals(provider)
+                            && executable.getSimpleName().contentEquals(providerMethod)
+                            && !callers.isEmpty()) {
+                        result.add(new InvocationEvidence(
+                                owner.getQualifiedName().toString(),
+                                executableSignature(executable),
+                                callerSignature(callers.peek()),
+                                locationOf(trees, getCurrentPath(), sourceRoot)));
+                    }
+                    return super.visitMethodInvocation(invocation, unused);
+                }
+            }.scan(unit, null);
+        }
+
+        return result;
+    }
+
+    private static String executableSignature(ExecutableElement executable) {
+        return executable.getSimpleName() + "(" + executable.getParameters().stream()
+                .map(parameter -> parameter.asType().toString())
+                .reduce((left, right) -> left + "," + right)
+                .orElse("") + ")";
+    }
+
+    private static String callerSignature(ExecutableElement executable) {
+        TypeElement owner = (TypeElement) executable.getEnclosingElement();
+        return owner.getQualifiedName() + "#" + executableSignature(executable);
+    }
+
+    private static SourceLocation locationOf(Trees trees, Element element, Path sourceRoot) {
+        TreePath path = trees.getPath(element);
+        if (path == null) {
+            throw new IllegalStateException("No source location for " + element);
+        }
+        return locationOf(trees, path, sourceRoot);
+    }
+
+    private static SourceLocation locationOf(Trees trees, TreePath path, Path sourceRoot) {
+        CompilationUnitTree unit = path.getCompilationUnit();
+        long position = trees.getSourcePositions().getStartPosition(unit, path.getLeaf());
+        long line = unit.getLineMap().getLineNumber(position);
+        Path source = Path.of(unit.getSourceFile().toUri()).toAbsolutePath().normalize();
+        Path root = sourceRoot.toAbsolutePath().normalize();
+        String file = source.startsWith(root) ? root.relativize(source).toString() : source.toString();
+        return new SourceLocation(file, line);
+    }
+
+    private static List<String> diagnosticMessages(DiagnosticCollector<JavaFileObject> diagnostics) {
+        return diagnostics.getDiagnostics().stream()
+                .filter(diagnostic -> diagnostic.getKind() == Diagnostic.Kind.ERROR)
+                .map(diagnostic -> diagnostic.getMessage(null))
+                .toList();
+    }
+
+    private record Config(
+            String release,
+            Path sourceRoot,
+            String classpath,
+            String domainEvent,
+            String eventHandler,
+            String handler,
+            String provider,
+            String providerMethod,
+            List<Path> sources,
+            List<String> events) {
+
+        private static Config parse(String[] arguments) {
+            Map<String, List<String>> options = new LinkedHashMap<>();
+            for (int index = 0; index < arguments.length; index += 2) {
+                if (index + 1 >= arguments.length || !arguments[index].startsWith("--")) {
+                    throw new IllegalArgumentException("Expected --option value pairs");
+                }
+                options.computeIfAbsent(arguments[index], ignored -> new ArrayList<>()).add(arguments[index + 1]);
+            }
+
+            return new Config(
+                    single(options, "--release"),
+                    Path.of(single(options, "--source-root")),
+                    optional(options, "--classpath"),
+                    single(options, "--domain-event"),
+                    single(options, "--event-handler"),
+                    single(options, "--handler"),
+                    single(options, "--provider"),
+                    single(options, "--provider-method"),
+                    many(options, "--source").stream().map(Path::of).toList(),
+                    many(options, "--event"));
+        }
+
+        private static String single(Map<String, List<String>> options, String name) {
+            List<String> values = many(options, name);
+            if (values.size() != 1) throw new IllegalArgumentException("Expected exactly one " + name);
+            return values.getFirst();
+        }
+
+        private static String optional(Map<String, List<String>> options, String name) {
+            List<String> values = options.getOrDefault(name, List.of());
+            if (values.size() > 1) throw new IllegalArgumentException("Expected at most one " + name);
+            return values.isEmpty() ? null : values.getFirst();
+        }
+
+        private static List<String> many(Map<String, List<String>> options, String name) {
+            List<String> values = options.getOrDefault(name, List.of());
+            if (values.isEmpty()) throw new IllegalArgumentException("Expected at least one " + name);
+            return values;
+        }
+    }
+
+    private record SourceLocation(String file, long line) {
+        private String toJson() {
+            return "{\"file\":" + quote(file) + ",\"line\":" + line + "}";
+        }
+    }
+
+    private record TypeEvidence(
+            String qualifiedName,
+            boolean assignableToDomainEvent,
+            SourceLocation source) {
+        private String toJson() {
+            return "{\"qualifiedName\":" + quote(qualifiedName)
+                    + ",\"assignableToDomainEvent\":" + assignableToDomainEvent
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
+    private record HandlerEvidence(String qualifiedName, String eventType, SourceLocation source) {
+        private String toJson() {
+            return "{\"qualifiedName\":" + quote(qualifiedName)
+                    + ",\"eventType\":" + quote(eventType)
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
+    private record InvocationEvidence(
+            String owner,
+            String method,
+            String caller,
+            SourceLocation source) {
+        private String toJson() {
+            return "{\"owner\":" + quote(owner)
+                    + ",\"method\":" + quote(method)
+                    + ",\"caller\":" + quote(caller)
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
+    private record ProbeResult(
+            List<TypeEvidence> types,
+            HandlerEvidence handler,
+            List<InvocationEvidence> providerInvocations,
+            List<String> diagnostics) {
+        private String toJson() {
+            return "{\"engine\":\"jdk-compiler-api\",\"types\":"
+                    + jsonArray(types.stream().map(TypeEvidence::toJson).toList())
+                    + ",\"handler\":" + handler.toJson()
+                    + ",\"providerInvocations\":"
+                    + jsonArray(providerInvocations.stream().map(InvocationEvidence::toJson).toList())
+                    + ",\"diagnostics\":" + jsonArray(diagnostics.stream().map(JavaSemanticSpike::quote).toList())
+                    + "}";
+        }
+    }
+
+    private static String jsonArray(List<String> values) {
+        return "[" + String.join(",", values) + "]";
+    }
+
+    private static String quote(String value) {
+        StringBuilder escaped = new StringBuilder("\"");
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            switch (character) {
+                case '\\' -> escaped.append("\\\\");
+                case '\"' -> escaped.append("\\\"");
+                case '\n' -> escaped.append("\\n");
+                case '\r' -> escaped.append("\\r");
+                case '\t' -> escaped.append("\\t");
+                default -> escaped.append(character);
+            }
+        }
+        return escaped.append('\"').toString();
+    }
+}
