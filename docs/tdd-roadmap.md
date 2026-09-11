@@ -26,7 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
-| 15. Java semantic feasibility              | ACTIVE: integration-event graph delivered |
+| 15. Java semantic feasibility              | ACTIVE: projection State graph delivered  |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1153,7 +1153,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — lots 00 to 05 delivered, projections next**
+**Status: ACTIVE — lots 00 to 06 delivered, external boundary next**
 
 ### Goal
 
@@ -1218,13 +1218,17 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   versioned integration Events, proves the exact sender pipeline and binds the
   matching Spring-created SQS consumers without inventing Event-to-Event
   causality.
+- Lot 06 proves a ticket application projection mutation and direct sync
+  signal. `tickets` is taken from the projection-sync contract, while the SQS
+  lambda/ACL connection remains deliberately discontinuous.
 
 ### Probable next behaviors
 
-1. Select one real route-specific consumer for the Lot 06 projection
+1. Select one injected port and its concrete adapter for the Lot 07 External
    acceptance.
-2. Derive State identity from its application projection boundary.
-3. Prove only direct projection-sync publication and preserve ACL/lambda gaps.
+2. Prove the adapter's meaningful execution, communication or persistence
+   boundary through resolved method calls.
+3. Preserve unresolved adapter selection and delegation as explicit gaps.
 
 ### Known gaps
 
@@ -1232,8 +1236,7 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   the public CLI/MCP composition.
 - Maven/classpath loading and scan-scope separation remain in the isolated Java
   adapter script, outside the public CLI/MCP composition.
-- Projection State and port-to-adapter External resolution are later
-  acceptance territory.
+- Port-to-adapter External resolution is later acceptance territory.
 - The public CLI/MCP composition still selects only the TypeScript adapter.
 
 ### Discovered micro-cycles
@@ -1274,6 +1277,11 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 - A complete 23-node/30-relation avatar replay still misses `UserRepo` as an
   External behind a polymorphic outbox dispatch. This remains a separate
   TypeScript gateway/branch resolution acceptance candidate.
+- A projection handler can prove `Event --UPDATES--> State` from its exact
+  event parameter and repository mutation, while its direct sync publication
+  independently proves `Handler --DISPATCHES--> sync:<projection>:<scope>`.
+  `tickets` comes from the projection contract, not from the SQL table name;
+  lambda/ACL propagation from the SQS consumer remains absent.
 
 ### Open design questions
 

@@ -91,6 +91,17 @@ describe("Architecture scanner port", () => {
           source: { file: "fixture/Routes.java", line: 10, inScanScope: true },
         },
       ],
+      projectionUpdates: [
+        {
+          handler: "fixture.AcceptedProjection#handle(fixture.AcceptedEvent)",
+          eventType: "fixture.AcceptedEvent",
+          projection: "fixtures",
+          scope: "entity",
+          handlerSource: { file: "fixture/AcceptedProjection.java", line: 10, inScanScope: true },
+          mutationSource: { file: "fixture/AcceptedProjection.java", line: 11, inScanScope: true },
+          syncSource: { file: "fixture/AcceptedProjection.java", line: 13, inScanScope: true },
+        },
+      ],
       diagnostics: [
         {
           kind: "WARNING",
@@ -112,6 +123,7 @@ describe("Architecture scanner port", () => {
     expect(
       javaResult.graph.findNode("integration:fixture-events:fixture.accepted:v1"),
     ).toBeDefined();
+    expect(javaResult.graph.findNode("fixtures")).toMatchObject({ kind: "State" });
     expect(javaResult.diagnostics).toEqual([
       {
         severity: "warning",

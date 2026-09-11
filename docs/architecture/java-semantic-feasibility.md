@@ -132,7 +132,7 @@ to make the first acceptance appear complete.
 | 03  | DELIVERED | Detect domain events, typed local handlers and statically proven publication.                                     |
 | 04  | DELIVERED | Add the shared scanner port, HTTP protocol signals, commands and typed command handlers.                          |
 | 05  | DELIVERED | Reconstruct outbox mapping, public integration identities, destinations, SQS routes and inbox-backed consumers.   |
-| 06  | PROPOSED  | Detect event-fed projection State and Projection Sync signals.                                                    |
+| 06  | DELIVERED | Detect event-fed projection State and Projection Sync signals.                                                    |
 | 07  | PROPOSED  | Detect resolved external execution, communication and persistence boundaries.                                     |
 | 08  | PROPOSED  | Validate bounded Fragments projections and expose Java through the existing CLI and MCP application capabilities. |
 | 09  | LONG TERM | Generalize only from additional real corpora and repeated evidence.                                               |
@@ -298,10 +298,30 @@ Event-to-Event relation and this lot does not disguise it as one.
 
 ## Next investigation
 
-Lot 06 may investigate one route-specific consumer through its ACL/lambda into
-a projection handler, repository mutation and directly published projection
-sync signal. State granularity must be justified by the projection boundary;
-SQL table names alone are insufficient.
+Lot 07 may investigate the resolved adapter behind one injected port. It must
+prove an execution, communication or persistence boundary through the concrete
+adapter, rather than treating the port interface or a `Repository` suffix as an
+External.
+
+## Lot 06 result
+
+`TicketVerifyAcceptedEventHandler#handle` supplies one bounded projection
+proof: its exact Domain Event parameter is passed to
+`JdbcTicketStatusProjectionRepository.applyAnalyzing`, after which the same
+method directly publishes `ProjectionSyncEvent.projectionUpdated("tickets",
+"entity", ...)`. This yields:
+
+```text
+java-domain-event:...TicketVerifyAcceptedEvent --UPDATES--> tickets
+TicketVerifyAcceptedEventHandler#handle(...) --DISPATCHES--> sync:tickets:entity
+sync:tickets:entity --UPDATES--> tickets
+```
+
+`tickets` is an application projection identity from the sync contract, not
+the `ticket_status_projection` table name. The repository and sync publisher
+remain implementation details. The SQS factory-to-ACL-to-handler chain is not
+joined to this result: the lambda conversion is a real static gap, not an
+excuse to infer a listener relation.
 
 Direct publication is not general interprocedural propagation. Helpers that
 capture publishers, injected gateway calls and discriminated branches remain

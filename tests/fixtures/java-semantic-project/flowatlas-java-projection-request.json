@@ -1,0 +1,32 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": ["fixture/projection/TicketVerifyAcceptedProjection.java"],
+  "resolutionSources": [
+    "fixture/application/TicketVerificationProcessManager.java",
+    "fixture/events/TicketVerificationCompletedEvent.java",
+    "fixture/events/TicketVerifyAcceptedEvent.java",
+    "fixture/ports/TicketVerificationProvider.java",
+    "fixture/projection/ProjectionSyncEvent.java",
+    "fixture/projection/ProjectionSyncPublisher.java",
+    "fixture/projection/TicketProjectionRepository.java",
+    "fixture/shared/DomainEvent.java",
+    "fixture/shared/EventHandler.java"
+  ],
+  "domainEvent": "fixture.shared.DomainEvent",
+  "eventHandler": "fixture.shared.EventHandler",
+  "handler": "fixture.application.TicketVerificationProcessManager",
+  "provider": "fixture.ports.TicketVerificationProvider",
+  "providerMethod": "verify",
+  "events": [
+    "fixture.events.TicketVerifyAcceptedEvent",
+    "fixture.events.TicketVerificationCompletedEvent"
+  ],
+  "projectionHandler": "fixture.projection.TicketVerifyAcceptedProjection",
+  "projectionHandlerMethod": "handle",
+  "projectionRepository": "fixture.projection.TicketProjectionRepository",
+  "projectionMutationMethod": "applyAnalyzing",
+  "projectionSyncPublisher": "fixture.projection.ProjectionSyncPublisher",
+  "projectionSyncPublishMethod": "publish",
+  "projectionSyncEvent": "fixture.projection.ProjectionSyncEvent",
+  "projectionSyncFactoryMethod": "projectionUpdated"
+}

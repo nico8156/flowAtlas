@@ -190,6 +190,26 @@ const loadRequest = async (projectRoot, requestPath) => {
     fail("all integration event request properties must be provided together");
   }
 
+  const projectionConfiguration = {
+    projectionHandler: optionalString(request, "projectionHandler"),
+    projectionHandlerMethod: optionalString(request, "projectionHandlerMethod"),
+    projectionRepository: optionalString(request, "projectionRepository"),
+    projectionMutationMethod: optionalString(request, "projectionMutationMethod"),
+    projectionSyncPublisher: optionalString(request, "projectionSyncPublisher"),
+    projectionSyncPublishMethod: optionalString(request, "projectionSyncPublishMethod"),
+    projectionSyncEvent: optionalString(request, "projectionSyncEvent"),
+    projectionSyncFactoryMethod: optionalString(request, "projectionSyncFactoryMethod"),
+  };
+  const configuredProjectionProperties = Object.values(projectionConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    configuredProjectionProperties.length > 0 &&
+    configuredProjectionProperties.length !== Object.keys(projectionConfiguration).length
+  ) {
+    fail("all projection request properties must be provided together");
+  }
+
   return {
     sourceRootName,
     sourceRoot,
@@ -204,6 +224,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     domainEventPublishMethod,
     ...commandConfiguration,
     ...integrationConfiguration,
+    ...projectionConfiguration,
     events: requireStringArray(request, "events"),
   };
 };
@@ -325,6 +346,26 @@ const run = async () => {
             request.inboxClaimMethod,
             "--sqs-handle-method",
             request.sqsHandleMethod,
+          ]
+        : []),
+      ...(request.projectionHandler
+        ? [
+            "--projection-handler",
+            request.projectionHandler,
+            "--projection-handler-method",
+            request.projectionHandlerMethod,
+            "--projection-repository",
+            request.projectionRepository,
+            "--projection-mutation-method",
+            request.projectionMutationMethod,
+            "--projection-sync-publisher",
+            request.projectionSyncPublisher,
+            "--projection-sync-publish-method",
+            request.projectionSyncPublishMethod,
+            "--projection-sync-event",
+            request.projectionSyncEvent,
+            "--projection-sync-factory-method",
+            request.projectionSyncFactoryMethod,
           ]
         : []),
       ...[...new Set([...request.scanSources, ...request.resolutionSources])].flatMap((source) => [

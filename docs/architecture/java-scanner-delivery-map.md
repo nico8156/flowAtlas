@@ -4,7 +4,7 @@ Last updated: 11 September 2026.
 
 ## Current position
 
-**Lots 00 to 05 are delivered. Lot 06 is next and has not started.**
+**Lots 00 to 06 are delivered. Lot 07 is next and has not started.**
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
@@ -14,10 +14,10 @@ Last updated: 11 September 2026.
                                      DONE
 
 -> [04 HTTP/commands] -> [05 outbox/SQS] -> [06 projections]
-          DONE                 DONE               NEXT
+          DONE                 DONE               DONE
 
 -> [07 externals] -> [08 CLI/MCP] -> [09 more corpora]
-        LATER             LATER            LONG TERM
+        NEXT              LATER            LONG TERM
 ```
 
 The detailed semantic decision is in
@@ -92,7 +92,7 @@ in `ArchitectureGraph`.
 | 03  | DELIVERED | Detect domain events, typed local handlers and proven publication.                                     | First `ArchitectureGraph` projection for the ticket-verification event slice, including important absent edges.                |
 | 04  | DELIVERED | Add the shared scanner port, HTTP protocol signals, commands and typed command handlers.               | Controller-to-command entry is proven without changing the meaning of Event or the public MCP protocol.                        |
 | 05  | DELIVERED | Reconstruct outbox mappings, destination/versioned integration events, SQS routes and inbox consumers. | Two destination-specific Ticket identities and their configured consumers are proven without Event-to-Event causality.         |
-| 06  | PROPOSED  | Detect event-fed projection State and projection-sync signals.                                         | State granularity comes from a real projection acceptance, not table-name guessing.                                            |
+| 06  | DELIVERED | Detect event-fed projection State and projection-sync signals.                                         | Ticket State comes from the projection-sync contract; the ACL discontinuity remains visible.                                   |
 | 07  | PROPOSED  | Detect meaningful external boundaries through resolved adapters.                                       | A port call becomes `CALLS_EXTERNAL` only when adapter resolution proves HTTP, SQS, storage, process or persistence execution. |
 | 08  | PROPOSED  | Expose Java projects through the existing CLI and MCP capabilities.                                    | Bounded Fragments projections are deterministic and preserve current TypeScript behavior.                                      |
 | 09  | LONG TERM | Generalize from additional Java corpora.                                                               | Repeated evidence, not one framework convention, justifies new detectors or vocabulary review.                                 |
@@ -228,6 +228,25 @@ in `ArchitectureGraph`.
   may remain broader, but an out-of-scope catalog or resolver cannot create an
   integration node.
 
+### Lot 06 — projection State and sync signal
+
+- `TicketVerifyAcceptedEventHandler#handle` proves an exact event parameter
+  passed to `applyAnalyzing`, followed by direct construction and publication
+  of `ProjectionSyncEvent.projectionUpdated("tickets", "entity", ...)`.
+- The resulting graph is:
+
+  ```text
+  java-domain-event:...TicketVerifyAcceptedEvent --UPDATES--> tickets
+  TicketVerifyAcceptedEventHandler#handle(...) --DISPATCHES--> sync:tickets:entity
+  sync:tickets:entity --UPDATES--> tickets
+  ```
+
+- `tickets` comes from the projection contract, not the physical
+  `ticket_status_projection` table. The repository and publisher remain
+  implementation details.
+- The integration route's lambda/ACL conversion is intentionally not followed
+  to the projection handler. A statically honest graph keeps that discontinuity.
+
 ## Fragments feedback loop
 
 The App Store audit currently identifies two distinct opportunities:
@@ -256,7 +275,7 @@ this roadmap. They may share graph vocabulary, but they must not be merged into
 one implementation cycle: their semantic engines and proof mechanisms differ.
 
 The Java reference source was first pinned at Fragments commit `c5319de` and
-revalidated through Lot 05 at descendant commit `a5ba73b`, after the later App
+revalidated through Lot 06 at descendant commit `a5ba73b`, after the later App
 Store lots described in `docs/audits/app-store-readiness-2026-09-11.md` in the
 Fragments repository.
 
@@ -290,8 +309,7 @@ framework. Additional shared inputs require evidence from another real caller.
 
 ## Next acceptance boundary
 
-Lot 06 should start from one real route-specific consumer and prove a projection
-State mutation plus any projection-sync Event that is directly published. The
-State identity must come from the application projection boundary, not from a
-table name or repository suffix. ACL conversion, lambdas and inbox routing may
-remain explicit gaps when their connection is not statically proven.
+Lot 07 should start from one injected port and prove its concrete adapter
+reaches a meaningful execution, communication or persistence boundary. The port
+interface and adapter package name alone remain insufficient; unresolved
+selection or delegation must stay an explicit gap.
