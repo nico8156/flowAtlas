@@ -15,7 +15,9 @@ describe("FlowAtlas MCP server", () => {
   it("returns structured context with only a compact textual acknowledgement", async () => {
     const graph = createArchitectureGraph();
     graph.addNode({ id: "requested", kind: "Event" });
-    const server = createFlowAtlasMcpServer(async () => graph);
+    const server = createFlowAtlasMcpServer({
+      scan: async () => ({ graph, diagnostics: [] }),
+    });
     const client = new Client({ name: "flowatlas-unit", version: "1.0.0" });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     closeables.push(client, server);

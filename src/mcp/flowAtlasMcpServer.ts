@@ -3,9 +3,8 @@ import * as z from "zod/v4";
 
 import { buildArchitectureContext } from "../application/architectureContext.js";
 import { findArchitectureNodes } from "../application/architectureNodeDiscovery.js";
-import type { ArchitectureGraph, NodeKind } from "../domain/architectureGraph.js";
-
-export type ArchitectureGraphLoader = (projectPath: string) => Promise<ArchitectureGraph>;
+import type { ArchitectureScanner } from "../application/architectureScanner.js";
+import type { NodeKind } from "../domain/architectureGraph.js";
 
 const nodeKindSchema = z.enum(["Event", "Handler", "State", "External"]);
 const directionSchema = z.enum(["upstream", "downstream", "both"]);
@@ -20,7 +19,7 @@ const toolResult = (value: object) => ({
   structuredContent: value as Record<string, unknown>,
 });
 
-export const createFlowAtlasMcpServer = (loadGraph: ArchitectureGraphLoader): McpServer => {
+export const createFlowAtlasMcpServer = (scanner: ArchitectureScanner): McpServer => {
   const server = new McpServer({ name: "flowatlas", version: "0.1.0" });
 
   server.registerTool(
@@ -35,7 +34,7 @@ export const createFlowAtlasMcpServer = (loadGraph: ArchitectureGraphLoader): Mc
       },
     },
     async ({ query, projectPath, kind, limit }) => {
-      const graph = await loadGraph(projectPath);
+      const { graph } = await scanner.scan({ projectPath });
       return toolResult(findArchitectureNodes(graph, query, [kind as NodeKind], limit));
     },
   );
@@ -55,7 +54,7 @@ export const createFlowAtlasMcpServer = (loadGraph: ArchitectureGraphLoader): Mc
       },
     },
     async ({ nodeId, projectPath, direction, maxDepth, maxNodes, maxEdges, maxBytes }) => {
-      const graph = await loadGraph(projectPath);
+      const { graph } = await scanner.scan({ projectPath });
       return toolResult(
         buildArchitectureContext(graph, nodeId, direction, maxDepth, {
           maxNodes,

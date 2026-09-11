@@ -11,6 +11,7 @@ import {
 import { createFlowAtlasMcpServer } from "./mcp/flowAtlasMcpServer.js";
 import { createProgramReusingProjectScanner } from "./mcp/programReusingProjectScanner.js";
 import { createVerifiedSnapshotGraphLoader } from "./mcp/verifiedSnapshotGraphLoader.js";
+import { createTypeScriptArchitectureScanner } from "./scanner/typeScriptArchitectureScanner.js";
 
 const projectLoader =
   process.env.FLOWATLAS_SNAPSHOT_VERIFICATION === "metadata"
@@ -22,10 +23,12 @@ const projectLoader =
     : loadTypeScriptProject;
 
 const server = createFlowAtlasMcpServer(
-  createVerifiedSnapshotGraphLoader(
-    projectLoader,
-    createProgramReusingProjectScanner({ maxPrograms: 4 }),
-    { maxSnapshots: 4 },
+  createTypeScriptArchitectureScanner(
+    createVerifiedSnapshotGraphLoader(
+      projectLoader,
+      createProgramReusingProjectScanner({ maxPrograms: 4 }),
+      { maxSnapshots: 4 },
+    ),
   ),
 );
 

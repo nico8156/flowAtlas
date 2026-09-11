@@ -26,7 +26,9 @@ describeFragments("FlowAtlas MCP agent context", () => {
   it("discovers and projects a real architecture through the MCP protocol", async () => {
     const loadedProject = await loadTypeScriptProject(fragmentsRoot);
     const graph = scanTypeScriptProject(loadedProject.project);
-    const server = createFlowAtlasMcpServer(async () => graph);
+    const server = createFlowAtlasMcpServer({
+      scan: async () => ({ graph, diagnostics: [] }),
+    });
     const client = new Client({ name: "flowatlas-acceptance", version: "1.0.0" });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     closeables.push(client, server);
