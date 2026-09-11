@@ -128,7 +128,7 @@ to make the first acceptance appear complete.
 | --- | --------- | ----------------------------------------------------------------------------------------------------------------- |
 | 00  | DELIVERED | Record the graph vocabulary, Event roles, identities and investigation boundary.                                  |
 | 01  | DELIVERED | Compare Java semantic engines on one fixture and the pinned acceptance source, then select one with evidence.     |
-| 02  | PROPOSED  | Load a Java project with full resolution context and bounded architectural scan scope.                            |
+| 02  | DELIVERED | Load a Java project with full resolution context and bounded architectural scan scope.                            |
 | 03  | PROPOSED  | Detect domain events, typed local handlers and statically proven publication.                                     |
 | 04  | PROPOSED  | Add HTTP protocol signals, commands and typed command handlers after replaying the first event acceptance.        |
 | 05  | PROPOSED  | Reconstruct outbox mapping, public integration identities, destinations, SQS routes and inbox-backed consumers.   |
@@ -203,14 +203,43 @@ not architectural scan scope: emitted evidence still comes only from explicit
 source inputs.
 
 The engine must expose compiler diagnostics rather than silently converting
-error types into architecture. Exact Maven project loading and bounded scan
-scope are Lot 02 responsibilities.
+error types into architecture. Lot 02 implements this boundary in the isolated
+project-context spike.
+
+## Lot 02 project-context result
+
+The Maven project context remains isolated in
+`scripts/javaMavenSemanticContext.mjs`; it is not a production scanner port.
+It composes the Lot 01 JDK probe with:
+
+- Java release discovery from `maven.compiler.release`, `java.version` or
+  `maven.compiler.source` properties;
+- dependency classpath discovery through the project Maven wrapper, or local
+  Maven when no wrapper exists;
+- available `target/classes` bytecode as resolution assistance;
+- a normalized source root and explicit `scanSources`;
+- optional `resolutionSources` that help compilation without entering scan
+  scope;
+- structured compiler diagnostics with source location and scope membership.
+
+Every returned source location includes `inScanScope`. This is deliberately
+evidence metadata, not an intermediate architecture model. The controlled
+fixture proves that a missing type remains a visible scoped diagnostic while
+out-of-scope events can still be resolved. The Fragments acceptance proves the
+same boundary without diagnostics: only the ticket process manager is in scan
+scope while its event, handler-interface and provider types resolve from the
+broader Maven context.
+
+The current spike is intentionally limited to the single-module Maven shape
+observed in Fragments: one configured main source root, Maven properties for
+the Java release and the conventional `target/classes` output. Multi-module
+reactors, profiles and generated source roots need later real evidence.
 
 ## Known gaps
 
 - The selected JDK compiler API has not entered the production scanner.
-- Maven/classpath loading and architectural scan scope are still spike-level
-  concerns rather than a reusable Java semantic context.
+- Maven/classpath loading and architectural scan scope are proven only in the
+  isolated spike, not the production scanner.
 - The exact representation of the domain-event-to-integration-event mapping
   must be derived from the outbox acceptance without inventing Event-to-Event
   causality.
@@ -225,14 +254,16 @@ scope are Lot 02 responsibilities.
 
 ## Next investigation
 
-Lot 02 may turn the selected engine into a Java project-loading context. Its
-acceptance must prove that Maven dependencies and compiled types are available
-for resolution while detectors remain bounded to an explicitly requested
-source scope. It must surface unresolved symbols and compiler diagnostics, and
-it must not yet emit Java architecture nodes or relations.
+Lot 03 may translate the proven Java semantic evidence into the first bounded
+domain-event `ArchitectureGraph` projection. It must detect concrete
+`DomainEvent` identities and typed `EventHandler<E>` listening, then prove
+publication without interpreting every method call as graph causality.
 
-Whether this justifies a new language-neutral scanner port is still a human
-review decision. Lot 01 adds no such boundary.
+The language-neutral scanner port remains deferred by explicit human decision.
+It must be reviewed immediately after the first Java graph results, before
+broader Java or HTTP integration. The intended port would remain stable around
+architectural scan input, diagnostics and graph output; Maven, javac,
+TypeScript and Redux details would stay inside their adapters.
 
 ## Engine references
 

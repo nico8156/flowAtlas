@@ -4,11 +4,11 @@ Last updated: 11 September 2026.
 
 ## Current position
 
-**Lots 00 and 01 are delivered. Lot 02 is next and has not started.**
+**Lots 00, 01 and 02 are delivered. Lot 03 is next and has not started.**
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
-      DONE             DONE             NEXT                 LATER
+      DONE             DONE              DONE                  NEXT
 
 -> [04 HTTP/commands] -> [05 outbox/SQS] -> [06 projections]
           LATER                LATER              LATER
@@ -74,9 +74,10 @@ TicketVerifyAcceptedEvent
     -> TicketVerificationCompletedEvent
 ```
 
-Lot 01 proves the Java identities and method resolution in this slice. It does
-not yet claim that the provider is an `External`, nor that the process manager
-dispatches the completed event in `ArchitectureGraph`.
+Lot 02 proves that the Java identities remain resolvable with only the process
+manager in architectural scan scope. It does not yet claim that the provider
+is an `External`, nor that the process manager dispatches the completed event
+in `ArchitectureGraph`.
 
 ## Delivery tracker
 
@@ -84,8 +85,8 @@ dispatches the completed event in `ArchitectureGraph`.
 | --- | --------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | 00  | DELIVERED | Freeze the four node kinds, four relation kinds and Java Event identities.                             | Human-approved decision; no graph vocabulary change.                                                                           |
 | 01  | DELIVERED | Select a Java semantic engine.                                                                         | Controlled Java 21 fixture and real Fragments Maven slice resolve types, generics, methods and locations.                      |
-| 02  | NEXT      | Load a Maven project with complete resolution context and bounded scan scope.                          | Out-of-scope sources may resolve symbols but cannot emit architecture; diagnostics stay visible.                               |
-| 03  | PROPOSED  | Detect domain events, typed local handlers and proven publication.                                     | First `ArchitectureGraph` projection for the ticket-verification event slice, including important absent edges.                |
+| 02  | DELIVERED | Load a Maven project with complete resolution context and bounded scan scope.                          | Out-of-scope sources resolve symbols without entering scope; diagnostics retain source and scope information.                  |
+| 03  | NEXT      | Detect domain events, typed local handlers and proven publication.                                     | First `ArchitectureGraph` projection for the ticket-verification event slice, including important absent edges.                |
 | 04  | PROPOSED  | Add HTTP protocol signals, commands and typed command handlers.                                        | Controller-to-command entry is proven without changing the meaning of Event.                                                   |
 | 05  | PROPOSED  | Reconstruct outbox mappings, destination/versioned integration events, SQS routes and inbox consumers. | Producer and consumer identities remain distinct; unsupported causal gaps remain explicit.                                     |
 | 06  | PROPOSED  | Detect event-fed projection State and projection-sync signals.                                         | State granularity comes from a real projection acceptance, not table-name guessing.                                            |
@@ -119,6 +120,25 @@ dispatches the completed event in `ArchitectureGraph`.
 - The controlled fixture and Fragments acceptance both return exact source
   locations. The fully resolved Fragments run has no compiler diagnostics.
 
+### Lot 02 — Maven context and scan scope
+
+- `javaMavenSemanticContext.mjs` reads the Java release from the Maven
+  properties, obtains the dependency classpath and includes available compiled
+  project classes as resolution context.
+- A request distinguishes `scanSources` from optional `resolutionSources`.
+  Both may participate in compilation, but every returned source location is
+  marked with `inScanScope` from the former only.
+- Paths are normalized and source inputs must remain inside the declared source
+  root.
+- Compiler diagnostics retain their severity, message, source location and
+  scope membership. A controlled unresolved type proves the failure path.
+- In the real Fragments acceptance, only
+  `TicketVerificationProcessManager.java` is in scope. Domain events,
+  `EventHandler` and the provider interface resolve outside scope with no
+  diagnostics.
+- The capability remains an isolated spike. It does not change the TypeScript
+  scanner, CLI, MCP interface or `ArchitectureGraph`.
+
 ## Fragments feedback loop
 
 The App Store audit currently identifies two distinct opportunities:
@@ -150,21 +170,26 @@ in `docs/audits/app-store-readiness-2026-09-11.md` in the Fragments repository.
 
 ## Next acceptance boundary
 
-Lot 02 should prove a reusable project-loading capability, not a detector. Its
-minimum observable contract is:
+Lot 03 may introduce the first Java detector and `ArchitectureGraph` projection
+for the domain-event slice. Its minimum observable contract is:
 
 ```text
-Maven project + requested source scope
-            |
-            v
-Java semantic context
-  - resolved dependency and project types
-  - fully qualified declarations
-  - source locations
-  - explicit diagnostics
-  - no ArchitectureGraph emission yet
+TicketVerificationProcessManager.java in scan scope
+            + Maven resolution context
+                         |
+                         v
+TicketVerifyAcceptedEvent                    Event
+TicketVerificationProcessManager             Handler
+Handler --LISTENS_TO--> accepted Event
+Handler --DISPATCHES--> completed Event       only if exact publication is proven
 ```
 
-The open decision for that lot is structural: whether repeated evidence now
-justifies a language-neutral scanner port. That decision requires human review
-before implementation.
+The provider call remains semantic evidence, not an `External`, until the
+adapter resolution lot proves the boundary. A name-only event and unresolved
+publication must remain absent.
+
+After this first real Java graph is available, work must pause for an explicit
+review of the shared scanner port. The agreed direction is a stable
+language-neutral architectural port with independent TypeScript and Java
+adapters—not a port that accumulates compiler-specific options. No such port
+is authorized by Lots 00–03 alone.

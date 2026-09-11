@@ -82,7 +82,7 @@ public final class JavaSemanticSpike {
                         boolean assignable = types.isAssignable(
                                 types.erasure(event.asType()),
                                 types.erasure(domainEvent.asType()));
-                        return new TypeEvidence(eventName, assignable, locationOf(trees, event, config.sourceRoot()));
+                        return new TypeEvidence(eventName, assignable, locationOf(trees, event, config));
                     })
                     .toList();
 
@@ -99,16 +99,16 @@ public final class JavaSemanticSpike {
             HandlerEvidence handlerEvidence = new HandlerEvidence(
                     config.handler(),
                     eventType.toString(),
-                    locationOf(trees, handler, config.sourceRoot()));
+                    locationOf(trees, handler, config));
 
             List<InvocationEvidence> invocations = findProviderInvocations(
                     units,
                     trees,
                     config.provider(),
                     config.providerMethod(),
-                    config.sourceRoot());
+                    config);
 
-            return new ProbeResult(typeEvidence, handlerEvidence, invocations, diagnosticMessages(diagnostics));
+            return new ProbeResult(typeEvidence, handlerEvidence, invocations, diagnosticEvidence(diagnostics, config));
         }
     }
 
@@ -151,7 +151,7 @@ public final class JavaSemanticSpike {
             Trees trees,
             String provider,
             String providerMethod,
-            Path sourceRoot) {
+            Config config) {
         List<InvocationEvidence> result = new ArrayList<>();
 
         for (CompilationUnitTree unit : units) {
@@ -184,7 +184,7 @@ public final class JavaSemanticSpike {
                                 owner.getQualifiedName().toString(),
                                 executableSignature(executable),
                                 callerSignature(callers.peek()),
-                                locationOf(trees, getCurrentPath(), sourceRoot)));
+                                locationOf(trees, getCurrentPath(), config)));
                     }
                     return super.visitMethodInvocation(invocation, unused);
                 }
@@ -206,28 +206,57 @@ public final class JavaSemanticSpike {
         return owner.getQualifiedName() + "#" + executableSignature(executable);
     }
 
-    private static SourceLocation locationOf(Trees trees, Element element, Path sourceRoot) {
+    private static SourceLocation locationOf(Trees trees, Element element, Config config) {
         TreePath path = trees.getPath(element);
         if (path == null) {
             throw new IllegalStateException("No source location for " + element);
         }
-        return locationOf(trees, path, sourceRoot);
+        return locationOf(trees, path, config);
     }
 
-    private static SourceLocation locationOf(Trees trees, TreePath path, Path sourceRoot) {
+    private static SourceLocation locationOf(Trees trees, TreePath path, Config config) {
         CompilationUnitTree unit = path.getCompilationUnit();
         long position = trees.getSourcePositions().getStartPosition(unit, path.getLeaf());
         long line = unit.getLineMap().getLineNumber(position);
         Path source = Path.of(unit.getSourceFile().toUri()).toAbsolutePath().normalize();
-        Path root = sourceRoot.toAbsolutePath().normalize();
-        String file = source.startsWith(root) ? root.relativize(source).toString() : source.toString();
-        return new SourceLocation(file, line);
+        return locationOf(source, line, config);
+    }
+
+    private static SourceLocation locationOf(Path source, long line, Config config) {
+        Path normalizedSource = source.toAbsolutePath().normalize();
+        Path root = config.sourceRoot().toAbsolutePath().normalize();
+        String file = normalizedSource.startsWith(root)
+                ? root.relativize(normalizedSource).toString()
+                : normalizedSource.toString();
+        boolean inScanScope = config.scanSources().stream()
+                .map(path -> path.toAbsolutePath().normalize())
+                .anyMatch(normalizedSource::equals);
+        return new SourceLocation(file, line, inScanScope);
     }
 
     private static List<String> diagnosticMessages(DiagnosticCollector<JavaFileObject> diagnostics) {
         return diagnostics.getDiagnostics().stream()
                 .filter(diagnostic -> diagnostic.getKind() == Diagnostic.Kind.ERROR)
                 .map(diagnostic -> diagnostic.getMessage(null))
+                .toList();
+    }
+
+    private static List<DiagnosticEvidence> diagnosticEvidence(
+            DiagnosticCollector<JavaFileObject> diagnostics,
+            Config config) {
+        return diagnostics.getDiagnostics().stream()
+                .map(diagnostic -> {
+                    SourceLocation source = diagnostic.getSource() == null
+                            ? null
+                            : locationOf(
+                                    Path.of(diagnostic.getSource().toUri()),
+                                    diagnostic.getLineNumber(),
+                                    config);
+                    return new DiagnosticEvidence(
+                            diagnostic.getKind().name(),
+                            diagnostic.getMessage(null),
+                            source);
+                })
                 .toList();
     }
 
@@ -241,6 +270,7 @@ public final class JavaSemanticSpike {
             String provider,
             String providerMethod,
             List<Path> sources,
+            List<Path> scanSources,
             List<String> events) {
 
         private static Config parse(String[] arguments) {
@@ -252,6 +282,12 @@ public final class JavaSemanticSpike {
                 options.computeIfAbsent(arguments[index], ignored -> new ArrayList<>()).add(arguments[index + 1]);
             }
 
+            List<Path> sources = many(options, "--source").stream().map(Path::of).toList();
+            List<String> configuredScanSources = optionalMany(options, "--scan-source");
+            List<Path> scanSources = configuredScanSources.isEmpty()
+                    ? sources
+                    : configuredScanSources.stream().map(Path::of).toList();
+
             return new Config(
                     single(options, "--release"),
                     Path.of(single(options, "--source-root")),
@@ -261,7 +297,8 @@ public final class JavaSemanticSpike {
                     single(options, "--handler"),
                     single(options, "--provider"),
                     single(options, "--provider-method"),
-                    many(options, "--source").stream().map(Path::of).toList(),
+                    sources,
+                    scanSources,
                     many(options, "--event"));
         }
 
@@ -282,11 +319,26 @@ public final class JavaSemanticSpike {
             if (values.isEmpty()) throw new IllegalArgumentException("Expected at least one " + name);
             return values;
         }
+
+        private static List<String> optionalMany(Map<String, List<String>> options, String name) {
+            return options.getOrDefault(name, List.of());
+        }
     }
 
-    private record SourceLocation(String file, long line) {
+    private record SourceLocation(String file, long line, boolean inScanScope) {
         private String toJson() {
-            return "{\"file\":" + quote(file) + ",\"line\":" + line + "}";
+            return "{\"file\":" + quote(file)
+                    + ",\"line\":" + line
+                    + ",\"inScanScope\":" + inScanScope + "}";
+        }
+    }
+
+    private record DiagnosticEvidence(String kind, String message, SourceLocation source) {
+        private String toJson() {
+            return "{\"kind\":" + quote(kind)
+                    + ",\"message\":" + quote(message)
+                    + (source == null ? "" : ",\"source\":" + source.toJson())
+                    + "}";
         }
     }
 
@@ -326,14 +378,14 @@ public final class JavaSemanticSpike {
             List<TypeEvidence> types,
             HandlerEvidence handler,
             List<InvocationEvidence> providerInvocations,
-            List<String> diagnostics) {
+            List<DiagnosticEvidence> diagnostics) {
         private String toJson() {
             return "{\"engine\":\"jdk-compiler-api\",\"types\":"
                     + jsonArray(types.stream().map(TypeEvidence::toJson).toList())
                     + ",\"handler\":" + handler.toJson()
                     + ",\"providerInvocations\":"
                     + jsonArray(providerInvocations.stream().map(InvocationEvidence::toJson).toList())
-                    + ",\"diagnostics\":" + jsonArray(diagnostics.stream().map(JavaSemanticSpike::quote).toList())
+                    + ",\"diagnostics\":" + jsonArray(diagnostics.stream().map(DiagnosticEvidence::toJson).toList())
                     + "}";
         }
     }

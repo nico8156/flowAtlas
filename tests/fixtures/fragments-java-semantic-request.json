@@ -1,0 +1,22 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": [
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/processManagers/TicketVerificationProcessManager.java"
+  ],
+  "resolutionSources": [
+    "com/nm/fragmentsclean/sharedKernel/businesslogic/models/DomainEvent.java",
+    "com/nm/fragmentsclean/sharedKernel/businesslogic/models/event/EventHandler.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/models/TicketVerifyAcceptedEvent.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/models/TicketVerificationCompletedEvent.java",
+    "com/nm/fragmentsclean/ticketContext/write/businesslogic/gateways/TicketVerificationProvider.java"
+  ],
+  "domainEvent": "com.nm.fragmentsclean.sharedKernel.businesslogic.models.DomainEvent",
+  "eventHandler": "com.nm.fragmentsclean.sharedKernel.businesslogic.models.event.EventHandler",
+  "handler": "com.nm.fragmentsclean.ticketContext.write.businesslogic.processManagers.TicketVerificationProcessManager",
+  "provider": "com.nm.fragmentsclean.ticketContext.write.businesslogic.gateways.TicketVerificationProvider",
+  "providerMethod": "verify",
+  "events": [
+    "com.nm.fragmentsclean.ticketContext.write.businesslogic.models.TicketVerifyAcceptedEvent",
+    "com.nm.fragmentsclean.ticketContext.write.businesslogic.models.TicketVerificationCompletedEvent"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": [
+    "fixture/application/TicketVerificationProcessManager.java",
+    "fixture/application/BrokenHandler.java"
+  ],
+  "domainEvent": "fixture.shared.DomainEvent",
+  "eventHandler": "fixture.shared.EventHandler",
+  "handler": "fixture.application.TicketVerificationProcessManager",
+  "provider": "fixture.ports.TicketVerificationProvider",
+  "providerMethod": "verify",
+  "events": [
+    "fixture.events.TicketVerifyAcceptedEvent",
+    "fixture.events.TicketVerificationCompletedEvent",
+    "fixture.events.ConventionOnlyEvent"
+  ]
+}

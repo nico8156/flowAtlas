@@ -26,7 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
-| 15. Java semantic feasibility              | ACTIVE: engine selected                   |
+| 15. Java semantic feasibility              | ACTIVE: Java context proven               |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1153,7 +1153,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — lots 00 and 01 delivered, project loading next**
+**Status: ACTIVE — lots 00 to 02 delivered, domain-event graph next**
 
 ### Goal
 
@@ -1199,21 +1199,25 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   injected provider method and exact source identities on both a controlled
   fixture and the Fragments Maven Java 21 slice. It changes no production
   scanner behavior.
+- Lot 02 adds an isolated Maven semantic context with explicit scan and
+  resolution sources. It derives the Java release and classpath, preserves
+  source locations, marks scope membership and returns structured compiler
+  diagnostics. It changes no production scanner behavior.
 
 ### Probable next behaviors
 
-1. Load Maven resolution context while keeping architectural scan scope
-   explicit and bounded.
-2. Surface diagnostics and unresolved symbols without creating dangling graph
-   edges or architecture inferred from compiler error types.
-3. Replay the Lot 01 probe through that context before proposing the first
-   domain-event detector.
+1. Detect concrete `DomainEvent` types and typed `EventHandler<E>` listening
+   inside an explicitly bounded Java scan scope.
+2. Prove the completed-event publication from exact compiler-resolved source
+   evidence without constructing a general call graph.
+3. Produce the first Fragments Java `ArchitectureGraph` projection, including
+   important absent nodes and edges, then stop for the shared-port review.
 
 ### Known gaps
 
 - The JDK compiler API is selected but has not entered the production scanner.
-- Maven/classpath loading and scan-scope separation exist only in the isolated
-  feasibility acceptance.
+- Maven/classpath loading and scan-scope separation remain isolated from the
+  production scanner.
 - Spring-created handlers, destination-specific integration mappings,
   projection State and port-to-adapter External resolution are later acceptance
   territory.
@@ -1231,13 +1235,20 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   with a Maven-derived classpath and no diagnostics.
 - Source-only analysis exposed unresolved third-party/generated types, so
   bytecode may assist resolution but cannot widen emitted scan scope.
+- A Maven request now separates `scanSources` from `resolutionSources`; every
+  returned location records whether it belongs to the architectural scope.
+- A controlled missing type remains a structured compiler diagnostic rather
+  than becoming semantic evidence or a graph endpoint.
+- On Fragments, the process manager resolves its out-of-scope events, generic
+  handler interface and provider against the full Maven context with no
+  diagnostics.
 
 ### Open design questions
 
-- Does the first production behavior justify a language-neutral scanner port,
-  or can that boundary wait for repeated evidence?
-- What is the smallest explicit Java scan request that keeps Maven context out
-  of the canonical graph while supporting multiple source roots?
+- After the first Java graph in Lot 03, what is the smallest stable scanner port
+  shared by TypeScript and Java adapters?
+- Which second real Maven shape would justify multiple source roots,
+  multi-module reactors or generated-source support?
 
 ### Completion criteria
 
