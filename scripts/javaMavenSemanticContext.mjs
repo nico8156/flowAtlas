@@ -155,6 +155,36 @@ const loadRequest = async (projectRoot, requestPath) => {
     fail("all HTTP command request properties must be provided together");
   }
 
+  const integrationConfiguration = {
+    integrationProducerEvent: optionalString(request, "integrationProducerEvent"),
+    outboxMetadataContributor: optionalString(request, "outboxMetadataContributor"),
+    outboxMetadata: optionalString(request, "outboxMetadata"),
+    integrationDestinationResolver: optionalString(request, "integrationDestinationResolver"),
+    integrationDestinationMethod: optionalString(request, "integrationDestinationMethod"),
+    outboxEventEntity: optionalString(request, "outboxEventEntity"),
+    aggregateTypeGetter: optionalString(request, "aggregateTypeGetter"),
+    eventTypeGetter: optionalString(request, "eventTypeGetter"),
+    integrationTypeCatalog: optionalString(request, "integrationTypeCatalog"),
+    integrationVersionMethod: optionalString(request, "integrationVersionMethod"),
+    integrationSender: optionalString(request, "integrationSender"),
+    integrationSenderMethod: optionalString(request, "integrationSenderMethod"),
+    integrationEnvelopeFactory: optionalString(request, "integrationEnvelopeFactory"),
+    integrationEnvelopeFactoryMethod: optionalString(request, "integrationEnvelopeFactoryMethod"),
+    integrationMessagePublisher: optionalString(request, "integrationMessagePublisher"),
+    integrationMessagePublishMethod: optionalString(request, "integrationMessagePublishMethod"),
+    sqsHandlerInterface: optionalString(request, "sqsHandlerInterface"),
+    sqsConfiguration: optionalString(request, "sqsConfiguration"),
+  };
+  const configuredIntegrationProperties = Object.values(integrationConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    configuredIntegrationProperties.length > 0 &&
+    configuredIntegrationProperties.length !== Object.keys(integrationConfiguration).length
+  ) {
+    fail("all integration event request properties must be provided together");
+  }
+
   return {
     sourceRootName,
     sourceRoot,
@@ -168,6 +198,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     domainEventPublisher,
     domainEventPublishMethod,
     ...commandConfiguration,
+    ...integrationConfiguration,
     events: requireStringArray(request, "events"),
   };
 };
@@ -239,6 +270,46 @@ const run = async () => {
             request.commandBus,
             "--command-dispatch-method",
             request.commandDispatchMethod,
+          ]
+        : []),
+      ...(request.integrationProducerEvent
+        ? [
+            "--integration-producer-event",
+            request.integrationProducerEvent,
+            "--outbox-metadata-contributor",
+            request.outboxMetadataContributor,
+            "--outbox-metadata",
+            request.outboxMetadata,
+            "--integration-destination-resolver",
+            request.integrationDestinationResolver,
+            "--integration-destination-method",
+            request.integrationDestinationMethod,
+            "--outbox-event-entity",
+            request.outboxEventEntity,
+            "--aggregate-type-getter",
+            request.aggregateTypeGetter,
+            "--event-type-getter",
+            request.eventTypeGetter,
+            "--integration-type-catalog",
+            request.integrationTypeCatalog,
+            "--integration-version-method",
+            request.integrationVersionMethod,
+            "--integration-sender",
+            request.integrationSender,
+            "--integration-sender-method",
+            request.integrationSenderMethod,
+            "--integration-envelope-factory",
+            request.integrationEnvelopeFactory,
+            "--integration-envelope-factory-method",
+            request.integrationEnvelopeFactoryMethod,
+            "--integration-message-publisher",
+            request.integrationMessagePublisher,
+            "--integration-message-publish-method",
+            request.integrationMessagePublishMethod,
+            "--sqs-handler-interface",
+            request.sqsHandlerInterface,
+            "--sqs-configuration",
+            request.sqsConfiguration,
           ]
         : []),
       ...[...new Set([...request.scanSources, ...request.resolutionSources])].flatMap((source) => [

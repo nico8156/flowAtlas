@@ -11,6 +11,10 @@ import {
   detectJavaHttpCommandGraph,
   type JavaHttpCommandEvidence,
 } from "./javaHttpCommandDetector.js";
+import {
+  detectJavaIntegrationEventGraph,
+  type JavaIntegrationEventEvidence,
+} from "./javaIntegrationEventDetector.js";
 
 type JavaDiagnostic = {
   kind: string;
@@ -23,7 +27,8 @@ type JavaDiagnostic = {
 };
 
 type JavaSemanticEvidence = JavaDomainEventEvidence &
-  JavaHttpCommandEvidence & {
+  JavaHttpCommandEvidence &
+  JavaIntegrationEventEvidence & {
     diagnostics: readonly JavaDiagnostic[];
   };
 
@@ -47,6 +52,7 @@ export const createJavaArchitectureScanner = (
     const evidence = await loadEvidence(projectPath);
     const graph = detectJavaDomainEventGraph(evidence);
     mergeGraph(graph, detectJavaHttpCommandGraph(evidence));
+    mergeGraph(graph, detectJavaIntegrationEventGraph(evidence));
     return {
       graph,
       diagnostics: evidence.diagnostics.map(({ kind, message, source }) => ({

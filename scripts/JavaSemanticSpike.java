@@ -1,6 +1,19 @@
+import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.EnhancedForLoopTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IfTree;
+import com.sun.source.tree.InstanceOfTree;
+import com.sun.source.tree.LiteralTree;
+import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.ParenthesizedTree;
+import com.sun.source.tree.ReturnTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.UnaryTree;
+import com.sun.source.tree.VariableTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -23,6 +36,7 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -125,12 +139,21 @@ public final class JavaSemanticSpike {
                     diagnostics,
                     config);
 
+            IntegrationSliceEvidence integrationSlice = analyzeIntegrationSlice(
+                    units,
+                    trees,
+                    elements,
+                    types,
+                    diagnostics,
+                    config);
+
             return new ProbeResult(
                     typeEvidence,
                     handlerEvidence,
                     invocations,
                     publications,
                     commandSlice,
+                    integrationSlice,
                     diagnosticEvidence(diagnostics, config));
         }
     }
@@ -141,8 +164,11 @@ public final class JavaSemanticSpike {
             DiagnosticCollector<JavaFileObject> diagnostics) {
         TypeElement result = elements.getTypeElement(qualifiedName);
         if (result != null) return result;
+        String details = diagnostics == null
+                ? ""
+                : ". Diagnostics: " + String.join(" | ", diagnosticMessages(diagnostics));
         throw new IllegalStateException(
-                "Could not resolve " + qualifiedName + ". Diagnostics: " + String.join(" | ", diagnosticMessages(diagnostics)));
+                "Could not resolve " + qualifiedName + details);
     }
 
     private static TypeMirror findGenericArgument(
@@ -417,6 +443,576 @@ public final class JavaSemanticSpike {
         return result;
     }
 
+    private static IntegrationSliceEvidence analyzeIntegrationSlice(
+            List<? extends CompilationUnitTree> units,
+            Trees trees,
+            Elements elements,
+            Types types,
+            DiagnosticCollector<JavaFileObject> diagnostics,
+            Config config) {
+        if (config.integrationProducerEvent() == null) return null;
+
+        TypeElement producerEvent = requiredType(elements, config.integrationProducerEvent(), diagnostics);
+        String producerSimpleName = producerEvent.getSimpleName().toString();
+        AggregateTypeEvidence aggregateType = findOutboxAggregateType(
+                trees,
+                elements,
+                config,
+                producerEvent);
+        List<DestinationEvidence> destinations = findIntegrationDestinations(
+                trees,
+                elements,
+                config,
+                producerEvent,
+                aggregateType.aggregateType());
+        StableTypeEvidence stableType = findStableIntegrationType(
+                trees,
+                elements,
+                config,
+                producerSimpleName);
+        VersionEvidence version = findIntegrationVersion(trees, elements, config);
+        SenderEvidence sender = findIntegrationSender(trees, elements, config);
+        List<IntegrationConsumerEvidence> consumers = findIntegrationConsumers(
+                trees,
+                elements,
+                types,
+                config);
+
+        List<IntegrationMappingEvidence> mappings = destinations.stream()
+                .map(destination -> new IntegrationMappingEvidence(
+                        config.integrationProducerEvent(),
+                        aggregateType.aggregateType(),
+                        destination.destination(),
+                        stableType.eventType(),
+                        version.version(),
+                        sender.handler(),
+                        sender.source(),
+                        aggregateType.source(),
+                        destination.source(),
+                        stableType.source(),
+                        version.source()))
+                .toList();
+        return new IntegrationSliceEvidence(mappings, consumers);
+    }
+
+    private static AggregateTypeEvidence findOutboxAggregateType(
+            Trees trees,
+            Elements elements,
+            Config config,
+            TypeElement producerEvent) {
+        TypeElement contributor = requiredType(elements, config.outboxMetadataContributor(), null);
+        TypeElement metadata = requiredType(elements, config.outboxMetadata(), null);
+        TreePath contributorPath = trees.getPath(contributor);
+        List<AggregateTypeEvidence> matches = new ArrayList<>();
+
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitIf(IfTree ifTree, Void unused) {
+                ExpressionTree condition = unwrap(ifTree.getCondition());
+                if (condition instanceof InstanceOfTree instanceOf) {
+                    TypeMirror checkedType = trees.getTypeMirror(new TreePath(getCurrentPath(), instanceOf.getType()));
+                    if (checkedType != null && checkedType.toString().equals(producerEvent.getQualifiedName().toString())) {
+                        new TreePathScanner<Void, Void>() {
+                            @Override
+                            public Void visitNewClass(NewClassTree newClass, Void nestedUnused) {
+                                TypeMirror constructed = trees.getTypeMirror(
+                                        new TreePath(getCurrentPath(), newClass.getIdentifier()));
+                                if (constructed != null
+                                        && constructed.toString().equals(metadata.getQualifiedName().toString())
+                                        && !newClass.getArguments().isEmpty()) {
+                                    String value = constantString(
+                                            trees,
+                                            new TreePath(getCurrentPath(), newClass.getArguments().getFirst()));
+                                    if (value != null) {
+                                        matches.add(new AggregateTypeEvidence(
+                                                value,
+                                                locationOf(trees, getCurrentPath(), config)));
+                                    }
+                                }
+                                return super.visitNewClass(newClass, nestedUnused);
+                            }
+                        }.scan(new TreePath(getCurrentPath(), ifTree.getThenStatement()), null);
+                    }
+                }
+                return super.visitIf(ifTree, unused);
+            }
+        }.scan(contributorPath, null);
+
+        List<AggregateTypeEvidence> distinct = matches.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        AggregateTypeEvidence::aggregateType,
+                        value -> value,
+                        (first, duplicate) -> first,
+                        LinkedHashMap::new))
+                .values().stream().toList();
+        if (distinct.size() != 1) {
+            throw new IllegalStateException(
+                    "Expected exactly one outbox aggregate type for " + config.integrationProducerEvent());
+        }
+        return distinct.getFirst();
+    }
+
+    private static List<DestinationEvidence> findIntegrationDestinations(
+            Trees trees,
+            Elements elements,
+            Config config,
+            TypeElement producerEvent,
+            String aggregateType) {
+        TypeElement resolver = requiredType(elements, config.integrationDestinationResolver(), null);
+        ExecutableElement method = requiredMethod(resolver, config.integrationDestinationMethod());
+        TreePath methodPath = trees.getPath(method);
+        Map<Element, String> roles = new LinkedHashMap<>();
+
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitVariable(VariableTree variable, Void unused) {
+                if (variable.getInitializer() instanceof MethodInvocationTree invocation) {
+                    ExecutableElement invoked = executableAt(
+                            trees,
+                            new TreePath(getCurrentPath(), invocation));
+                    if (invoked != null
+                            && ownerName(invoked).equals(config.outboxEventEntity())) {
+                        String role = invoked.getSimpleName().contentEquals(config.aggregateTypeGetter())
+                                ? "aggregateType"
+                                : invoked.getSimpleName().contentEquals(config.eventTypeGetter())
+                                        ? "eventType"
+                                        : null;
+                        Element variableElement = trees.getElement(getCurrentPath());
+                        if (role != null && variableElement != null) roles.put(variableElement, role);
+                    }
+                }
+                return super.visitVariable(variable, unused);
+            }
+        }.scan(methodPath, null);
+
+        List<DestinationEvidence> destinations = new ArrayList<>();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitIf(IfTree ifTree, Void unused) {
+                TreePath conditionPath = new TreePath(getCurrentPath(), ifTree.getCondition());
+                Boolean selected = evaluateKnownStringCondition(
+                        trees,
+                        conditionPath,
+                        roles,
+                        producerEvent.getQualifiedName().toString(),
+                        aggregateType);
+                boolean eventSpecific = referencesRole(trees, conditionPath, roles, "eventType");
+                if (Boolean.TRUE.equals(selected)
+                        && eventSpecific
+                        && hasMatchingAggregateAncestor(
+                                trees,
+                                getCurrentPath(),
+                                roles,
+                                producerEvent.getQualifiedName().toString(),
+                                aggregateType)) {
+                    destinations.addAll(returnedStringConstants(
+                            trees,
+                            new TreePath(getCurrentPath(), ifTree.getThenStatement()),
+                            config));
+                }
+                return super.visitIf(ifTree, unused);
+            }
+        }.scan(methodPath, null);
+
+        List<DestinationEvidence> distinct = destinations.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        DestinationEvidence::destination,
+                        value -> value,
+                        (first, duplicate) -> first,
+                        LinkedHashMap::new))
+                .values().stream().toList();
+        if (distinct.isEmpty()) {
+            throw new IllegalStateException(
+                    "Could not resolve integration destinations for " + config.integrationProducerEvent());
+        }
+        return distinct;
+    }
+
+    private static StableTypeEvidence findStableIntegrationType(
+            Trees trees,
+            Elements elements,
+            Config config,
+            String producerSimpleName) {
+        TypeElement catalog = requiredType(elements, config.integrationTypeCatalog(), null);
+        List<StableTypeEvidence> matches = new ArrayList<>();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                if (invocation.getArguments().size() == 2) {
+                    TreePath firstPath = new TreePath(getCurrentPath(), invocation.getArguments().get(0));
+                    TreePath secondPath = new TreePath(getCurrentPath(), invocation.getArguments().get(1));
+                    if (producerSimpleName.equals(constantString(trees, firstPath))) {
+                        String stableType = constantString(trees, secondPath);
+                        if (stableType != null) {
+                            matches.add(new StableTypeEvidence(
+                                    stableType,
+                                    locationOf(trees, getCurrentPath(), config)));
+                        }
+                    }
+                }
+                return super.visitMethodInvocation(invocation, unused);
+            }
+        }.scan(trees.getPath(catalog), null);
+
+        List<StableTypeEvidence> distinct = matches.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        StableTypeEvidence::eventType,
+                        value -> value,
+                        (first, duplicate) -> first,
+                        LinkedHashMap::new))
+                .values().stream().toList();
+        if (distinct.size() != 1) {
+            throw new IllegalStateException(
+                    "Expected exactly one stable integration type for " + producerSimpleName);
+        }
+        return distinct.getFirst();
+    }
+
+    private static VersionEvidence findIntegrationVersion(
+            Trees trees,
+            Elements elements,
+            Config config) {
+        TypeElement catalog = requiredType(elements, config.integrationTypeCatalog(), null);
+        ExecutableElement method = requiredMethod(catalog, config.integrationVersionMethod());
+        List<VersionEvidence> values = new ArrayList<>();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitReturn(ReturnTree returnTree, Void unused) {
+                if (returnTree.getExpression() instanceof LiteralTree literal
+                        && literal.getValue() instanceof Integer value) {
+                    values.add(new VersionEvidence(value, locationOf(trees, getCurrentPath(), config)));
+                }
+                return super.visitReturn(returnTree, unused);
+            }
+        }.scan(trees.getPath(method), null);
+        List<VersionEvidence> distinct = values.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        VersionEvidence::version,
+                        value -> value,
+                        (first, duplicate) -> first,
+                        LinkedHashMap::new))
+                .values().stream().toList();
+        if (distinct.size() != 1) {
+            throw new IllegalStateException("Expected one constant integration event version");
+        }
+        return distinct.getFirst();
+    }
+
+    private static SenderEvidence findIntegrationSender(
+            Trees trees,
+            Elements elements,
+            Config config) {
+        TypeElement sender = requiredType(elements, config.integrationSender(), null);
+        ExecutableElement method = requiredMethod(sender, config.integrationSenderMethod());
+        if (method.getParameters().size() != 1
+                || !method.getParameters().getFirst().asType().toString().equals(config.outboxEventEntity())) {
+            throw new IllegalStateException("Configured integration sender must accept the outbox entity");
+        }
+        VariableElement eventParameter = method.getParameters().getFirst();
+        List<SourceLocation> publications = new ArrayList<>();
+
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitEnhancedForLoop(EnhancedForLoopTree loop, Void unused) {
+                if (!(loop.getExpression() instanceof MethodInvocationTree destinationInvocation)) {
+                    return super.visitEnhancedForLoop(loop, unused);
+                }
+                TreePath destinationInvocationPath = new TreePath(getCurrentPath(), destinationInvocation);
+                ExecutableElement destinationMethod = executableAt(trees, destinationInvocationPath);
+                if (destinationMethod == null
+                        || !ownerName(destinationMethod).equals(config.integrationDestinationResolver())
+                        || !destinationMethod.getSimpleName().contentEquals(config.integrationDestinationMethod())
+                        || destinationInvocation.getArguments().size() != 1
+                        || trees.getElement(new TreePath(
+                                destinationInvocationPath,
+                                destinationInvocation.getArguments().getFirst())) != eventParameter) {
+                    return super.visitEnhancedForLoop(loop, unused);
+                }
+
+                Element destinationVariable = trees.getElement(new TreePath(getCurrentPath(), loop.getVariable()));
+                Map<Element, Boolean> envelopeVariables = new LinkedHashMap<>();
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitVariable(VariableTree variable, Void nestedUnused) {
+                        if (variable.getInitializer() instanceof MethodInvocationTree invocation) {
+                            TreePath invocationPath = new TreePath(getCurrentPath(), invocation);
+                            ExecutableElement invoked = executableAt(trees, invocationPath);
+                            if (invoked != null
+                                    && ownerName(invoked).equals(config.integrationEnvelopeFactory())
+                                    && invoked.getSimpleName().contentEquals(
+                                            config.integrationEnvelopeFactoryMethod())
+                                    && invocation.getArguments().size() == 2
+                                    && trees.getElement(new TreePath(
+                                            invocationPath,
+                                            invocation.getArguments().get(0))) == eventParameter
+                                    && trees.getElement(new TreePath(
+                                            invocationPath,
+                                            invocation.getArguments().get(1))) == destinationVariable) {
+                                Element variableElement = trees.getElement(getCurrentPath());
+                                if (variableElement != null) envelopeVariables.put(variableElement, true);
+                            }
+                        }
+                        return super.visitVariable(variable, nestedUnused);
+                    }
+
+                    @Override
+                    public Void visitMethodInvocation(MethodInvocationTree invocation, Void nestedUnused) {
+                        TreePath invocationPath = getCurrentPath();
+                        ExecutableElement invoked = executableAt(trees, invocationPath);
+                        if (invoked != null
+                                && ownerName(invoked).equals(config.integrationMessagePublisher())
+                                && invoked.getSimpleName().contentEquals(
+                                    config.integrationMessagePublishMethod())
+                                && invocation.getArguments().size() == 1
+                                && envelopeVariables.containsKey(trees.getElement(new TreePath(
+                                    invocationPath,
+                                    invocation.getArguments().getFirst())))) {
+                            publications.add(locationOf(trees, invocationPath, config));
+                        }
+                        return super.visitMethodInvocation(invocation, nestedUnused);
+                    }
+                }.scan(new TreePath(getCurrentPath(), loop.getStatement()), null);
+                return super.visitEnhancedForLoop(loop, unused);
+            }
+        }.scan(trees.getPath(method), null);
+
+        if (publications.size() != 1) {
+            throw new IllegalStateException("Could not prove the configured integration sender pipeline");
+        }
+        return new SenderEvidence(callerSignature(method), publications.getFirst());
+    }
+
+    private static List<IntegrationConsumerEvidence> findIntegrationConsumers(
+            Trees trees,
+            Elements elements,
+            Types types,
+            Config config) {
+        TypeElement configuration = requiredType(elements, config.sqsConfiguration(), null);
+        TypeElement handlerInterface = requiredType(elements, config.sqsHandlerInterface(), null);
+        List<IntegrationConsumerEvidence> consumers = new ArrayList<>();
+        for (Element enclosed : configuration.getEnclosedElements()) {
+            if (!(enclosed instanceof ExecutableElement method)
+                    || !types.isAssignable(
+                            types.erasure(method.getReturnType()),
+                            types.erasure(handlerInterface.asType()))) {
+                continue;
+            }
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitNewClass(NewClassTree newClass, Void unused) {
+                    TypeMirror constructed = trees.getTypeMirror(
+                            new TreePath(getCurrentPath(), newClass.getIdentifier()));
+                    if (constructed != null
+                            && types.isAssignable(types.erasure(constructed), types.erasure(handlerInterface.asType()))
+                            && newClass.getArguments().size() >= 2) {
+                        String destination = constantString(
+                                trees,
+                                new TreePath(getCurrentPath(), newClass.getArguments().get(0)));
+                        String eventType = constantString(
+                                trees,
+                                new TreePath(getCurrentPath(), newClass.getArguments().get(1)));
+                        if (destination != null && eventType != null) {
+                            consumers.add(new IntegrationConsumerEvidence(
+                                    callerSignature(method),
+                                    destination,
+                                    eventType,
+                                    locationOf(trees, method, config)));
+                        }
+                    }
+                    return super.visitNewClass(newClass, unused);
+                }
+            }.scan(trees.getPath(method), null);
+        }
+        return consumers;
+    }
+
+    private static List<DestinationEvidence> returnedStringConstants(
+            Trees trees,
+            TreePath statementPath,
+            Config config) {
+        List<DestinationEvidence> result = new ArrayList<>();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitReturn(ReturnTree returnTree, Void unused) {
+                if (returnTree.getExpression() instanceof MethodInvocationTree invocation) {
+                    for (ExpressionTree argument : invocation.getArguments()) {
+                        TreePath argumentPath = new TreePath(getCurrentPath(), argument);
+                        String value = constantString(trees, argumentPath);
+                        if (value != null) {
+                            result.add(new DestinationEvidence(
+                                    value,
+                                    locationOf(trees, argumentPath, config)));
+                        }
+                    }
+                }
+                return super.visitReturn(returnTree, unused);
+            }
+        }.scan(statementPath, null);
+        return result;
+    }
+
+    private static boolean hasMatchingAggregateAncestor(
+            Trees trees,
+            TreePath path,
+            Map<Element, String> roles,
+            String eventType,
+            String aggregateType) {
+        for (TreePath candidate = path.getParentPath(); candidate != null; candidate = candidate.getParentPath()) {
+            if (!(candidate.getLeaf() instanceof IfTree ifTree)) continue;
+            TreePath conditionPath = new TreePath(candidate, ifTree.getCondition());
+            if (referencesRole(trees, conditionPath, roles, "aggregateType")
+                    && Boolean.TRUE.equals(evaluateKnownStringCondition(
+                            trees,
+                            conditionPath,
+                            roles,
+                            eventType,
+                            aggregateType))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Boolean evaluateKnownStringCondition(
+            Trees trees,
+            TreePath path,
+            Map<Element, String> roles,
+            String eventType,
+            String aggregateType) {
+        Tree leaf = unwrap(path.getLeaf());
+        TreePath unwrappedPath = leaf == path.getLeaf() ? path : new TreePath(path, leaf);
+        if (leaf instanceof BinaryTree binary) {
+            Boolean left = evaluateKnownStringCondition(
+                    trees,
+                    new TreePath(unwrappedPath, binary.getLeftOperand()),
+                    roles,
+                    eventType,
+                    aggregateType);
+            Boolean right = evaluateKnownStringCondition(
+                    trees,
+                    new TreePath(unwrappedPath, binary.getRightOperand()),
+                    roles,
+                    eventType,
+                    aggregateType);
+            if (binary.getKind() == Tree.Kind.CONDITIONAL_AND) {
+                if (Boolean.FALSE.equals(left) || Boolean.FALSE.equals(right)) return false;
+                return left == null || right == null ? null : true;
+            }
+            if (binary.getKind() == Tree.Kind.CONDITIONAL_OR) {
+                if (Boolean.TRUE.equals(left) || Boolean.TRUE.equals(right)) return true;
+                return left == null || right == null ? null : false;
+            }
+        }
+        if (leaf instanceof UnaryTree unary && unary.getKind() == Tree.Kind.LOGICAL_COMPLEMENT) {
+            Boolean value = evaluateKnownStringCondition(
+                    trees,
+                    new TreePath(unwrappedPath, unary.getExpression()),
+                    roles,
+                    eventType,
+                    aggregateType);
+            return value == null ? null : !value;
+        }
+        if (!(leaf instanceof MethodInvocationTree invocation)
+                || !(invocation.getMethodSelect() instanceof MemberSelectTree select)
+                || invocation.getArguments().size() != 1) {
+            return null;
+        }
+        ExecutableElement method = executableAt(trees, unwrappedPath);
+        if (method == null || !ownerName(method).equals("java.lang.String")) return null;
+
+        TreePath receiverPath = new TreePath(unwrappedPath, select.getExpression());
+        TreePath argumentPath = new TreePath(unwrappedPath, invocation.getArguments().getFirst());
+        String receiverRole = roles.get(trees.getElement(receiverPath));
+        String argumentRole = roles.get(trees.getElement(argumentPath));
+        String receiverConstant = constantString(trees, receiverPath);
+        String argumentConstant = constantString(trees, argumentPath);
+        String methodName = method.getSimpleName().toString();
+
+        if (methodName.equals("endsWith") && receiverRole != null && argumentConstant != null) {
+            String known = receiverRole.equals("eventType") ? eventType : aggregateType;
+            return known.endsWith(argumentConstant);
+        }
+        if (methodName.equals("equals")) {
+            if (receiverRole != null && argumentConstant != null) {
+                String known = receiverRole.equals("eventType") ? eventType : aggregateType;
+                return known.equals(argumentConstant);
+            }
+            if (receiverConstant != null && argumentRole != null) {
+                String known = argumentRole.equals("eventType") ? eventType : aggregateType;
+                return receiverConstant.equals(known);
+            }
+        }
+        return null;
+    }
+
+    private static boolean referencesRole(
+            Trees trees,
+            TreePath path,
+            Map<Element, String> roles,
+            String role) {
+        final boolean[] found = { false };
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void scan(Tree tree, Void unused) {
+                if (tree == null || found[0]) return null;
+                return super.scan(tree, unused);
+            }
+
+            @Override
+            public Void visitIdentifier(com.sun.source.tree.IdentifierTree identifier, Void unused) {
+                if (role.equals(roles.get(trees.getElement(getCurrentPath())))) found[0] = true;
+                return super.visitIdentifier(identifier, unused);
+            }
+        }.scan(path, null);
+        return found[0];
+    }
+
+    private static ExpressionTree unwrap(ExpressionTree expression) {
+        ExpressionTree current = expression;
+        while (current instanceof ParenthesizedTree parenthesized) {
+            current = parenthesized.getExpression();
+        }
+        return current;
+    }
+
+    private static Tree unwrap(Tree tree) {
+        return tree instanceof ExpressionTree expression ? unwrap(expression) : tree;
+    }
+
+    private static String constantString(Trees trees, TreePath path) {
+        if (path.getLeaf() instanceof LiteralTree literal && literal.getValue() instanceof String value) {
+            return value;
+        }
+        Element element = trees.getElement(path);
+        return element instanceof VariableElement variable && variable.getConstantValue() instanceof String value
+                ? value
+                : null;
+    }
+
+    private static ExecutableElement executableAt(Trees trees, TreePath path) {
+        Element element = trees.getElement(path);
+        return element instanceof ExecutableElement executable ? executable : null;
+    }
+
+    private static String ownerName(ExecutableElement method) {
+        return method.getEnclosingElement() instanceof TypeElement owner
+                ? owner.getQualifiedName().toString()
+                : "";
+    }
+
+    private static ExecutableElement requiredMethod(TypeElement type, String methodName) {
+        List<ExecutableElement> methods = type.getEnclosedElements().stream()
+                .filter(ExecutableElement.class::isInstance)
+                .map(ExecutableElement.class::cast)
+                .filter(method -> method.getSimpleName().contentEquals(methodName))
+                .toList();
+        if (methods.size() != 1) {
+            throw new IllegalStateException(
+                    "Expected exactly one " + type.getQualifiedName() + "#" + methodName);
+        }
+        return methods.getFirst();
+    }
+
     private static String executableSignature(ExecutableElement executable) {
         return executable.getSimpleName() + "(" + executable.getParameters().stream()
                 .map(parameter -> parameter.asType().toString())
@@ -505,6 +1101,24 @@ public final class JavaSemanticSpike {
             String httpMethod,
             String commandBus,
             String commandDispatchMethod,
+            String integrationProducerEvent,
+            String outboxMetadataContributor,
+            String outboxMetadata,
+            String integrationDestinationResolver,
+            String integrationDestinationMethod,
+            String outboxEventEntity,
+            String aggregateTypeGetter,
+            String eventTypeGetter,
+            String integrationTypeCatalog,
+            String integrationVersionMethod,
+            String integrationSender,
+            String integrationSenderMethod,
+            String integrationEnvelopeFactory,
+            String integrationEnvelopeFactoryMethod,
+            String integrationMessagePublisher,
+            String integrationMessagePublishMethod,
+            String sqsHandlerInterface,
+            String sqsConfiguration,
             List<Path> sources,
             List<Path> scanSources,
             List<String> events) {
@@ -546,6 +1160,24 @@ public final class JavaSemanticSpike {
                     optional(options, "--http-method"),
                     optional(options, "--command-bus"),
                     optional(options, "--command-dispatch-method"),
+                    optional(options, "--integration-producer-event"),
+                    optional(options, "--outbox-metadata-contributor"),
+                    optional(options, "--outbox-metadata"),
+                    optional(options, "--integration-destination-resolver"),
+                    optional(options, "--integration-destination-method"),
+                    optional(options, "--outbox-event-entity"),
+                    optional(options, "--aggregate-type-getter"),
+                    optional(options, "--event-type-getter"),
+                    optional(options, "--integration-type-catalog"),
+                    optional(options, "--integration-version-method"),
+                    optional(options, "--integration-sender"),
+                    optional(options, "--integration-sender-method"),
+                    optional(options, "--integration-envelope-factory"),
+                    optional(options, "--integration-envelope-factory-method"),
+                    optional(options, "--integration-message-publisher"),
+                    optional(options, "--integration-message-publish-method"),
+                    optional(options, "--sqs-handler-interface"),
+                    optional(options, "--sqs-configuration"),
                     sources,
                     scanSources,
                     many(options, "--event"));
@@ -697,12 +1329,75 @@ public final class JavaSemanticSpike {
             List<CommandDispatchEvidence> dispatches) {
     }
 
+    private record DestinationEvidence(String destination, SourceLocation source) {
+    }
+
+    private record AggregateTypeEvidence(String aggregateType, SourceLocation source) {
+    }
+
+    private record StableTypeEvidence(String eventType, SourceLocation source) {
+    }
+
+    private record VersionEvidence(int version, SourceLocation source) {
+    }
+
+    private record SenderEvidence(String handler, SourceLocation source) {
+    }
+
+    private record IntegrationMappingEvidence(
+            String producerEvent,
+            String aggregateType,
+            String destination,
+            String eventType,
+            int version,
+            String sender,
+            SourceLocation senderSource,
+            SourceLocation aggregateSource,
+            SourceLocation destinationSource,
+            SourceLocation typeSource,
+            SourceLocation versionSource) {
+        private String toJson() {
+            return "{\"producerEvent\":" + quote(producerEvent)
+                    + ",\"aggregateType\":" + quote(aggregateType)
+                    + ",\"destination\":" + quote(destination)
+                    + ",\"eventType\":" + quote(eventType)
+                    + ",\"version\":" + version
+                    + ",\"sender\":" + quote(sender)
+                    + ",\"senderSource\":" + senderSource.toJson()
+                    + ",\"aggregateSource\":" + aggregateSource.toJson()
+                    + ",\"destinationSource\":" + destinationSource.toJson()
+                    + ",\"typeSource\":" + typeSource.toJson()
+                    + ",\"versionSource\":" + versionSource.toJson()
+                    + "}";
+        }
+    }
+
+    private record IntegrationConsumerEvidence(
+            String handler,
+            String destination,
+            String eventType,
+            SourceLocation source) {
+        private String toJson() {
+            return "{\"handler\":" + quote(handler)
+                    + ",\"destination\":" + quote(destination)
+                    + ",\"eventType\":" + quote(eventType)
+                    + ",\"source\":" + source.toJson()
+                    + "}";
+        }
+    }
+
+    private record IntegrationSliceEvidence(
+            List<IntegrationMappingEvidence> mappings,
+            List<IntegrationConsumerEvidence> consumers) {
+    }
+
     private record ProbeResult(
             List<TypeEvidence> types,
             HandlerEvidence handler,
             List<InvocationEvidence> providerInvocations,
             List<PublicationEvidence> domainEventPublications,
             CommandSliceEvidence commandSlice,
+            IntegrationSliceEvidence integrationSlice,
             List<DiagnosticEvidence> diagnostics) {
         private String toJson() {
             return "{\"engine\":\"jdk-compiler-api\",\"types\":"
@@ -718,6 +1413,14 @@ public final class JavaSemanticSpike {
                     + ",\"commandDispatches\":" + (commandSlice == null
                             ? "[]"
                             : jsonArray(commandSlice.dispatches().stream().map(CommandDispatchEvidence::toJson).toList()))
+                    + ",\"integrationEventMappings\":" + (integrationSlice == null
+                            ? "[]"
+                            : jsonArray(integrationSlice.mappings().stream()
+                                    .map(IntegrationMappingEvidence::toJson).toList()))
+                    + ",\"integrationEventConsumers\":" + (integrationSlice == null
+                            ? "[]"
+                            : jsonArray(integrationSlice.consumers().stream()
+                                    .map(IntegrationConsumerEvidence::toJson).toList()))
                     + ",\"diagnostics\":" + jsonArray(diagnostics.stream().map(DiagnosticEvidence::toJson).toList())
                     + "}";
         }

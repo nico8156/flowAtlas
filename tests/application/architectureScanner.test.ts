@@ -58,6 +58,37 @@ describe("Architecture scanner port", () => {
           source: { file: "fixture/VerifyController.java", line: 9, inScanScope: true },
         },
       ],
+      integrationEventMappings: [
+        {
+          producerEvent: "fixture.AcceptedEvent",
+          aggregateType: "Fixture",
+          destination: "fixture-events",
+          eventType: "fixture.accepted",
+          version: 1,
+          sender: "fixture.StableSender#send(fixture.OutboxEvent)",
+          senderSource: { file: "fixture/StableSender.java", line: 12, inScanScope: true },
+          aggregateSource: {
+            file: "fixture/MetadataContributor.java",
+            line: 8,
+            inScanScope: true,
+          },
+          destinationSource: {
+            file: "fixture/DestinationResolver.java",
+            line: 14,
+            inScanScope: true,
+          },
+          typeSource: { file: "fixture/TypeCatalog.java", line: 8, inScanScope: true },
+          versionSource: { file: "fixture/TypeCatalog.java", line: 15, inScanScope: true },
+        },
+      ],
+      integrationEventConsumers: [
+        {
+          handler: "fixture.Routes#accepted()",
+          destination: "fixture-events",
+          eventType: "fixture.accepted",
+          source: { file: "fixture/Routes.java", line: 10, inScanScope: true },
+        },
+      ],
       diagnostics: [
         {
           kind: "WARNING",
@@ -76,6 +107,9 @@ describe("Architecture scanner port", () => {
     expect(loadJavaEvidence).toHaveBeenCalledWith("/workspace/backend");
     expect(javaResult.graph.findNode("java-domain-event:fixture.AcceptedEvent")).toBeDefined();
     expect(javaResult.graph.findNode("protocol:http:POST:/verify")).toBeDefined();
+    expect(
+      javaResult.graph.findNode("integration:fixture-events:fixture.accepted:v1"),
+    ).toBeDefined();
     expect(javaResult.diagnostics).toEqual([
       {
         severity: "warning",
