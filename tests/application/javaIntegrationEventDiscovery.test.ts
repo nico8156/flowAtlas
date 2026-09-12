@@ -36,6 +36,7 @@ describe("Java integration-event discovery", () => {
         integrationEventConsumers: [],
         projectionUpdates: [],
         externalCalls: [],
+        scheduledHandlers: [],
         diagnostics: [],
       })),
     );

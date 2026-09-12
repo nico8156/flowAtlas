@@ -249,6 +249,21 @@ const loadRequest = async (projectRoot, requestPath) => {
     fail("all external request properties must be provided together");
   }
 
+  const scheduledConfiguration = {
+    scheduledHandler: optionalString(request, "scheduledHandler"),
+    scheduledMethod: optionalString(request, "scheduledMethod"),
+    scheduledAnnotation: optionalString(request, "scheduledAnnotation"),
+  };
+  const configuredScheduledProperties = Object.values(scheduledConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    configuredScheduledProperties.length > 0 &&
+    configuredScheduledProperties.length !== Object.keys(scheduledConfiguration).length
+  ) {
+    fail("all scheduled request properties must be provided together");
+  }
+
   return {
     sourceRootName,
     sourceRoot,
@@ -265,6 +280,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     ...integrationConfiguration,
     ...projectionConfiguration,
     ...externalConfiguration,
+    ...scheduledConfiguration,
     events: requireStringArray(request, "events"),
   };
 };
@@ -430,6 +446,16 @@ const run = async () => {
             request.externalProcessBuilder,
             "--external-process-start-method",
             request.externalProcessStartMethod,
+          ]
+        : []),
+      ...(request.scheduledHandler
+        ? [
+            "--scheduled-handler",
+            request.scheduledHandler,
+            "--scheduled-method",
+            request.scheduledMethod,
+            "--scheduled-annotation",
+            request.scheduledAnnotation,
           ]
         : []),
       ...[...new Set([...request.scanSources, ...request.resolutionSources])].flatMap((source) => [

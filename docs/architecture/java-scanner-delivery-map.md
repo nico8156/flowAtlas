@@ -97,7 +97,7 @@ in `ArchitectureGraph`.
 | 08  | DELIVERED | Expose Java projects through the existing CLI and MCP capabilities.                                    | Explicit Java project/request inputs return the Fragments graph without changing TypeScript defaults.                  |
 | 09  | DELIVERED | Make stale Java semantic requests actionable.                                                          | Failed requests name their request file, semantic failure and safe source-scope remediation.                           |
 | 10  | DELIVERED | Improve Java integration-contract discovery aliases.                                                   | Java producer event names find their canonical integration contract without new graph topology.                        |
-| 11  | ACTIVE    | Re-anchor External execution and make the Java runtime explicit.                                       | Worker/process boundary and effective JDK are proven; `@Scheduled` signal remains next.                                |
+| 11  | DELIVERED | Re-anchor External execution, make Java runtime explicit, and map one scheduled signal.                | Worker/process boundary, effective JDK and `@Scheduled` signal are proven without a durable-job join.                  |
 
 ## What has been learned
 
@@ -126,6 +126,14 @@ in `ArchitectureGraph`.
 - The semantic helper prefers `JAVA_HOME/bin/java` when supplied and reports
   its executable, full version and feature version in scan project metadata.
 - A runtime below the Maven release fails concisely before semantic analysis.
+
+### Lot 11C — scheduled protocol signal
+
+- A configured method annotated with Spring `@Scheduled` is represented as a
+  protocol Event. `ScheduledTicketVerificationWorker#runDue()` listens to that
+  Event; it is not treated as a domain event or an External.
+- This says nothing about a particular invocation, transaction, job row or
+  retry. In particular, FlowAtlas emits no process-manager-to-worker edge.
 
 ### Lot 00 — graph semantics
 

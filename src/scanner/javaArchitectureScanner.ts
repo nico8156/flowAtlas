@@ -21,6 +21,7 @@ import {
   type JavaProjectionEvidence,
 } from "./javaProjectionDetector.js";
 import { detectJavaExternalGraph, type JavaExternalEvidence } from "./javaExternalDetector.js";
+import { detectJavaScheduledGraph, type JavaScheduledEvidence } from "./javaScheduledDetector.js";
 
 type JavaDiagnostic = {
   kind: string;
@@ -37,7 +38,8 @@ type JavaSemanticEvidence = JavaDomainEventEvidence &
   JavaIntegrationEventEvidence & {
     diagnostics: readonly JavaDiagnostic[];
   } & JavaProjectionEvidence &
-  JavaExternalEvidence;
+  JavaExternalEvidence &
+  JavaScheduledEvidence;
 
 type JavaSemanticEvidenceLoader = (
   projectPath: string,
@@ -82,6 +84,7 @@ export const createJavaArchitectureScanner = (
     mergeGraph(graph, detectJavaIntegrationEventGraph(evidence));
     mergeGraph(graph, detectJavaProjectionGraph(evidence));
     mergeGraph(graph, detectJavaExternalGraph(evidence));
+    mergeGraph(graph, detectJavaScheduledGraph(evidence));
     return {
       graph,
       diagnostics: evidence.diagnostics.map(({ kind, message, source }) => ({

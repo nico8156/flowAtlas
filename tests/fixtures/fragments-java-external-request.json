@@ -26,5 +26,8 @@
   "externalAdapterMethod": "verify",
   "externalHandler": "com.nm.fragmentsclean.ticketContext.write.adapters.primary.springboot.scheduling.ScheduledTicketVerificationWorker",
   "externalProcessBuilder": "java.lang.ProcessBuilder",
-  "externalProcessStartMethod": "start"
+  "externalProcessStartMethod": "start",
+  "scheduledHandler": "com.nm.fragmentsclean.ticketContext.write.adapters.primary.springboot.scheduling.ScheduledTicketVerificationWorker",
+  "scheduledMethod": "runDue",
+  "scheduledAnnotation": "org.springframework.scheduling.annotation.Scheduled"
 }

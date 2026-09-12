@@ -162,6 +162,8 @@ public final class JavaSemanticSpike {
                     config,
                     invocations);
 
+            ScheduledSliceEvidence scheduledSlice = analyzeScheduledSlice(trees, elements, diagnostics, config);
+
             return new ProbeResult(
                     typeEvidence,
                     handlerEvidence,
@@ -171,6 +173,7 @@ public final class JavaSemanticSpike {
                     integrationSlice,
                     projectionSlice,
                     externalSlice,
+                    scheduledSlice,
                     diagnosticEvidence(diagnostics, config));
         }
     }
@@ -984,6 +987,29 @@ public final class JavaSemanticSpike {
                 sync.source())));
     }
 
+    private static ScheduledSliceEvidence analyzeScheduledSlice(
+            Trees trees,
+            Elements elements,
+            DiagnosticCollector<JavaFileObject> diagnostics,
+            Config config) {
+        if (config.scheduledHandler() == null) return null;
+        TypeElement handler = requiredType(elements, config.scheduledHandler(), diagnostics);
+        ExecutableElement method = requiredMethod(handler, config.scheduledMethod());
+        boolean scheduled = method.getAnnotationMirrors().stream()
+                .map(annotation -> annotation.getAnnotationType().asElement())
+                .filter(TypeElement.class::isInstance)
+                .map(TypeElement.class::cast)
+                .anyMatch(annotation -> annotation.getQualifiedName().contentEquals(config.scheduledAnnotation()));
+        if (!scheduled) {
+            throw new IllegalStateException("Configured scheduled method does not carry annotation "
+                    + config.scheduledAnnotation());
+        }
+        return new ScheduledSliceEvidence(List.of(new ScheduledHandlerEvidence(
+                handler.getQualifiedName().toString(),
+                callerSignature(method).substring(callerSignature(method).indexOf('#') + 1),
+                locationOf(trees, method, config))));
+    }
+
     private static ExternalSliceEvidence analyzeExternalSlice(
             Trees trees,
             Elements elements,
@@ -1370,6 +1396,9 @@ public final class JavaSemanticSpike {
             String externalHandler,
             String externalProcessBuilder,
             String externalProcessStartMethod,
+            String scheduledHandler,
+            String scheduledMethod,
+            String scheduledAnnotation,
             List<Path> sources,
             List<Path> scanSources,
             List<String> events) {
@@ -1449,6 +1478,9 @@ public final class JavaSemanticSpike {
                     optional(options, "--external-handler"),
                     optional(options, "--external-process-builder"),
                     optional(options, "--external-process-start-method"),
+                    optional(options, "--scheduled-handler"),
+                    optional(options, "--scheduled-method"),
+                    optional(options, "--scheduled-annotation"),
                     sources,
                     scanSources,
                     many(options, "--event"));
@@ -1720,6 +1752,17 @@ public final class JavaSemanticSpike {
     private record ExternalSliceEvidence(List<ExternalCallEvidence> calls) {
     }
 
+    private record ScheduledHandlerEvidence(String handler, String method, SourceLocation source) {
+        private String toJson() {
+            return "{\"handler\":" + quote(handler)
+                    + ",\"method\":" + quote(method)
+                    + ",\"source\":" + source.toJson() + "}";
+        }
+    }
+
+    private record ScheduledSliceEvidence(List<ScheduledHandlerEvidence> handlers) {
+    }
+
     private record ProbeResult(
             List<TypeEvidence> types,
             HandlerEvidence handler,
@@ -1729,6 +1772,7 @@ public final class JavaSemanticSpike {
             IntegrationSliceEvidence integrationSlice,
             ProjectionSliceEvidence projectionSlice,
             ExternalSliceEvidence externalSlice,
+            ScheduledSliceEvidence scheduledSlice,
             List<DiagnosticEvidence> diagnostics) {
         private String toJson() {
             return "{\"engine\":\"jdk-compiler-api\",\"types\":"
@@ -1760,6 +1804,10 @@ public final class JavaSemanticSpike {
                             ? "[]"
                             : jsonArray(externalSlice.calls().stream()
                                     .map(ExternalCallEvidence::toJson).toList()))
+                    + ",\"scheduledHandlers\":" + (scheduledSlice == null
+                            ? "[]"
+                            : jsonArray(scheduledSlice.handlers().stream()
+                                    .map(ScheduledHandlerEvidence::toJson).toList()))
                     + ",\"diagnostics\":" + jsonArray(diagnostics.stream().map(DiagnosticEvidence::toJson).toList())
                     + "}";
         }

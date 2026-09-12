@@ -380,6 +380,14 @@ worker class, and FlowAtlas proves only the worker method's call through the
 configured provider adapter to `ProcessBuilder.start()`. It emits no invented
 edge from job persistence to the scheduled worker.
 
+## Scheduled protocol result
+
+`@Scheduled` is static evidence of a framework-triggered protocol signal, not
+of an execution occurrence. The Java adapter maps the configured worker method
+to `protocol:scheduled:<worker>#runDue()` and emits the worker's `LISTENS_TO`
+edge. The durable job table, transaction scope, lease and retry timing remain
+outside the graph until independently and statically justified.
+
 ## Engine references
 
 - [JDK 21 `Trees` API](https://docs.oracle.com/en/java/javase/21/docs/api/jdk.compiler/com/sun/source/util/Trees.html)

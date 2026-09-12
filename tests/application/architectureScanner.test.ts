@@ -114,6 +114,7 @@ describe("Architecture scanner port", () => {
           externalSource: { file: "fixture/ProcessProvider.java", line: 12, inScanScope: true },
         },
       ],
+      scheduledHandlers: [],
       diagnostics: [
         {
           kind: "WARNING",
