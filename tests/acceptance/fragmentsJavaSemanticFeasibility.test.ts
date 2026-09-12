@@ -66,19 +66,7 @@ describeFragments("Fragments Java semantic feasibility", () => {
         source: expect.objectContaining({ inScanScope: true }),
       }),
     );
-    expect(result.providerInvocations).toEqual([
-      {
-        owner:
-          "com.nm.fragmentsclean.ticketContext.write.businesslogic.gateways.TicketVerificationProvider",
-        method: "verify(java.lang.String,java.lang.String)",
-        caller:
-          "com.nm.fragmentsclean.ticketContext.write.businesslogic.processManagers.TicketVerificationProcessManager#handle(com.nm.fragmentsclean.ticketContext.write.businesslogic.models.TicketVerifyAcceptedEvent)",
-        source: expect.objectContaining({
-          file: "com/nm/fragmentsclean/ticketContext/write/businesslogic/processManagers/TicketVerificationProcessManager.java",
-          line: expect.any(Number),
-          inScanScope: true,
-        }),
-      },
-    ]);
+    // The durable intake records a job; provider execution belongs to the scheduled worker.
+    expect(result.providerInvocations).toEqual([]);
   }, 60_000);
 });

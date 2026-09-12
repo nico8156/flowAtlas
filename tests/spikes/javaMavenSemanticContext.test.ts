@@ -30,6 +30,7 @@ describe("Java Maven semantic context", () => {
       project: {
         root: string;
         javaRelease: string;
+        javaRuntime: { executable: string; version: string; feature: string };
         sourceRoot: string;
         classpathEntries: number;
       };
@@ -59,6 +60,11 @@ describe("Java Maven semantic context", () => {
     expect(result.project).toEqual({
       root: fixtureRoot,
       javaRelease: "21",
+      javaRuntime: {
+        executable: expect.any(String),
+        version: expect.any(String),
+        feature: expect.any(String),
+      },
       sourceRoot: "src/main/java",
       classpathEntries: expect.any(Number),
     });

@@ -97,7 +97,7 @@ in `ArchitectureGraph`.
 | 08  | DELIVERED | Expose Java projects through the existing CLI and MCP capabilities.                                    | Explicit Java project/request inputs return the Fragments graph without changing TypeScript defaults.                  |
 | 09  | DELIVERED | Make stale Java semantic requests actionable.                                                          | Failed requests name their request file, semantic failure and safe source-scope remediation.                           |
 | 10  | DELIVERED | Improve Java integration-contract discovery aliases.                                                   | Java producer event names find their canonical integration contract without new graph topology.                        |
-| 11  | ACTIVE    | Re-anchor one resolved External boundary on its explicit scheduled worker.                             | Worker method, configured adapter and process boundary are proven; durable intake remains discontinuous.               |
+| 11  | ACTIVE    | Re-anchor External execution and make the Java runtime explicit.                                       | Worker/process boundary and effective JDK are proven; `@Scheduled` signal remains next.                                |
 
 ## What has been learned
 
@@ -120,6 +120,12 @@ in `ArchitectureGraph`.
 - The request now names `ScheduledTicketVerificationWorker` explicitly. The
   proven edge is `worker#process(UUID) --CALLS_EXTERNAL--> local-process:java.lang.ProcessBuilder`.
   Job persistence and later polling remain separate, unconnected projections.
+
+### Lot 11A — explicit Java runtime
+
+- The semantic helper prefers `JAVA_HOME/bin/java` when supplied and reports
+  its executable, full version and feature version in scan project metadata.
+- A runtime below the Maven release fails concisely before semantic analysis.
 
 ### Lot 00 — graph semantics
 

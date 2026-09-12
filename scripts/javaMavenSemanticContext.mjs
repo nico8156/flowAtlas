@@ -81,6 +81,26 @@ const readJavaRelease = (pom) => {
   fail("pom.xml must declare maven.compiler.release, java.version, or maven.compiler.source");
 };
 
+const resolveJavaExecutable = () =>
+  globalThis.process.env.JAVA_HOME ? join(globalThis.process.env.JAVA_HOME, "bin", "java") : "java";
+
+const readJavaRuntime = async (executable) => {
+  let versionOutput;
+  try {
+    ({ stderr: versionOutput } = await execFileAsync(executable, ["-version"], {
+      maxBuffer: 16 * 1024,
+    }));
+  } catch (error) {
+    fail(
+      `cannot execute Java runtime ${executable}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  const version = versionOutput.match(/version "([^"\s]+)/u)?.[1];
+  const feature = version?.match(/^(\d+)/u)?.[1];
+  if (!version || !feature) fail(`cannot identify Java version from ${executable}`);
+  return { executable, version, feature };
+};
+
 const buildMavenClasspath = async (projectRoot, temporaryDirectory) => {
   const classpathFile = resolve(temporaryDirectory, "classpath.txt");
   const wrapper = resolve(projectRoot, "mvnw");
@@ -262,6 +282,12 @@ const run = async () => {
 
   const request = await loadRequest(projectRoot, requestPath);
   const javaRelease = readJavaRelease(await readFile(pomPath, "utf8"));
+  const javaRuntime = await readJavaRuntime(resolveJavaExecutable());
+  if (Number(javaRuntime.feature) < Number(javaRelease)) {
+    fail(
+      `Java runtime ${javaRuntime.executable} is ${javaRuntime.version}, below Maven release ${javaRelease}`,
+    );
+  }
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "flowatlas-java-context-"));
 
   try {
@@ -413,7 +439,7 @@ const run = async () => {
       ...request.scanSources.flatMap((source) => ["--scan-source", source]),
       ...request.events.flatMap((event) => ["--event", event]),
     ];
-    const { stdout } = await execFileAsync("java", javaArguments, {
+    const { stdout } = await execFileAsync(javaRuntime.executable, javaArguments, {
       cwd: repositoryRoot,
       maxBuffer: 1024 * 1024,
     });
@@ -429,6 +455,7 @@ const run = async () => {
           project: {
             root: projectRoot,
             javaRelease,
+            javaRuntime,
             sourceRoot: request.sourceRootName,
             classpathEntries: classpathEntries.length,
           },
