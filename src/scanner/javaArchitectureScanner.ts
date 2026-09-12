@@ -38,7 +38,10 @@ type JavaSemanticEvidence = JavaDomainEventEvidence &
   } & JavaProjectionEvidence &
   JavaExternalEvidence;
 
-type JavaSemanticEvidenceLoader = (projectPath: string) => Promise<JavaSemanticEvidence>;
+type JavaSemanticEvidenceLoader = (
+  projectPath: string,
+  requestPath: string | undefined,
+) => Promise<JavaSemanticEvidence>;
 
 const diagnosticSeverity = (kind: string): ArchitectureScanDiagnostic["severity"] => {
   if (kind === "ERROR") return "error";
@@ -54,8 +57,8 @@ const mergeGraph = (target: ArchitectureGraph, source: ArchitectureGraph): void 
 export const createJavaArchitectureScanner = (
   loadEvidence: JavaSemanticEvidenceLoader,
 ): ArchitectureScanner => ({
-  async scan({ projectPath }) {
-    const evidence = await loadEvidence(projectPath);
+  async scan({ projectPath, requestPath }) {
+    const evidence = await loadEvidence(projectPath, requestPath);
     const graph = detectJavaDomainEventGraph(evidence);
     mergeGraph(graph, detectJavaHttpCommandGraph(evidence));
     mergeGraph(graph, detectJavaIntegrationEventGraph(evidence));

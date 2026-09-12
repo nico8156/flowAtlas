@@ -1,10 +1,10 @@
 # Java Scanner Delivery Map
 
-Last updated: 11 September 2026.
+Last updated: 12 September 2026.
 
 ## Current position
 
-**Lots 00 to 07 are delivered. Lot 08 is next and has not started.**
+**Lots 00 to 08 are delivered. Lot 09 remains long-term.**
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
@@ -17,7 +17,7 @@ Last updated: 11 September 2026.
           DONE                 DONE               DONE
 
 -> [07 externals] -> [08 CLI/MCP] -> [09 more corpora]
-        DONE              NEXT             LONG TERM
+        DONE              DONE             LONG TERM
 ```
 
 The detailed semantic decision is in
@@ -94,7 +94,7 @@ in `ArchitectureGraph`.
 | 05  | DELIVERED | Reconstruct outbox mappings, destination/versioned integration events, SQS routes and inbox consumers. | Two destination-specific Ticket identities and their configured consumers are proven without Event-to-Event causality. |
 | 06  | DELIVERED | Detect event-fed projection State and projection-sync signals.                                         | Ticket State comes from the projection-sync contract; the ACL discontinuity remains visible.                           |
 | 07  | DELIVERED | Detect meaningful external boundaries through resolved adapters.                                       | Ticket verification reaches a resolved local-process boundary; the port itself remains absent.                         |
-| 08  | PROPOSED  | Expose Java projects through the existing CLI and MCP capabilities.                                    | Bounded Fragments projections are deterministic and preserve current TypeScript behavior.                              |
+| 08  | DELIVERED | Expose Java projects through the existing CLI and MCP capabilities.                                    | Explicit Java project/request inputs return the Fragments graph without changing TypeScript defaults.                  |
 | 09  | LONG TERM | Generalize from additional Java corpora.                                                               | Repeated evidence, not one framework convention, justifies new detectors or vocabulary review.                         |
 
 ## What has been learned
@@ -264,6 +264,23 @@ in `ArchitectureGraph`.
   boundary rather than an invented executable identity.
 - Profiles, alternative beans and adapter delegation remain explicit gaps.
 
+### Lot 08 — explicit CLI and MCP selection
+
+- Human-approved Option A extends `ArchitectureScanRequest` with an adapter
+  selector and optional request path. TypeScript remains the default; Java
+  requires an explicit semantic request.
+- The CLI accepts a Java JSON export without ambient Maven configuration:
+
+  ```text
+  flowatlas scan --adapter java --request <request.json> <maven-project> --json
+  ```
+
+- `flowatlas_find_nodes` and `flowatlas_get_context` now accept `adapter` and
+  `requestPath`. Existing TypeScript MCP callers keep their current defaults.
+- The real Fragments external request is exercised through the built CLI. The
+  Java adapter still requires a JDK, Maven or `mvnw`, and a request file that
+  explicitly names scan and resolution sources.
+
 ## Fragments feedback loop
 
 The App Store audit currently identifies two distinct opportunities:
@@ -326,6 +343,5 @@ framework. Additional shared inputs require evidence from another real caller.
 
 ## Next acceptance boundary
 
-Lot 08 should expose an explicit Java project/request selection through the
-existing CLI and MCP adapters. It must preserve all TypeScript command behavior
-and must not make Maven/classpath configuration a hidden global default.
+Lot 09 needs a second real Java corpus before generalizing multi-module roots,
+generated sources, additional framework routes or bean-selection behavior.

@@ -129,7 +129,7 @@ describe("Architecture scanner port", () => {
 
     expect(loadTypeScriptGraph).toHaveBeenCalledWith("/workspace/front");
     expect(typeScriptResult).toEqual({ graph: typeScriptGraph, diagnostics: [] });
-    expect(loadJavaEvidence).toHaveBeenCalledWith("/workspace/backend");
+    expect(loadJavaEvidence).toHaveBeenCalledWith("/workspace/backend", undefined);
     expect(javaResult.graph.findNode("java-domain-event:fixture.AcceptedEvent")).toBeDefined();
     expect(javaResult.graph.findNode("protocol:http:POST:/verify")).toBeDefined();
     expect(

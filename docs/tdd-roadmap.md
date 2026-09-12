@@ -26,7 +26,7 @@ acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 | 12. Agent value validation                 | DELIVERED: first paired Fragments run     |
 | 13. Diagnostics                            | LONG TERM                                 |
 | 14. Runtime overlay                        | LONG TERM                                 |
-| 15. Java semantic feasibility              | ACTIVE: External boundary graph delivered |
+| 15. Java semantic feasibility              | ACTIVE: Java CLI/MCP delivery completed   |
 
 ## Completed Investigation: TypeScript Program / TypeChecker
 
@@ -1153,7 +1153,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — lots 00 to 07 delivered, CLI/MCP composition next**
+**Status: ACTIVE — lots 00 to 08 delivered, second corpus next**
 
 ### Goal
 
@@ -1224,21 +1224,24 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 - Lot 07 resolves the ticket verification port through its configured concrete
   adapter to `ProcessBuilder.start()`, producing a local-process External
   without treating the port interface as an External.
+- Lot 08 exposes an explicit Java adapter and request through CLI JSON export
+  and the existing MCP discovery/context tools, preserving TypeScript defaults.
 
 ### Probable next behaviors
 
-1. Define explicit Java project and request inputs for the Lot 08 CLI/MCP
-   acceptance.
-2. Preserve existing TypeScript behavior and bounded diagnostic output.
-3. Keep Maven/classpath configuration out of ambient process state.
+1. Select a second real Java corpus before expanding detector coverage.
+2. Compare its source roots, framework routes and dependency configuration
+   against the bounded Fragments evidence.
+3. Escalate any proposal for multi-module, generated-source or dynamic-bean
+   generalization.
 
 ### Known gaps
 
-- The JDK compiler API remains behind the Java adapter and is not yet wired to
-  the public CLI/MCP composition.
-- Maven/classpath loading and scan-scope separation remain in the isolated Java
-  adapter script, outside the public CLI/MCP composition.
-- The public CLI/MCP composition still selects only the TypeScript adapter.
+- Maven/classpath loading and scan-scope separation remain inside the explicit
+  Java adapter request rather than becoming global CLI/MCP configuration.
+- The current Java exposure is bounded to explicit requests and JSON graph
+  export plus MCP discovery/context; interactive Java TUI and implicit project
+  discovery remain unimplemented.
 
 ### Discovered micro-cycles
 
@@ -1287,6 +1290,10 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   adapter implementation and `ProcessBuilder.start()` are all resolved. The
   graph records `local-process:java.lang.ProcessBuilder`, not a dynamic binary
   path; alternative beans, profiles and adapter delegation remain gaps.
+- Option A extends the shared request with `adapter` and `requestPath`; this is
+  the first proven second caller for explicit language selection. CLI JSON
+  export and MCP discovery/context pass those inputs to the Java adapter while
+  TypeScript remains the default.
 
 ### Open design questions
 

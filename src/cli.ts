@@ -22,6 +22,7 @@ import { runInAlternateTerminalScreen } from "./cli/terminalSession.js";
 import { projectDownstream, projectUpstream } from "./domain/graphProjection.js";
 import type { NodeKind } from "./domain/architectureGraph.js";
 import { scanTypeScriptProject } from "./scanner/typeScriptScanner.js";
+import { createJavaMavenArchitectureScanner } from "./scanner/javaMavenArchitectureScanner.js";
 import {
   TerminalTuiLoader,
   type ProjectionChange,
@@ -29,9 +30,42 @@ import {
 } from "./tui/TerminalTui.js";
 
 const usage =
-  "Usage: flowatlas scan [path] | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas find <query> [path] --kind <Event|Handler|State|External> --limit <count> --json | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> [--max-nodes <count> --max-edges <count>] [--max-bytes <count>] --json | flowatlas tui <nodeId> [path]";
+  "Usage: flowatlas scan [path] | flowatlas scan --adapter java --request <request.json> <maven-project> --json | flowatlas inspect <nodeId> [path] | flowatlas downstream <nodeId> [path] | flowatlas upstream <nodeId> [path] | flowatlas focus <nodeId> [path] | flowatlas find <query> [path] --kind <Event|Handler|State|External> --limit <count> --json | flowatlas context <nodeId> [path] --direction <upstream|downstream|both> --depth <count> [--max-nodes <count> --max-edges <count>] [--max-bytes <count>] --json | flowatlas tui <nodeId> [path]";
 
 const nodeKinds: readonly NodeKind[] = ["Event", "Handler", "State", "External"];
+
+const parseJavaJsonScanArguments = (
+  arguments_: readonly string[],
+): { projectPath: string; requestPath: string } | undefined => {
+  if (!arguments_.includes("--adapter")) return undefined;
+  if (arguments_[0] !== "scan") throw new Error(usage);
+
+  let adapter: string | undefined;
+  let requestPath: string | undefined;
+  let projectPath: string | undefined;
+  let json = false;
+  for (let index = 1; index < arguments_.length; index += 1) {
+    const argument = arguments_[index];
+    if (argument === "--adapter") {
+      adapter = arguments_[index + 1];
+      index += 1;
+      continue;
+    }
+    if (argument === "--request") {
+      requestPath = arguments_[index + 1];
+      index += 1;
+      continue;
+    }
+    if (argument === "--json") {
+      json = true;
+      continue;
+    }
+    if (argument?.startsWith("--") || projectPath !== undefined) throw new Error(usage);
+    projectPath = argument;
+  }
+  if (adapter !== "java" || !requestPath || !projectPath || !json) throw new Error(usage);
+  return { projectPath, requestPath };
+};
 
 const parseFindArguments = (
   arguments_: readonly string[],
@@ -173,6 +207,17 @@ const parseContextArguments = (
 export const runCli = async (
   arguments_: readonly string[] = process.argv.slice(2),
 ): Promise<void> => {
+  const javaJsonScan = parseJavaJsonScanArguments(arguments_);
+  if (javaJsonScan) {
+    const { graph } = await createJavaMavenArchitectureScanner().scan({
+      projectPath: javaJsonScan.projectPath,
+      adapter: "java",
+      requestPath: javaJsonScan.requestPath,
+    });
+    process.stdout.write(`${serializeArchitectureGraph(graph)}\n`);
+    return;
+  }
+
   if (arguments_[0] === "find") {
     const { query, projectPath, kind, limit } = parseFindArguments(arguments_.slice(1));
     const loadedProject = await loadTypeScriptProject(projectPath);

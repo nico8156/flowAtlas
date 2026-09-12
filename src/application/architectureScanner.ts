@@ -2,6 +2,8 @@ import type { ArchitectureGraph, SourceLocation } from "../domain/architectureGr
 
 export type ArchitectureScanRequest = {
   projectPath: string;
+  adapter?: "typescript" | "java";
+  requestPath?: string;
 };
 
 export type ArchitectureScanDiagnostic = {

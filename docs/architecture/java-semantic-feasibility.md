@@ -134,7 +134,7 @@ to make the first acceptance appear complete.
 | 05  | DELIVERED | Reconstruct outbox mapping, public integration identities, destinations, SQS routes and inbox-backed consumers.   |
 | 06  | DELIVERED | Detect event-fed projection State and Projection Sync signals.                                                    |
 | 07  | DELIVERED | Detect resolved external execution, communication and persistence boundaries.                                     |
-| 08  | PROPOSED  | Validate bounded Fragments projections and expose Java through the existing CLI and MCP application capabilities. |
+| 08  | DELIVERED | Validate bounded Fragments projections and expose Java through the existing CLI and MCP application capabilities. |
 | 09  | LONG TERM | Generalize only from additional real corpora and repeated evidence.                                               |
 
 Each proposed lot requires its own acceptance or focused behavioral RED and is
@@ -298,9 +298,8 @@ Event-to-Event relation and this lot does not disguise it as one.
 
 ## Next investigation
 
-Lot 08 may expose the Java adapter through the existing CLI and MCP
-composition, preserving TypeScript behavior and explicit Java project/request
-selection.
+Lot 09 needs a second Java corpus before generalizing beyond the observed
+Maven, Spring factory, SQS and local-process shapes.
 
 ## Lot 06 result
 
@@ -338,6 +337,21 @@ TicketVerificationProcessManager#handle(...)
 The External identifies the statically proven process-spawn boundary, not a
 binary name: the configured binary path is runtime-configurable. Alternative
 beans, profiles and delegating adapters remain unsupported selection gaps.
+
+## Lot 08 result
+
+Option A was explicitly approved: `ArchitectureScanRequest` now carries an
+adapter selector and optional request path. TypeScript remains the default;
+Java requires the explicit request used by the Maven semantic context.
+
+```text
+flowatlas scan --adapter java --request <request.json> <maven-project> --json
+```
+
+The existing MCP node-discovery and context tools expose the same `adapter`
+and `requestPath` inputs. Their TypeScript defaults remain unchanged. The
+request file, JDK and Maven context are explicit inputs, never hidden process
+defaults.
 
 Direct publication is not general interprocedural propagation. Helpers that
 capture publishers, injected gateway calls and discriminated branches remain
