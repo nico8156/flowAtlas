@@ -1,6 +1,7 @@
 import type {
   ArchitectureScanDiagnostic,
   ArchitectureScanner,
+  ArchitectureNodeDiscoveryAlias,
 } from "../application/architectureScanner.js";
 import type { ArchitectureGraph } from "../domain/architectureGraph.js";
 import {
@@ -54,6 +55,23 @@ const mergeGraph = (target: ArchitectureGraph, source: ArchitectureGraph): void 
   for (const edge of source.edges) target.addEdge(edge);
 };
 
+const integrationDiscoveryAliases = (
+  evidence: JavaIntegrationEventEvidence,
+): readonly ArchitectureNodeDiscoveryAlias[] =>
+  evidence.integrationEventMappings
+    .filter(
+      (mapping) =>
+        mapping.senderSource.inScanScope &&
+        mapping.aggregateSource.inScanScope &&
+        mapping.destinationSource.inScanScope &&
+        mapping.typeSource.inScanScope &&
+        mapping.versionSource.inScanScope,
+    )
+    .map((mapping) => ({
+      nodeId: `integration:${mapping.destination}:${mapping.eventType}:v${mapping.version}`,
+      aliases: [mapping.producerEvent, mapping.eventType],
+    }));
+
 export const createJavaArchitectureScanner = (
   loadEvidence: JavaSemanticEvidenceLoader,
 ): ArchitectureScanner => ({
@@ -71,6 +89,7 @@ export const createJavaArchitectureScanner = (
         message,
         ...(source ? { sourceLocation: { file: source.file, line: source.line } } : {}),
       })),
+      discoveryAliases: integrationDiscoveryAliases(evidence),
     };
   },
 });

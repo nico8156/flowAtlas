@@ -358,6 +358,20 @@ capture publishers, injected gateway calls and discriminated branches remain
 future acceptance cases. Branches may enrich evidence or diagnostics, but do
 not justify new graph kinds or speculative causal edges.
 
+## Lot 09 and 10 results
+
+An explicit Java semantic request is intentionally narrow and can become stale
+after a refactor. When the configured proof no longer exists, FlowAtlas now
+reports the request path, the Java semantic failure and the bounded remediation:
+update `scanSources` or `resolutionSources`, or use a request for the current
+vertical. It emits no partial graph as if the former proof still held.
+
+Integration-contract discovery additionally retains the exact statically
+configured producer event type as query metadata for the canonical
+destination/type/version Event. It is not graph topology. On Fragments,
+`TicketVerifyAcceptedEvent` finds both destination-specific integration
+contracts; callers must still use their canonical ids for context traversal.
+
 ## Engine references
 
 - [JDK 21 `Trees` API](https://docs.oracle.com/en/java/javase/21/docs/api/jdk.compiler/com/sun/source/util/Trees.html)

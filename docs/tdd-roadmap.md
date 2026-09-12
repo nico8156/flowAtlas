@@ -1226,6 +1226,11 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   without treating the port interface as an External.
 - Lot 08 exposes an explicit Java adapter and request through CLI JSON export
   and the existing MCP discovery/context tools, preserving TypeScript defaults.
+- Lot 09 makes a stale explicit Java request actionable rather than silently
+  returning a topology from an obsolete proof.
+- Lot 10 adds discovery-only aliases from a statically configured Java producer
+  event type to its canonical integration contract. The aliases are neither
+  nodes nor relations and do not cross the outbox discontinuity.
 
 ### Probable next behaviors
 

@@ -38,12 +38,14 @@ export const createFlowAtlasMcpServer = (scanner: ArchitectureScanner): McpServe
       },
     },
     async ({ query, projectPath, adapter, requestPath, kind, limit }) => {
-      const { graph } = await scanner.scan({
+      const { graph, discoveryAliases } = await scanner.scan({
         projectPath,
         adapter,
         ...(requestPath ? { requestPath } : {}),
       });
-      return toolResult(findArchitectureNodes(graph, query, [kind as NodeKind], limit));
+      return toolResult(
+        findArchitectureNodes(graph, query, [kind as NodeKind], limit, discoveryAliases),
+      );
     },
   );
 

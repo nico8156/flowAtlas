@@ -4,7 +4,7 @@ Last updated: 12 September 2026.
 
 ## Current position
 
-**Lots 00 to 09 are delivered. Job-worker mapping is next.**
+**Lots 00 to 10 are delivered. Bounded job-worker mapping is next.**
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
@@ -96,10 +96,21 @@ in `ArchitectureGraph`.
 | 07  | DELIVERED | Detect meaningful external boundaries through resolved adapters.                                       | Ticket verification reaches a resolved local-process boundary; the port itself remains absent.                         |
 | 08  | DELIVERED | Expose Java projects through the existing CLI and MCP capabilities.                                    | Explicit Java project/request inputs return the Fragments graph without changing TypeScript defaults.                  |
 | 09  | DELIVERED | Make stale Java semantic requests actionable.                                                          | Failed requests name their request file, semantic failure and safe source-scope remediation.                           |
-| 10  | PROPOSED  | Improve Java integration-contract discovery aliases.                                                   | Java producer/consumer names find their canonical integration contract without new graph topology.                     |
+| 10  | DELIVERED | Improve Java integration-contract discovery aliases.                                                   | Java producer event names find their canonical integration contract without new graph topology.                        |
 | 11  | PROPOSED  | Prove one injected job repository and one scheduled worker.                                            | Constructor injection and `@Scheduled` evidence remain bounded, with no generic Spring simulation.                     |
 
 ## What has been learned
+
+### Lot 10 — integration-contract discovery
+
+- A Java producer event type is a statically configured mapping input, whereas
+  the emitted graph identity is the stable destination/type/version contract.
+  Discovery now retains that exact mapping as non-canonical query metadata.
+- Searching `TicketVerifyAcceptedEvent` on the real Fragments integration
+  request returns the two canonical destination-specific contracts. No alias is
+  added to `ArchitectureGraph`; context still starts from the canonical id.
+- The metadata is discovery-only: it introduces neither a node nor a relation,
+  and it cannot bridge the outbox discontinuity.
 
 ### Lot 00 — graph semantics
 
