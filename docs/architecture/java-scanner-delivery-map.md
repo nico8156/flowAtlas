@@ -4,7 +4,7 @@ Last updated: 12 September 2026.
 
 ## Current position
 
-**Lots 00 to 08 are delivered. Lot 09 remains long-term.**
+**Lots 00 to 09 are delivered. Job-worker mapping is next.**
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
@@ -17,7 +17,7 @@ Last updated: 12 September 2026.
           DONE                 DONE               DONE
 
 -> [07 externals] -> [08 CLI/MCP] -> [09 more corpora]
-        DONE              DONE             LONG TERM
+        DONE              DONE             DONE
 ```
 
 The detailed semantic decision is in
@@ -95,7 +95,9 @@ in `ArchitectureGraph`.
 | 06  | DELIVERED | Detect event-fed projection State and projection-sync signals.                                         | Ticket State comes from the projection-sync contract; the ACL discontinuity remains visible.                           |
 | 07  | DELIVERED | Detect meaningful external boundaries through resolved adapters.                                       | Ticket verification reaches a resolved local-process boundary; the port itself remains absent.                         |
 | 08  | DELIVERED | Expose Java projects through the existing CLI and MCP capabilities.                                    | Explicit Java project/request inputs return the Fragments graph without changing TypeScript defaults.                  |
-| 09  | LONG TERM | Generalize from additional Java corpora.                                                               | Repeated evidence, not one framework convention, justifies new detectors or vocabulary review.                         |
+| 09  | DELIVERED | Make stale Java semantic requests actionable.                                                          | Failed requests name their request file, semantic failure and safe source-scope remediation.                           |
+| 10  | PROPOSED  | Improve Java integration-contract discovery aliases.                                                   | Java producer/consumer names find their canonical integration contract without new graph topology.                     |
+| 11  | PROPOSED  | Prove one injected job repository and one scheduled worker.                                            | Constructor injection and `@Scheduled` evidence remain bounded, with no generic Spring simulation.                     |
 
 ## What has been learned
 
@@ -280,6 +282,14 @@ in `ArchitectureGraph`.
 - The real Fragments external request is exercised through the built CLI. The
   Java adapter still requires a JDK, Maven or `mvnw`, and a request file that
   explicitly names scan and resolution sources.
+
+### Lot 09 — request freshness diagnostics
+
+- A Java semantic failure now names the request file, preserves the semantic
+  failure and suggests only safe remediation: update `scanSources` or
+  `resolutionSources`, or choose the request for the current vertical.
+- The scanner still emits no partial topology when a request is stale. This
+  guards the distinction between missing evidence and absent architecture.
 
 ## Fragments feedback loop
 
