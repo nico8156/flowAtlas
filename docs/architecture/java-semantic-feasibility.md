@@ -372,6 +372,14 @@ destination/type/version Event. It is not graph topology. On Fragments,
 `TicketVerifyAcceptedEvent` finds both destination-specific integration
 contracts; callers must still use their canonical ids for context traversal.
 
+## Worker-owned External result
+
+The ticket verification process manager now records a durable job rather than
+calling the provider. The External request therefore identifies an explicit
+worker class, and FlowAtlas proves only the worker method's call through the
+configured provider adapter to `ProcessBuilder.start()`. It emits no invented
+edge from job persistence to the scheduled worker.
+
 ## Engine references
 
 - [JDK 21 `Trees` API](https://docs.oracle.com/en/java/javase/21/docs/api/jdk.compiler/com/sun/source/util/Trees.html)

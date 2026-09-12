@@ -1039,10 +1039,11 @@ public final class JavaSemanticSpike {
         }
 
         List<InvocationEvidence> calls = providerInvocations.stream()
-                .filter(invocation -> invocation.caller().startsWith(config.handler() + "#"))
+                .filter(invocation -> invocation.caller().startsWith(config.externalHandler() + "#"))
                 .toList();
         if (calls.size() != 1) {
-            throw new IllegalStateException("Could not prove one configured handler port invocation");
+            throw new IllegalStateException("Could not prove configured external handler invocation: handler="
+                    + config.externalHandler() + "; port=" + config.provider() + "; method=" + config.providerMethod());
         }
         InvocationEvidence call = calls.getFirst();
         return new ExternalSliceEvidence(List.of(new ExternalCallEvidence(
@@ -1366,6 +1367,7 @@ public final class JavaSemanticSpike {
             String externalFactoryMethod,
             String externalAdapter,
             String externalAdapterMethod,
+            String externalHandler,
             String externalProcessBuilder,
             String externalProcessStartMethod,
             List<Path> sources,
@@ -1444,6 +1446,7 @@ public final class JavaSemanticSpike {
                     optional(options, "--external-factory-method"),
                     optional(options, "--external-adapter"),
                     optional(options, "--external-adapter-method"),
+                    optional(options, "--external-handler"),
                     optional(options, "--external-process-builder"),
                     optional(options, "--external-process-start-method"),
                     sources,

@@ -97,7 +97,7 @@ in `ArchitectureGraph`.
 | 08  | DELIVERED | Expose Java projects through the existing CLI and MCP capabilities.                                    | Explicit Java project/request inputs return the Fragments graph without changing TypeScript defaults.                  |
 | 09  | DELIVERED | Make stale Java semantic requests actionable.                                                          | Failed requests name their request file, semantic failure and safe source-scope remediation.                           |
 | 10  | DELIVERED | Improve Java integration-contract discovery aliases.                                                   | Java producer event names find their canonical integration contract without new graph topology.                        |
-| 11  | PROPOSED  | Prove one injected job repository and one scheduled worker.                                            | Constructor injection and `@Scheduled` evidence remain bounded, with no generic Spring simulation.                     |
+| 11  | ACTIVE    | Re-anchor one resolved External boundary on its explicit scheduled worker.                             | Worker method, configured adapter and process boundary are proven; durable intake remains discontinuous.               |
 
 ## What has been learned
 
@@ -111,6 +111,15 @@ in `ArchitectureGraph`.
   added to `ArchitectureGraph`; context still starts from the canonical id.
 - The metadata is discovery-only: it introduces neither a node nor a relation,
   and it cannot bridge the outbox discontinuity.
+
+### Lot 11B — worker-owned external execution
+
+- The former External request named the event process manager as its handler.
+  After durable-job hardening, that source persists intent only; it no longer
+  invokes the provider.
+- The request now names `ScheduledTicketVerificationWorker` explicitly. The
+  proven edge is `worker#process(UUID) --CALLS_EXTERNAL--> local-process:java.lang.ProcessBuilder`.
+  Job persistence and later polling remain separate, unconnected projections.
 
 ### Lot 00 — graph semantics
 

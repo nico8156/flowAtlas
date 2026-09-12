@@ -26,6 +26,7 @@
   "externalFactoryMethod": "verificationProvider",
   "externalAdapter": "fixture.adapters.ProcessVerificationProvider",
   "externalAdapterMethod": "verify",
+  "externalHandler": "fixture.application.TicketVerificationProcessManager",
   "externalProcessBuilder": "java.lang.ProcessBuilder",
   "externalProcessStartMethod": "start"
 }

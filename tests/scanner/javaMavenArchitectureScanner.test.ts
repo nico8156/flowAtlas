@@ -13,4 +13,14 @@ describe("Java Maven architecture scanner", () => {
     expect(error.message).toContain("Could not prove one configured handler port invocation");
     expect(error.message).toContain("scanSources or resolutionSources");
   });
+
+  it("preserves the configured property named by a semantic proof failure", () => {
+    const error = formatJavaSemanticFailure("/workspace/request.json", {
+      stderr:
+        'Exception in thread "main" java.lang.IllegalStateException: Could not prove configured external handler invocation: handler=fixture.Worker#run(); port=fixture.Provider; method=verify\n',
+    });
+
+    expect(error.message).toContain("handler=fixture.Worker#run()");
+    expect(error.message).toContain("port=fixture.Provider");
+  });
 });

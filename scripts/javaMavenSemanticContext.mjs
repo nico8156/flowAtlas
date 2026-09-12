@@ -215,6 +215,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     externalFactoryMethod: optionalString(request, "externalFactoryMethod"),
     externalAdapter: optionalString(request, "externalAdapter"),
     externalAdapterMethod: optionalString(request, "externalAdapterMethod"),
+    externalHandler: optionalString(request, "externalHandler"),
     externalProcessBuilder: optionalString(request, "externalProcessBuilder"),
     externalProcessStartMethod: optionalString(request, "externalProcessStartMethod"),
   };
@@ -397,6 +398,8 @@ const run = async () => {
             request.externalAdapter,
             "--external-adapter-method",
             request.externalAdapterMethod,
+            "--external-handler",
+            request.externalHandler,
             "--external-process-builder",
             request.externalProcessBuilder,
             "--external-process-start-method",

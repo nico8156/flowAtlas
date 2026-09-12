@@ -13,11 +13,11 @@ const fragmentsRoot = resolve(process.env.FLOWATLAS_FRAGMENTS_BACKEND_ROOT ?? ".
 const fragmentsAvailable = existsSync(resolve(fragmentsRoot, "pom.xml"));
 const describeFragments = fragmentsAvailable ? describe : describe.skip;
 
-const processManager =
-  "com.nm.fragmentsclean.ticketContext.write.businesslogic.processManagers.TicketVerificationProcessManager#handle(com.nm.fragmentsclean.ticketContext.write.businesslogic.models.TicketVerifyAcceptedEvent)";
+const worker =
+  "com.nm.fragmentsclean.ticketContext.write.adapters.primary.springboot.scheduling.ScheduledTicketVerificationWorker#process(java.util.UUID)";
 
 describeFragments("Fragments Java external graph", () => {
-  it("proves the verification process manager reaches a resolved local-process boundary", async () => {
+  it("proves the scheduled verification worker reaches a resolved local-process boundary", async () => {
     const { stdout } = await execFileAsync(
       "node",
       [
@@ -32,14 +32,14 @@ describeFragments("Fragments Java external graph", () => {
 
     expect(graph.nodes).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: processManager, kind: "Handler" }),
+        expect.objectContaining({ id: worker, kind: "Handler" }),
         expect.objectContaining({ id: "local-process:java.lang.ProcessBuilder", kind: "External" }),
       ]),
     );
     expect(graph.edges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          source: processManager,
+          source: worker,
           target: "local-process:java.lang.ProcessBuilder",
           kind: "CALLS_EXTERNAL",
         }),
