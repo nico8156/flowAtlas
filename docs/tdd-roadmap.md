@@ -166,6 +166,9 @@ hypothetical full TypeChecker rewrite.
   context versus scan scope and shared resolution indexing.
 - RED 56: semantic declaration index built once per scan and function-like
   resolver migration.
+- RED 57: registration-scoped Redux listener handlers for factories that
+  register multiple listeners. This prevents a path from one listened action
+  from inheriting dispatches belonging to a sibling registration.
 - Final Fragments projection fix: `AppThunkWl -> ThunkAction -> ExtraArgWl ->
 DependenciesWl -> Partial<GatewaysWl> -> LikeWlGateway`.
 
@@ -222,6 +225,8 @@ RED 49.
 - shared TypeScript import-path indexing, avoiding a full project path-set
   rebuild for every import resolution;
 - External discovery and bounded propagation through internal helpers;
+- listener factories with multiple `startListening` registrations are split
+  into registration-scoped Handler identities;
 - tolerant omission of unresolved relations;
 - distinction between project TypeScript context and architectural scan scope.
 
@@ -230,12 +235,16 @@ RED 49.
 - `ArchitectureGraph` remains the only public architectural model;
 - acceptance scenarios are projections, not complete graph equality;
 - helpers remain metadata/analysis details;
+- a factory can remain an implementation container while each listener
+  registration owns its own Handler relations when multiple registrations are
+  present;
 - no intermediate facts model or generic call graph was introduced.
 
 ### Completion criteria
 
-The three Fragments acceptance drivers pass, relevant unit/scanner suites are
-green, and the static graph remains trustworthy under the current V1 scope.
+The Fragments acceptance drivers and the profile/avatar listener-scoping
+acceptance pass, relevant unit/scanner suites are green, and the static graph
+remains trustworthy under the current V1 scope.
 
 ## Milestone 3 - Complete Fragments Like Architecture
 
@@ -260,7 +269,7 @@ projection.updated
     -> likesRetrieval
     -> LikeWlGateway.get
     -> likesRetrieved
-    -> lState
+    -> likeWlReducer
 ```
 
 The thunk `likesRetrieval` behaves architecturally like a Handler but is
@@ -767,7 +776,7 @@ incremental TypeScript Program or persisted graph.
 - bounded contexts preserve the induced graph between returned nodes and
   expose completion, returned counts and canonical relations crossing the
   unexplored frontier;
-- the real Fragments `lState` acceptance proves that an edge budget can stop
+- the real Fragments `likeWlReducer` acceptance proves that an edge budget can stop
   before the node budget without silently hiding an internal relation.
 - a repository-owned Codex exploration skill now selects `find` only when the
   entry point is unknown, requests bounded `context`, reads referenced sources

@@ -24,7 +24,7 @@ describeFragments("FlowAtlas CLI bounded context", () => {
 
     await runCli([
       "context",
-      "lState",
+      "likeWlReducer",
       fragmentsRoot,
       "--direction",
       "both",
@@ -61,14 +61,14 @@ describeFragments("FlowAtlas CLI bounded context", () => {
       returned: { nodes: 5, edges: 4 },
     });
     expect(context.projection.nodes.map(({ id }) => id)).toEqual([
-      "lState",
+      "likeWlReducer",
       "likeOptimisticApplied",
       "likeReconciled",
       "likeRollback",
       "likesRetrievalFailed",
     ]);
     expect(context.projection.edges).toHaveLength(4);
-    expect(context.projection.edges.every((edge) => edge.target === "lState")).toBe(true);
+    expect(context.projection.edges.every((edge) => edge.target === "likeWlReducer")).toBe(true);
     expect(context.frontier).toEqual(
       expect.arrayContaining([
         {
@@ -76,7 +76,7 @@ describeFragments("FlowAtlas CLI bounded context", () => {
           traversal: "upstream",
           via: {
             source: "likesRetrievalPending",
-            target: "lState",
+            target: "likeWlReducer",
             kind: "UPDATES",
           },
         },

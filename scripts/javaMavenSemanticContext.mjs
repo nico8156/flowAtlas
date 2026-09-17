@@ -50,6 +50,14 @@ const optionalString = (object, property) => {
   return value;
 };
 
+const optionalNumber = (object, property) => {
+  const value = object[property];
+  if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+    fail(`request property ${property} must be a non-negative integer when present`);
+  }
+  return value;
+};
+
 const assertInside = (root, candidate, label) => {
   const relativePath = relative(root, candidate);
   if (relativePath === ".." || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) {
@@ -219,6 +227,11 @@ const loadRequest = async (projectRoot, requestPath) => {
     projectionSyncPublishMethod: optionalString(request, "projectionSyncPublishMethod"),
     projectionSyncEvent: optionalString(request, "projectionSyncEvent"),
     projectionSyncFactoryMethod: optionalString(request, "projectionSyncFactoryMethod"),
+    projectionSyncProjectionArgumentIndex: optionalNumber(
+      request,
+      "projectionSyncProjectionArgumentIndex",
+    ),
+    projectionSyncScopeArgumentIndex: optionalNumber(request, "projectionSyncScopeArgumentIndex"),
   };
   const configuredProjectionProperties = Object.values(projectionConfiguration).filter(
     (value) => value !== undefined,
@@ -428,6 +441,10 @@ const run = async () => {
             request.projectionSyncEvent,
             "--projection-sync-factory-method",
             request.projectionSyncFactoryMethod,
+            "--projection-sync-projection-argument-index",
+            String(request.projectionSyncProjectionArgumentIndex),
+            "--projection-sync-scope-argument-index",
+            String(request.projectionSyncScopeArgumentIndex),
           ]
         : []),
       ...(request.externalConfiguration

@@ -348,6 +348,32 @@ Experience, Comments, Like and Tickets gateways but does not classify
 `UserRepo` as an External. This remains evidence for injected gateway and
 discriminated-branch analysis; it does not widen the Java integration lot.
 
+The 17 September 2026 Fragments pre-release audit recorded 22 MCP calls across
+Redux and four Java slices. It confirmed FlowAtlas as a useful bounded
+architectural index, not an arbiter of safety: authorization, atomicity,
+idempotence, retention and runtime causality still came from source, tests and
+configuration review. The same audit provided concrete regression material:
+
+- `profileUpdateRequested` previously reached `avatarUpdateOptimistic` because
+  multiple registrations inside `profileUpdateListenerFactory` shared one
+  Handler id. This is now delivered in the TypeScript adapter: factories with
+  multiple listener registrations emit registration-scoped Handler identities,
+  for example `profileUpdateListenerFactory[profileUpdateRequested]`.
+- `projection.updated` still exposes only the infrastructure callback listener,
+  not the helper-routed snapshot dispatches. This remains a bounded helper
+  dispatch problem, and `complete=true` must continue to mean projection
+  completeness within current support and budgets, not semantic completeness
+  of the application flow.
+- Duplicate or repeated relations still lack callsite identity and branch
+  provenance. Edge provenance, site ids and richer completion diagnostics are
+  the next trust improvements before broadening scan coverage.
+- Java projection `UPDATES` relationships based on configured sync/projection
+  conventions must be read as static projection association, not execution
+  order. This needs clearer response metadata before adding new Java breadth.
+- The MCP process still needs build/source traceability (`scanId`, tool SHA,
+  request hash, project SHA/propreté) and phase timings before performance
+  observations can be treated as benchmarks.
+
 The first opportunity improves the existing Redux adapter. The second drives
 this roadmap. They may share graph vocabulary, but they must not be merged into
 one implementation cycle: their semantic engines and proof mechanisms differ.

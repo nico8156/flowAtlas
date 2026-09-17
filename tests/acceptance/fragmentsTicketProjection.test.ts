@@ -46,7 +46,7 @@ describeFragments("Fragments Ticket projection", () => {
         "ticketOptimisticCreated",
         "enqueueCommitted",
         "outboxProcessOnce",
-        "processOutboxFactory",
+        "processOutboxFactory[outboxProcessOnce]",
         "TicketsWlGateway",
       ]),
     );
@@ -59,7 +59,7 @@ describeFragments("Fragments Ticket projection", () => {
           kind: "LISTENS_TO",
         },
         {
-          source: "processOutboxFactory",
+          source: "processOutboxFactory[outboxProcessOnce]",
           target: "TicketsWlGateway",
           kind: "CALLS_EXTERNAL",
         },

@@ -28,5 +28,7 @@
   "projectionSyncPublisher": "fixture.projection.ProjectionSyncPublisher",
   "projectionSyncPublishMethod": "publish",
   "projectionSyncEvent": "fixture.projection.ProjectionSyncEvent",
-  "projectionSyncFactoryMethod": "projectionUpdated"
+  "projectionSyncFactoryMethod": "projectionUpdated",
+  "projectionSyncProjectionArgumentIndex": 0,
+  "projectionSyncScopeArgumentIndex": 1
 }

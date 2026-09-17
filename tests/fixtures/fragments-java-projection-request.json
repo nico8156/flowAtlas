@@ -28,5 +28,7 @@
   "projectionSyncPublisher": "com.nm.fragmentsclean.sharedKernel.businesslogic.projectionSync.ProjectionSyncPublisher",
   "projectionSyncPublishMethod": "publish",
   "projectionSyncEvent": "com.nm.fragmentsclean.sharedKernel.businesslogic.projectionSync.ProjectionSyncEvent",
-  "projectionSyncFactoryMethod": "projectionUpdated"
+  "projectionSyncFactoryMethod": "userProjectionUpdated",
+  "projectionSyncProjectionArgumentIndex": 1,
+  "projectionSyncScopeArgumentIndex": 2
 }

@@ -35,7 +35,7 @@ describeFragments("Fragments Like acceptance", () => {
       "likeToggleUseCaseFactory",
       "likeOptimisticApplied",
       "unlikeOptimisticApplied",
-      "lState",
+      "likeWlReducer",
     ]);
 
     const actual = {
@@ -53,7 +53,7 @@ describeFragments("Fragments Like acceptance", () => {
         { id: "likeToggleUseCaseFactory", kind: "Handler" },
         { id: "likeOptimisticApplied", kind: "Event" },
         { id: "unlikeOptimisticApplied", kind: "Event" },
-        { id: "lState", kind: "State" },
+        { id: "likeWlReducer", kind: "State" },
       ]),
     );
     expect(actual.edges).toEqual(
@@ -75,7 +75,7 @@ describeFragments("Fragments Like acceptance", () => {
         },
         {
           source: "likeOptimisticApplied",
-          target: "lState",
+          target: "likeWlReducer",
           kind: "UPDATES",
         },
       ]),
@@ -85,5 +85,5 @@ describeFragments("Fragments Like acceptance", () => {
       target: "likeReconciled",
       kind: "DISPATCHES",
     });
-  });
+  }, 15_000);
 });

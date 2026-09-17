@@ -93,8 +93,8 @@ describeFragments("Fragments visualizer acceptance", () => {
     render(<ArchitectureMap graph={graph} />);
 
     const explorer = within(screen.getByRole("complementary", { name: "Explorer" }));
-    fireEvent.click(explorer.getByRole("button", { name: "tState" }));
-    fireEvent.click(screen.getByRole("button", { name: "Explore upstream from tState" }));
+    fireEvent.click(explorer.getByRole("button", { name: "ticketWlReducer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Explore upstream from ticketWlReducer" }));
 
     expect(explorer.getByRole("button", { name: "ticketSubmitUseCaseFactory" })).toBeTruthy();
     expect(explorer.getByRole("button", { name: "ticketRetrieval" })).toBeTruthy();
@@ -112,7 +112,7 @@ describeFragments("Fragments visualizer acceptance", () => {
     });
 
     expect(explorer.getByRole("button", { name: "uiTicketSubmitRequested" })).toBeTruthy();
-    expect(explorer.queryByRole("button", { name: "tState" })).toBeNull();
+    expect(explorer.queryByRole("button", { name: "ticketWlReducer" })).toBeNull();
   }, 60_000);
 
   it("shows the source location of a real scanned node", async () => {

@@ -80,6 +80,55 @@ describe("Handler and listener detection", () => {
     });
   });
 
+  it("keeps dispatches scoped to their listener registration inside a shared factory", () => {
+    const file = "tests/fixtures/sharedListenerFactory.ts";
+    const source = `
+      const profileUpdateRequested = createAction("USER/PROFILE_UPDATE_REQUESTED");
+      const avatarAttachRequested = createAction("USER/AVATAR_ATTACH_REQUESTED");
+      const profileUpdateOptimistic = createAction("USER/PROFILE_UPDATE_OPTIMISTIC");
+      const avatarUpdateOptimistic = createAction("USER/AVATAR_UPDATE_OPTIMISTIC");
+
+      const profileUpdateListenerFactory = () => {
+        const mw = createListenerMiddleware();
+        const listen = mw.startListening as TypedStartListening;
+
+        listen({
+          actionCreator: profileUpdateRequested,
+          effect: async (_action, api) => {
+            api.dispatch(profileUpdateOptimistic());
+          },
+        });
+
+        listen({
+          actionCreator: avatarAttachRequested,
+          effect: async (_action, api) => {
+            api.dispatch(avatarUpdateOptimistic());
+          },
+        });
+
+        return mw;
+      };
+    `;
+
+    const graph = scanTypeScriptSource({ file, source });
+
+    const profileHandler = "profileUpdateListenerFactory[profileUpdateRequested]";
+    const avatarHandler = "profileUpdateListenerFactory[avatarAttachRequested]";
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([
+        { source: profileHandler, target: "profileUpdateRequested", kind: "LISTENS_TO" },
+        { source: profileHandler, target: "profileUpdateOptimistic", kind: "DISPATCHES" },
+        { source: avatarHandler, target: "avatarAttachRequested", kind: "LISTENS_TO" },
+        { source: avatarHandler, target: "avatarUpdateOptimistic", kind: "DISPATCHES" },
+      ]),
+    );
+    expect(graph.edges).not.toContainEqual({
+      source: profileHandler,
+      target: "avatarUpdateOptimistic",
+      kind: "DISPATCHES",
+    });
+  });
+
   it("ignores an unresolved dispatched Event without failing the scan", async () => {
     const file = "tests/fixtures/unresolvedDispatch.ts";
     const source = await readFixture("unresolvedDispatch.ts");

@@ -18,11 +18,11 @@ const domainEvent =
 const ticketEvents = "integration:ticket-events:ticket.verify.accepted:v1";
 const verificationRequests = "integration:ticket-verification-requested:ticket.verify.accepted:v1";
 const sender =
-  "com.nm.fragmentsclean.platform.eventing.StableEnvelopeOutboxEventSender#send(com.nm.fragmentsclean.sharedKernel.adapters.secondary.gateways.repositories.jpa.entities.OutboxEventJpaEntity)";
+  "com.nm.fragmentsclean.platform.eventing.StableEnvelopeOutboxEventSender#send(com.nm.fragmentsclean.sharedKernel.businesslogic.eventing.OutboxMessage)";
 const readConsumer =
-  "com.nm.fragmentsclean.ticketContext.read.adapters.primary.springboot.sqs.TicketSqsIntegrationEventHandlers#ticketVerifyAcceptedReadSqsIntegrationEventHandler(com.nm.fragmentsclean.ticketContext.read.projections.TicketVerifyAcceptedEventHandler)";
+  "com.nm.fragmentsclean.ticketContext.read.adapters.primary.springboot.sqs.TicketSqsIntegrationEventHandlers#ticketVerifyAcceptedReadSqsIntegrationEventHandler(com.nm.fragmentsclean.ticketContext.read.projections.TicketVerifyAcceptedEventHandler,com.nm.fragmentsclean.sharedKernel.businesslogic.privacy.AccountErasureBarrier)";
 const verificationConsumer =
-  "com.nm.fragmentsclean.ticketContext.read.adapters.primary.springboot.sqs.TicketSqsIntegrationEventHandlers#ticketVerificationRequestedSqsIntegrationEventHandler(com.nm.fragmentsclean.ticketContext.write.businesslogic.processManagers.TicketVerificationProcessManager)";
+  "com.nm.fragmentsclean.ticketContext.read.adapters.primary.springboot.sqs.TicketSqsIntegrationEventHandlers#ticketVerificationRequestedSqsIntegrationEventHandler(com.nm.fragmentsclean.ticketContext.write.businesslogic.processManagers.TicketVerificationProcessManager,com.nm.fragmentsclean.sharedKernel.businesslogic.privacy.AccountErasureBarrier)";
 
 describeFragments("Fragments Java integration-event graph", () => {
   it("projects destination-specific identities and their statically configured consumers", async () => {

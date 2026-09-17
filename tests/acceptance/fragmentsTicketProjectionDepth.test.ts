@@ -48,7 +48,7 @@ describeFragments("Fragments Ticket projection depth", () => {
         "outboxProcessOnce",
       ]),
     );
-    expect(projectedNodeIds).not.toContain("tState");
+    expect(projectedNodeIds).not.toContain("ticketWlReducer");
     expect(projectedNodeIds).not.toContain("TicketsWlGateway");
     expect(Array.from(graph.nodes)).toEqual(expect.arrayContaining(Array.from(projection.nodes)));
     expect(Array.from(graph.edges)).toEqual(expect.arrayContaining(Array.from(projection.edges)));

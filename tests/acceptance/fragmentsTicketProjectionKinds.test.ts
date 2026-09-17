@@ -52,11 +52,11 @@ describeFragments("Fragments Ticket projection node kinds", () => {
         "outboxProcessOnce",
       ]),
     );
-    expect(projection.nodes.map((node) => node.id)).not.toContain("tState");
+    expect(projection.nodes.map((node) => node.id)).not.toContain("ticketWlReducer");
     expect(projection.nodes.map((node) => node.id)).not.toContain("TicketsWlGateway");
     expect(projection.edges).not.toContainEqual({
       source: "ticketOptimisticCreated",
-      target: "tState",
+      target: "ticketWlReducer",
       kind: "UPDATES",
     });
   }, 60_000);

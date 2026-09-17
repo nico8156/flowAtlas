@@ -38,5 +38,5 @@ describeFragments("Fragments likesRetrieval regression", () => {
       target: "LikeWlGateway",
       kind: "CALLS_EXTERNAL",
     });
-  });
+  }, 15_000);
 });

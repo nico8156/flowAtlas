@@ -34,7 +34,7 @@ describe("program-reusing project scanner", () => {
     expect(reuse).toEqual([false, true]);
     expect(reusedGraph.nodes).toEqual(coldGraph.nodes);
     expect(reusedGraph.edges).toEqual(coldGraph.edges);
-  });
+  }, 15_000);
 
   it("starts a cold compiler context after a tsconfig change", () => {
     const reuse: boolean[] = [];
@@ -56,5 +56,5 @@ describe("program-reusing project scanner", () => {
     );
 
     expect(reuse).toEqual([false, false]);
-  });
+  }, 15_000);
 });

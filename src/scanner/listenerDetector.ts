@@ -80,6 +80,22 @@ const getActionCreatorReference = (
     : undefined;
 };
 
+const getRegistrationScopedHandlerId = (
+  sourceFile: ts.SourceFile,
+  factoryId: string,
+  configuration: ts.ObjectLiteralExpression,
+  bindings: ReadonlyMap<string, string>,
+): string => {
+  const actionCreator = getActionCreatorReference(configuration);
+  if (actionCreator) {
+    return `${factoryId}[${bindings.get(actionCreator) ?? actionCreator}]`;
+  }
+
+  const line =
+    sourceFile.getLineAndCharacterOfPosition(configuration.getStart(sourceFile)).line + 1;
+  return `${factoryId}[registration:${line}]`;
+};
+
 const addListeningRelationship = (
   graph: ArchitectureGraph,
   handlerId: string,
@@ -411,21 +427,18 @@ export const detectListeners = ({
       for (const registration of registrations) {
         const configuration = registration.arguments[0];
         if (!configuration || !ts.isObjectLiteralExpression(configuration)) continue;
-        addListeningRelationship(
-          graph,
-          architecturalFunctionId,
-          configuration,
-          bindings,
-          collectRelationships,
-        );
+        const handlerId =
+          registrations.length > 1
+            ? getRegistrationScopedHandlerId(
+                sourceFile,
+                architecturalFunctionId,
+                configuration,
+                bindings,
+              )
+            : architecturalFunctionId;
+        addListeningRelationship(graph, handlerId, configuration, bindings, collectRelationships);
         measureListenerPhase("listener-dispatch", () =>
-          addDispatchRelationships(
-            graph,
-            architecturalFunctionId,
-            configuration,
-            bindings,
-            collectRelationships,
-          ),
+          addDispatchRelationships(graph, handlerId, configuration, bindings, collectRelationships),
         );
         measureListenerPhase("listener-external", () =>
           addExternalRelationships({
@@ -436,7 +449,7 @@ export const detectListeners = ({
             sourceFiles,
             semanticIndex,
             ...(externalResolutionCache ? { externalResolutionCache } : {}),
-            handlerId: architecturalFunctionId,
+            handlerId,
             configuration,
           }),
         );

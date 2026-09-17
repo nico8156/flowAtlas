@@ -44,7 +44,7 @@ describeFragments("Fragments projection Like acceptance", () => {
       "likesRetrievalPending",
       "likesRetrieved",
       "likesRetrievalFailed",
-      "lState",
+      "likeWlReducer",
     ]);
     const relevantEdges = graph.edges.filter(
       (edge) => relevantNodeIds.has(edge.source) || relevantNodeIds.has(edge.target),
@@ -62,7 +62,7 @@ describeFragments("Fragments projection Like acceptance", () => {
         { id: "likesRetrievalPending", kind: "Event" },
         { id: "likesRetrieved", kind: "Event" },
         { id: "likesRetrievalFailed", kind: "Event" },
-        { id: "lState", kind: "State" },
+        { id: "likeWlReducer", kind: "State" },
       ]),
     );
     expect(graph.findNode("projection.updated")).toEqual(
@@ -97,17 +97,17 @@ describeFragments("Fragments projection Like acceptance", () => {
         },
         {
           source: "likesRetrievalPending",
-          target: "lState",
+          target: "likeWlReducer",
           kind: "UPDATES",
         },
         {
           source: "likesRetrieved",
-          target: "lState",
+          target: "likeWlReducer",
           kind: "UPDATES",
         },
         {
           source: "likesRetrievalFailed",
-          target: "lState",
+          target: "likeWlReducer",
           kind: "UPDATES",
         },
       ]),

@@ -592,8 +592,7 @@ public final class JavaSemanticSpike {
                     ExecutableElement invoked = executableAt(
                             trees,
                             new TreePath(getCurrentPath(), invocation));
-                    if (invoked != null
-                            && ownerName(invoked).equals(config.outboxEventEntity())) {
+                    if (invoked != null) {
                         String role = invoked.getSimpleName().contentEquals(config.aggregateTypeGetter())
                                 ? "aggregateType"
                                 : invoked.getSimpleName().contentEquals(config.eventTypeGetter())
@@ -952,13 +951,20 @@ public final class JavaSemanticSpike {
                         if (factory != null
                                 && ownerName(factory).equals(syncEvent.getQualifiedName().toString())
                                 && factory.getSimpleName().contentEquals(config.projectionSyncFactoryMethod())
-                                && factoryInvocation.getArguments().size() >= 2) {
+                                && factoryInvocation.getArguments().size() > config.projectionSyncProjectionArgumentIndex()
+                                && factoryInvocation.getArguments().size() > config.projectionSyncScopeArgumentIndex()) {
                             String projection = constantString(
                                     trees,
-                                    new TreePath(argumentPath, factoryInvocation.getArguments().get(0)));
+                                    new TreePath(
+                                            argumentPath,
+                                            factoryInvocation.getArguments()
+                                                    .get(config.projectionSyncProjectionArgumentIndex())));
                             String scope = constantString(
                                     trees,
-                                    new TreePath(argumentPath, factoryInvocation.getArguments().get(1)));
+                                    new TreePath(
+                                            argumentPath,
+                                            factoryInvocation.getArguments()
+                                                    .get(config.projectionSyncScopeArgumentIndex())));
                             if (projection != null && scope != null) {
                                 syncs.add(new ProjectionSyncEvidence(
                                         projection,
@@ -1389,6 +1395,8 @@ public final class JavaSemanticSpike {
             String projectionSyncPublishMethod,
             String projectionSyncEvent,
             String projectionSyncFactoryMethod,
+            int projectionSyncProjectionArgumentIndex,
+            int projectionSyncScopeArgumentIndex,
             String externalConfiguration,
             String externalFactoryMethod,
             String externalAdapter,
@@ -1471,6 +1479,8 @@ public final class JavaSemanticSpike {
                     optional(options, "--projection-sync-publish-method"),
                     optional(options, "--projection-sync-event"),
                     optional(options, "--projection-sync-factory-method"),
+                    optionalInt(options, "--projection-sync-projection-argument-index"),
+                    optionalInt(options, "--projection-sync-scope-argument-index"),
                     optional(options, "--external-configuration"),
                     optional(options, "--external-factory-method"),
                     optional(options, "--external-adapter"),
@@ -1496,6 +1506,12 @@ public final class JavaSemanticSpike {
             List<String> values = options.getOrDefault(name, List.of());
             if (values.size() > 1) throw new IllegalArgumentException("Expected at most one " + name);
             return values.isEmpty() ? null : values.getFirst();
+        }
+
+        private static int optionalInt(Map<String, List<String>> options, String name) {
+            List<String> values = options.getOrDefault(name, List.of());
+            if (values.size() > 1) throw new IllegalArgumentException("Expected at most one " + name);
+            return values.isEmpty() ? 0 : Integer.parseInt(values.getFirst());
         }
 
         private static List<String> many(Map<String, List<String>> options, String name) {

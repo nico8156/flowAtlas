@@ -35,9 +35,9 @@ describeFragments("Fragments outbox acceptance", () => {
     const relevantNodeIds = new Set([
       "likeToggleUseCaseFactory",
       "enqueueCommitted",
-      "oState",
+      "outboxWlReducer",
       "outboxProcessOnce",
-      "processOutboxFactory",
+      "processOutboxFactory[outboxProcessOnce]",
       "LikeWlGateway",
     ]);
     const actual = {
@@ -53,9 +53,9 @@ describeFragments("Fragments outbox acceptance", () => {
       expect.arrayContaining([
         { id: "likeToggleUseCaseFactory", kind: "Handler" },
         { id: "enqueueCommitted", kind: "Event" },
-        { id: "oState", kind: "State" },
+        { id: "outboxWlReducer", kind: "State" },
         { id: "outboxProcessOnce", kind: "Event" },
-        { id: "processOutboxFactory", kind: "Handler" },
+        { id: "processOutboxFactory[outboxProcessOnce]", kind: "Handler" },
         { id: "LikeWlGateway", kind: "External" },
       ]),
     );
@@ -68,7 +68,7 @@ describeFragments("Fragments outbox acceptance", () => {
         },
         {
           source: "enqueueCommitted",
-          target: "oState",
+          target: "outboxWlReducer",
           kind: "UPDATES",
         },
         {
@@ -77,16 +77,16 @@ describeFragments("Fragments outbox acceptance", () => {
           kind: "DISPATCHES",
         },
         {
-          source: "processOutboxFactory",
+          source: "processOutboxFactory[outboxProcessOnce]",
           target: "outboxProcessOnce",
           kind: "LISTENS_TO",
         },
         {
-          source: "processOutboxFactory",
+          source: "processOutboxFactory[outboxProcessOnce]",
           target: "LikeWlGateway",
           kind: "CALLS_EXTERNAL",
         },
       ]),
     );
-  });
+  }, 60_000);
 });

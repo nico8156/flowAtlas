@@ -38,20 +38,20 @@ describeFragments("Fragments Java domain-event graph", () => {
       expect.arrayContaining([
         expect.objectContaining({ id: acceptedEvent, kind: "Event" }),
         expect.objectContaining({ id: handler, kind: "Handler" }),
-        expect.objectContaining({ id: completedEvent, kind: "Event" }),
       ]),
     );
     expect(graph.edges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ source: handler, target: acceptedEvent, kind: "LISTENS_TO" }),
-        expect.objectContaining({ source: handler, target: completedEvent, kind: "DISPATCHES" }),
       ]),
     );
 
     expect(graph.findNode("TicketVerificationProvider")).toBeUndefined();
+    expect(graph.findNode(completedEvent)).toBeUndefined();
     expect(graph.edges).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ source: handler, target: acceptedEvent, kind: "DISPATCHES" }),
+        expect.objectContaining({ source: handler, target: completedEvent, kind: "DISPATCHES" }),
         expect.objectContaining({ source: handler, kind: "CALLS_EXTERNAL" }),
       ]),
     );

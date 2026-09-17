@@ -43,12 +43,12 @@ describeFragments("Fragments Ticket upstream projection", () => {
       projectFiles: await readFragmentProjectSources(),
     });
 
-    const projection = projectUpstream(graph, "tState");
+    const projection = projectUpstream(graph, "ticketWlReducer");
     const projectedNodeIds = projection.nodes.map((node) => node.id);
 
     expect(projectedNodeIds).toEqual(
       expect.arrayContaining([
-        "tState",
+        "ticketWlReducer",
         "ticketOptimisticCreated",
         "ticketRetrieved",
         "ticketSubmitUseCaseFactory",
@@ -61,12 +61,12 @@ describeFragments("Fragments Ticket upstream projection", () => {
       expect.arrayContaining([
         {
           source: "ticketOptimisticCreated",
-          target: "tState",
+          target: "ticketWlReducer",
           kind: "UPDATES",
         },
         {
           source: "ticketRetrieved",
-          target: "tState",
+          target: "ticketWlReducer",
           kind: "UPDATES",
         },
         {
