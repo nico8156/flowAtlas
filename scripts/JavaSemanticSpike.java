@@ -919,8 +919,10 @@ public final class JavaSemanticSpike {
         }
 
         TypeElement repository = requiredType(elements, config.projectionRepository(), diagnostics);
-        TypeElement publisher = requiredType(elements, config.projectionSyncPublisher(), diagnostics);
-        TypeElement syncEvent = requiredType(elements, config.projectionSyncEvent(), diagnostics);
+        TypeElement publisher = config.projectionSyncPublisher() == null
+                ? null : requiredType(elements, config.projectionSyncPublisher(), diagnostics);
+        TypeElement syncEvent = config.projectionSyncEvent() == null
+                ? null : requiredType(elements, config.projectionSyncEvent(), diagnostics);
         TreePath methodPath = trees.getPath(method);
         VariableElement eventParameter = method.getParameters().getFirst();
         List<SourceLocation> mutations = new ArrayList<>();
@@ -941,14 +943,14 @@ public final class JavaSemanticSpike {
                     mutations.add(locationOf(trees, invocationPath, config));
                 }
 
-                if (invoked != null
+                if (publisher != null && invoked != null
                         && ownerName(invoked).equals(publisher.getQualifiedName().toString())
                         && invoked.getSimpleName().contentEquals(config.projectionSyncPublishMethod())
                         && invocation.getArguments().size() == 1) {
                     TreePath argumentPath = new TreePath(invocationPath, invocation.getArguments().getFirst());
                     if (argumentPath.getLeaf() instanceof MethodInvocationTree factoryInvocation) {
                         ExecutableElement factory = executableAt(trees, argumentPath);
-                        if (factory != null
+                        if (syncEvent != null && factory != null
                                 && ownerName(factory).equals(syncEvent.getQualifiedName().toString())
                                 && factory.getSimpleName().contentEquals(config.projectionSyncFactoryMethod())
                                 && factoryInvocation.getArguments().size() > config.projectionSyncProjectionArgumentIndex()
@@ -978,19 +980,26 @@ public final class JavaSemanticSpike {
             }
         }.scan(methodPath, null);
 
-        if (mutations.size() != 1 || syncs.size() != 1) {
+        if (mutations.size() != 1 || (publisher != null && syncs.size() != 1)) {
             throw new IllegalStateException(
-                    "Could not prove one direct projection mutation and projection-sync publication");
+                    "Could not prove one direct projection mutation and configured projection-sync publication");
         }
-        ProjectionSyncEvidence sync = syncs.getFirst();
+        ProjectionSyncEvidence sync = syncs.isEmpty() ? null : syncs.getFirst();
+        if (config.projectionState() == null && sync == null) {
+            throw new IllegalStateException("Projection requires an explicit state id or proven sync contract");
+        }
+        String projection = config.projectionState() == null ? sync.projection() : config.projectionState();
+        if (sync != null && !sync.projection().equals(projection)) {
+            throw new IllegalStateException("Configured projectionState does not match projection-sync contract");
+        }
         return new ProjectionSliceEvidence(List.of(new ProjectionUpdateEvidence(
                 callerSignature(method),
                 eventType.toString(),
-                sync.projection(),
-                sync.scope(),
+                projection,
+                sync == null ? null : sync.scope(),
                 locationOf(trees, method, config),
                 mutations.getFirst(),
-                sync.source())));
+                sync == null ? null : sync.source())));
     }
 
     private static ScheduledSliceEvidence analyzeScheduledSlice(
@@ -1391,6 +1400,7 @@ public final class JavaSemanticSpike {
             String projectionHandlerMethod,
             String projectionRepository,
             String projectionMutationMethod,
+            String projectionState,
             String projectionSyncPublisher,
             String projectionSyncPublishMethod,
             String projectionSyncEvent,
@@ -1475,6 +1485,7 @@ public final class JavaSemanticSpike {
                     optional(options, "--projection-handler-method"),
                     optional(options, "--projection-repository"),
                     optional(options, "--projection-mutation-method"),
+                    optional(options, "--projection-state"),
                     optional(options, "--projection-sync-publisher"),
                     optional(options, "--projection-sync-publish-method"),
                     optional(options, "--projection-sync-event"),
@@ -1732,10 +1743,10 @@ public final class JavaSemanticSpike {
             return "{\"handler\":" + quote(handler)
                     + ",\"eventType\":" + quote(eventType)
                     + ",\"projection\":" + quote(projection)
-                    + ",\"scope\":" + quote(scope)
+                    + ",\"scope\":" + (scope == null ? "null" : quote(scope))
                     + ",\"handlerSource\":" + handlerSource.toJson()
                     + ",\"mutationSource\":" + mutationSource.toJson()
-                    + ",\"syncSource\":" + syncSource.toJson()
+                    + ",\"syncSource\":" + (syncSource == null ? "null" : syncSource.toJson())
                     + "}";
         }
     }

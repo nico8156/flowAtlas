@@ -223,6 +223,22 @@ const loadRequest = async (projectRoot, requestPath) => {
     projectionHandlerMethod: optionalString(request, "projectionHandlerMethod"),
     projectionRepository: optionalString(request, "projectionRepository"),
     projectionMutationMethod: optionalString(request, "projectionMutationMethod"),
+  };
+  const projectionState = optionalString(request, "projectionState");
+  const configuredProjectionProperties = Object.values(projectionConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    configuredProjectionProperties.length > 0 &&
+    configuredProjectionProperties.length !== Object.keys(projectionConfiguration).length
+  ) {
+    fail("all projection request properties must be provided together");
+  }
+  if (projectionState && !projectionConfiguration.projectionHandler) {
+    fail("projectionState requires a projection request block");
+  }
+
+  const projectionSyncConfiguration = {
     projectionSyncPublisher: optionalString(request, "projectionSyncPublisher"),
     projectionSyncPublishMethod: optionalString(request, "projectionSyncPublishMethod"),
     projectionSyncEvent: optionalString(request, "projectionSyncEvent"),
@@ -233,14 +249,24 @@ const loadRequest = async (projectRoot, requestPath) => {
     ),
     projectionSyncScopeArgumentIndex: optionalNumber(request, "projectionSyncScopeArgumentIndex"),
   };
-  const configuredProjectionProperties = Object.values(projectionConfiguration).filter(
+  const configuredProjectionSyncProperties = Object.values(projectionSyncConfiguration).filter(
     (value) => value !== undefined,
   );
   if (
-    configuredProjectionProperties.length > 0 &&
-    configuredProjectionProperties.length !== Object.keys(projectionConfiguration).length
+    configuredProjectionSyncProperties.length > 0 &&
+    configuredProjectionSyncProperties.length !== Object.keys(projectionSyncConfiguration).length
   ) {
-    fail("all projection request properties must be provided together");
+    fail("all projection sync request properties must be provided together");
+  }
+  if (configuredProjectionSyncProperties.length > 0 && !projectionConfiguration.projectionHandler) {
+    fail("projection sync requires a projection request block");
+  }
+  if (
+    projectionConfiguration.projectionHandler &&
+    !projectionState &&
+    !projectionSyncConfiguration.projectionSyncPublisher
+  ) {
+    fail("projectionState is required when projection sync is absent");
   }
 
   const externalConfiguration = {
@@ -292,6 +318,8 @@ const loadRequest = async (projectRoot, requestPath) => {
     ...commandConfiguration,
     ...integrationConfiguration,
     ...projectionConfiguration,
+    projectionState,
+    ...projectionSyncConfiguration,
     ...externalConfiguration,
     ...scheduledConfiguration,
     events: requireStringArray(request, "events"),
@@ -433,18 +461,23 @@ const run = async () => {
             request.projectionRepository,
             "--projection-mutation-method",
             request.projectionMutationMethod,
-            "--projection-sync-publisher",
-            request.projectionSyncPublisher,
-            "--projection-sync-publish-method",
-            request.projectionSyncPublishMethod,
-            "--projection-sync-event",
-            request.projectionSyncEvent,
-            "--projection-sync-factory-method",
-            request.projectionSyncFactoryMethod,
-            "--projection-sync-projection-argument-index",
-            String(request.projectionSyncProjectionArgumentIndex),
-            "--projection-sync-scope-argument-index",
-            String(request.projectionSyncScopeArgumentIndex),
+            ...(request.projectionState ? ["--projection-state", request.projectionState] : []),
+            ...(request.projectionSyncPublisher
+              ? [
+                  "--projection-sync-publisher",
+                  request.projectionSyncPublisher,
+                  "--projection-sync-publish-method",
+                  request.projectionSyncPublishMethod,
+                  "--projection-sync-event",
+                  request.projectionSyncEvent,
+                  "--projection-sync-factory-method",
+                  request.projectionSyncFactoryMethod,
+                  "--projection-sync-projection-argument-index",
+                  String(request.projectionSyncProjectionArgumentIndex),
+                  "--projection-sync-scope-argument-index",
+                  String(request.projectionSyncScopeArgumentIndex),
+                ]
+              : []),
           ]
         : []),
       ...(request.externalConfiguration

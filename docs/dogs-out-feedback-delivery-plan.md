@@ -29,7 +29,7 @@ resource-related timeouts in unrelated corpus tests.
 
 ## 2. Local Java projection without sync notification
 
-**Status: PROPOSED.** Goal: prove a projection mutation independently of a
+**Status: DELIVERED.** Goal: prove a projection mutation independently of a
 freshness notification. Acceptance: a local outbox dispatcher and projection
 handler behind a port yield only statically justified Event, Handler and State
 topology, with no invented sync Event or cross-outbox causality. The request
@@ -38,6 +38,17 @@ comes from the sync contract. **Decision required:** choose a stable State
 identity and source evidence for a projection without that contract. Only then
 split the request groups and semantic proof. The alternatives and recommendation
 are in the [local Java projection review](architecture/local-java-projection-review.md).
+
+The approved implementation adds `projectionState` for local requests and
+checks an exact event-argument mutation before emitting `Event --UPDATES-->
+State`. The sync block is optional; when present, its constant projection id
+must agree with an explicit state id. A local dispatcher fixture remains absent
+from the canonical graph, and the Fragments sync acceptance still passes. The
+mutation remains visible when only the sync publication is outside scan scope.
+The Dogs Out handler constructs a `CurrentWalkView` from `WalkStarted`, while the
+Java request still requires a `DomainEvent` marker and unrelated baseline
+fields. Replaying that real path belongs to milestone 3 and must prove the
+derived argument without a marker; milestone 2 does not claim that path yet.
 
 ## 3. Direct Java hexagonal and outbox paths
 

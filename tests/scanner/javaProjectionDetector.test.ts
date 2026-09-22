@@ -58,7 +58,7 @@ describe("Java projection detector", () => {
     );
   });
 
-  it("omits a projection when its mutation or direct sync proof is out of scan scope", () => {
+  it("omits a projection when its mutation proof is out of scan scope", () => {
     const graph = detectJavaProjectionGraph({
       projectionUpdates: [
         {
@@ -79,5 +79,34 @@ describe("Java projection detector", () => {
 
     expect(graph.nodes).toEqual([]);
     expect(graph.edges).toEqual([]);
+  });
+
+  it("retains an in-scope mutation when its sync publication is out of scope", () => {
+    const graph = detectJavaProjectionGraph({
+      projectionUpdates: [
+        {
+          handler: "fixture.read.LocalProjection#handle(fixture.events.Started)",
+          eventType: "fixture.events.Started",
+          projection: "walks",
+          scope: "entity",
+          handlerSource: inScope("fixture/read/LocalProjection.java", 10),
+          mutationSource: inScope("fixture/read/LocalProjection.java", 12),
+          syncSource: {
+            file: "fixture/read/LocalProjection.java",
+            line: 15,
+            inScanScope: false,
+          },
+        },
+      ],
+    });
+
+    expect(graph.edges).toContainEqual(
+      expect.objectContaining({
+        source: "java-domain-event:fixture.events.Started",
+        target: "walks",
+        kind: "UPDATES",
+      }),
+    );
+    expect(graph.nodes.some((node) => node.id.startsWith("sync:"))).toBe(false);
   });
 });

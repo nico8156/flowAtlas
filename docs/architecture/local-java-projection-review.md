@@ -1,8 +1,8 @@
 # Review: local Java projection state identity
 
-Status: **AWAITING HUMAN DECISION**. This review gates milestone 2 in the
-[Dogs Out feedback plan](../dogs-out-feedback-delivery-plan.md). No scanner
-implementation for the milestone has started.
+Status: **OPTION A APPROVED AND IMPLEMENTED FOR DIRECT MUTATIONS**. This review
+records the decision for milestone 2 in the
+[Dogs Out feedback plan](../dogs-out-feedback-delivery-plan.md).
 
 ## Problem
 

@@ -12,10 +12,10 @@ type JavaProjectionUpdateEvidence = {
   handler: string;
   eventType: string;
   projection: string;
-  scope: string;
+  scope: string | null;
   handlerSource: JavaSourceLocation;
   mutationSource: JavaSourceLocation;
-  syncSource: JavaSourceLocation;
+  syncSource: JavaSourceLocation | null;
 };
 
 export type JavaProjectionEvidence = {
@@ -28,16 +28,11 @@ export const detectJavaProjectionGraph = (evidence: JavaProjectionEvidence): Arc
   const graph = createArchitectureGraph();
 
   for (const update of evidence.projectionUpdates) {
-    if (
-      !update.handlerSource.inScanScope ||
-      !update.mutationSource.inScanScope ||
-      !update.syncSource.inScanScope
-    ) {
+    if (!update.handlerSource.inScanScope || !update.mutationSource.inScanScope) {
       continue;
     }
 
     const eventId = `java-domain-event:${update.eventType}`;
-    const syncEventId = `sync:${update.projection}:${update.scope}`;
 
     graph.addNode({
       id: eventId,
@@ -54,29 +49,32 @@ export const detectJavaProjectionGraph = (evidence: JavaProjectionEvidence): Arc
       kind: "State",
       sourceLocation: graphLocation(update.mutationSource),
     });
-    graph.addNode({
-      id: syncEventId,
-      kind: "Event",
-      sourceLocation: graphLocation(update.syncSource),
-    });
     graph.addEdge({
       source: eventId,
       target: update.projection,
       kind: "UPDATES",
       sourceLocation: graphLocation(update.mutationSource),
     });
-    graph.addEdge({
-      source: update.handler,
-      target: syncEventId,
-      kind: "DISPATCHES",
-      sourceLocation: graphLocation(update.syncSource),
-    });
-    graph.addEdge({
-      source: syncEventId,
-      target: update.projection,
-      kind: "UPDATES",
-      sourceLocation: graphLocation(update.syncSource),
-    });
+    if (update.syncSource?.inScanScope && update.scope !== null) {
+      const syncEventId = `sync:${update.projection}:${update.scope}`;
+      graph.addNode({
+        id: syncEventId,
+        kind: "Event",
+        sourceLocation: graphLocation(update.syncSource),
+      });
+      graph.addEdge({
+        source: update.handler,
+        target: syncEventId,
+        kind: "DISPATCHES",
+        sourceLocation: graphLocation(update.syncSource),
+      });
+      graph.addEdge({
+        source: syncEventId,
+        target: update.projection,
+        kind: "UPDATES",
+        sourceLocation: graphLocation(update.syncSource),
+      });
+    }
   }
 
   return graph;
