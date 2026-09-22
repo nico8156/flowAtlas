@@ -1,3 +1,4 @@
+import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.EnhancedForLoopTree;
@@ -36,6 +37,7 @@ import java.util.stream.StreamSupport;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -171,6 +173,7 @@ public final class JavaSemanticSpike {
                     config);
 
             ExternalSliceEvidence externalSlice = analyzeExternalSlice(
+                    units,
                     trees,
                     elements,
                     types,
@@ -1140,6 +1143,7 @@ public final class JavaSemanticSpike {
     }
 
     private static ExternalSliceEvidence analyzeExternalSlice(
+            List<? extends CompilationUnitTree> units,
             Trees trees,
             Elements elements,
             Types types,
@@ -1148,7 +1152,13 @@ public final class JavaSemanticSpike {
             List<InvocationEvidence> providerInvocations) {
         if (config.externalConfiguration() == null) return null;
 
-        TypeElement port = requiredType(elements, config.provider(), diagnostics);
+        String portName = config.externalPort() == null ? config.provider() : config.externalPort();
+        String portMethod = config.externalPortMethod() == null
+                ? config.providerMethod() : config.externalPortMethod();
+        if (portName == null || portMethod == null) {
+            throw new IllegalStateException("Configured external boundary requires a port and method");
+        }
+        TypeElement port = requiredType(elements, portName, diagnostics);
         TypeElement configuration = requiredType(elements, config.externalConfiguration(), diagnostics);
         ExecutableElement factory = requiredMethod(configuration, config.externalFactoryMethod());
         TypeElement adapter = requiredType(elements, config.externalAdapter(), diagnostics);
@@ -1159,57 +1169,161 @@ public final class JavaSemanticSpike {
             throw new IllegalStateException("Configured external factory must return the configured port");
         }
 
-        final boolean[] constructsAdapter = { false };
+        final ExecutableElement[] constructedAdapter = { null };
         new TreePathScanner<Void, Void>() {
             @Override
             public Void visitNewClass(NewClassTree newClass, Void unused) {
                 TypeMirror constructed = trees.getTypeMirror(new TreePath(getCurrentPath(), newClass.getIdentifier()));
                 if (constructed != null && constructed.toString().equals(adapter.getQualifiedName().toString())) {
-                    constructsAdapter[0] = true;
+                    constructedAdapter[0] = executableAt(trees, getCurrentPath());
                 }
                 return super.visitNewClass(newClass, unused);
             }
         }.scan(trees.getPath(factory), null);
-        if (!constructsAdapter[0]) {
+        if (constructedAdapter[0] == null) {
             throw new IllegalStateException("Configured external factory must construct the configured adapter");
         }
 
-        TypeElement processBuilder = requiredType(elements, config.externalProcessBuilder(), diagnostics);
+        boolean clientBoundary = config.externalClient() != null;
+        String executionTypeName = clientBoundary ? config.externalClient() : config.externalProcessBuilder();
+        String executionMethod = clientBoundary
+                ? config.externalClientMethod() : config.externalProcessStartMethod();
+        TypeElement executionType = requiredType(elements, executionTypeName, diagnostics);
         ExecutableElement adapterMethod = requiredMethod(adapter, config.externalAdapterMethod());
-        List<SourceLocation> starts = new ArrayList<>();
+        List<SourceLocation> executions = new ArrayList<>();
         new TreePathScanner<Void, Void>() {
             @Override
             public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
                 ExecutableElement invoked = executableAt(trees, getCurrentPath());
                 if (invoked != null
-                        && ownerName(invoked).equals(processBuilder.getQualifiedName().toString())
-                        && invoked.getSimpleName().contentEquals(config.externalProcessStartMethod())) {
-                    starts.add(locationOf(trees, getCurrentPath(), config));
+                        && ownerName(invoked).equals(executionType.getQualifiedName().toString())
+                        && invoked.getSimpleName().contentEquals(executionMethod)) {
+                    executions.add(locationOf(trees, getCurrentPath(), config));
                 }
                 return super.visitMethodInvocation(invocation, unused);
             }
         }.scan(trees.getPath(adapterMethod), null);
-        if (starts.size() != 1) {
-            throw new IllegalStateException("Could not prove one configured local-process execution boundary");
+        if (clientBoundary && executions.isEmpty()) {
+            SourceLocation bound = boundClientExecution(
+                    trees,
+                    adapter,
+                    constructedAdapter[0],
+                    adapterMethod,
+                    executionType,
+                    executionMethod,
+                    config);
+            if (bound != null) executions.add(bound);
+        }
+        if (executions.size() != 1) {
+            throw new IllegalStateException("Could not prove one configured external execution boundary");
         }
 
-        List<InvocationEvidence> calls = providerInvocations.stream()
+        List<InvocationEvidence> portInvocations = config.externalPort() == null
+                ? providerInvocations
+                : findProviderInvocations(units, trees, portName, portMethod, config);
+        List<InvocationEvidence> calls = portInvocations.stream()
                 .filter(invocation -> invocation.caller().startsWith(config.externalHandler() + "#"))
                 .toList();
         if (calls.size() != 1) {
             throw new IllegalStateException("Could not prove configured external handler invocation: handler="
-                    + config.externalHandler() + "; port=" + config.provider() + "; method=" + config.providerMethod());
+                    + config.externalHandler() + "; port=" + portName + "; method=" + portMethod);
         }
         InvocationEvidence call = calls.getFirst();
         return new ExternalSliceEvidence(List.of(new ExternalCallEvidence(
                 call.caller(),
                 port.getQualifiedName().toString(),
                 adapter.getQualifiedName().toString(),
-                "local-process:" + processBuilder.getQualifiedName(),
+                clientBoundary
+                        ? "java-client:" + executionType.getQualifiedName() + "#" + executionMethod
+                        : "local-process:" + executionType.getQualifiedName(),
                 call.source(),
                 locationOf(trees, factory, config),
                 locationOf(trees, adapter, config),
-                starts.getFirst())));
+                executions.getFirst())));
+    }
+
+    private static SourceLocation boundClientExecution(
+            Trees trees,
+            TypeElement adapter,
+            ExecutableElement constructedAdapter,
+            ExecutableElement adapterMethod,
+            TypeElement client,
+            String clientMethod,
+            Config config) {
+        VariableElement clientParameter = constructedAdapter.getParameters().stream()
+                .filter(parameter -> parameter.asType().toString().equals(client.getQualifiedName().toString()))
+                .findFirst()
+                .orElse(null);
+        if (clientParameter == null) return null;
+
+        final ExecutableElement[] delegatedConstructor = { null };
+        final int[] forwardedIndex = { -1 };
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                if (invocation.getMethodSelect().toString().equals("this")) {
+                    for (int index = 0; index < invocation.getArguments().size(); index++) {
+                        ExpressionTree argument = invocation.getArguments().get(index);
+                        if (!(argument instanceof MemberReferenceTree reference)) continue;
+                        TreePath referencePath = new TreePath(getCurrentPath(), reference);
+                        ExecutableElement target = executableAt(trees, referencePath);
+                        if (target != null
+                                && ownerName(target).equals(client.getQualifiedName().toString())
+                                && target.getSimpleName().contentEquals(clientMethod)
+                                && referencesEventParameter(
+                                        trees,
+                                        new TreePath(referencePath, reference.getQualifierExpression()),
+                                        clientParameter)) {
+                            List<ExecutableElement> matches = adapter.getEnclosedElements().stream()
+                                    .filter(ExecutableElement.class::isInstance)
+                                    .map(ExecutableElement.class::cast)
+                                    .filter(candidate -> candidate.getKind() == ElementKind.CONSTRUCTOR
+                                            && !candidate.equals(constructedAdapter)
+                                            && candidate.getParameters().size() == invocation.getArguments().size())
+                                    .toList();
+                            if (matches.size() == 1) {
+                                delegatedConstructor[0] = matches.getFirst();
+                                forwardedIndex[0] = index;
+                            }
+                        }
+                    }
+                }
+                return super.visitMethodInvocation(invocation, unused);
+            }
+        }.scan(trees.getPath(constructedAdapter), null);
+        if (delegatedConstructor[0] == null || forwardedIndex[0] < 0) return null;
+
+        VariableElement forwarded = delegatedConstructor[0].getParameters().get(forwardedIndex[0]);
+        final Element[] callbackField = { null };
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitAssignment(AssignmentTree assignment, Void unused) {
+                TreePath left = new TreePath(getCurrentPath(), assignment.getVariable());
+                TreePath right = new TreePath(getCurrentPath(), assignment.getExpression());
+                Element assigned = trees.getElement(left);
+                if (assigned instanceof VariableElement
+                        && assigned.getEnclosingElement().equals(adapter)
+                        && referencesEventParameter(trees, right, forwarded)) {
+                    callbackField[0] = assigned;
+                }
+                return super.visitAssignment(assignment, unused);
+            }
+        }.scan(trees.getPath(delegatedConstructor[0]), null);
+        if (callbackField[0] == null) return null;
+
+        List<SourceLocation> calls = new ArrayList<>();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                if (invocation.getMethodSelect() instanceof MemberSelectTree select
+                        && trees.getElement(new TreePath(getCurrentPath(), select.getExpression()))
+                                == callbackField[0]) {
+                    calls.add(locationOf(trees, getCurrentPath(), config));
+                }
+                return super.visitMethodInvocation(invocation, unused);
+            }
+        }.scan(trees.getPath(adapterMethod), null);
+        return calls.size() == 1 ? calls.getFirst() : null;
     }
 
     private static List<DestinationEvidence> returnedStringConstants(
@@ -1532,8 +1646,12 @@ public final class JavaSemanticSpike {
             String externalAdapter,
             String externalAdapterMethod,
             String externalHandler,
+            String externalPort,
+            String externalPortMethod,
             String externalProcessBuilder,
             String externalProcessStartMethod,
+            String externalClient,
+            String externalClientMethod,
             String scheduledHandler,
             String scheduledMethod,
             String scheduledAnnotation,
@@ -1623,8 +1741,12 @@ public final class JavaSemanticSpike {
                     optional(options, "--external-adapter"),
                     optional(options, "--external-adapter-method"),
                     optional(options, "--external-handler"),
+                    optional(options, "--external-port"),
+                    optional(options, "--external-port-method"),
                     optional(options, "--external-process-builder"),
                     optional(options, "--external-process-start-method"),
+                    optional(options, "--external-client"),
+                    optional(options, "--external-client-method"),
                     optional(options, "--scheduled-handler"),
                     optional(options, "--scheduled-method"),
                     optional(options, "--scheduled-annotation"),

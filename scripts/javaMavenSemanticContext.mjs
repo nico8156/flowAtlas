@@ -293,8 +293,19 @@ const loadRequest = async (projectRoot, requestPath) => {
     externalAdapter: optionalString(request, "externalAdapter"),
     externalAdapterMethod: optionalString(request, "externalAdapterMethod"),
     externalHandler: optionalString(request, "externalHandler"),
+  };
+  const externalPort = optionalString(request, "externalPort");
+  const externalPortMethod = optionalString(request, "externalPortMethod");
+  if ((externalPort === undefined) !== (externalPortMethod === undefined)) {
+    fail("externalPort and externalPortMethod must be provided together");
+  }
+  const externalProcessConfiguration = {
     externalProcessBuilder: optionalString(request, "externalProcessBuilder"),
     externalProcessStartMethod: optionalString(request, "externalProcessStartMethod"),
+  };
+  const externalClientConfiguration = {
+    externalClient: optionalString(request, "externalClient"),
+    externalClientMethod: optionalString(request, "externalClientMethod"),
   };
   const configuredExternalProperties = Object.values(externalConfiguration).filter(
     (value) => value !== undefined,
@@ -304,6 +315,34 @@ const loadRequest = async (projectRoot, requestPath) => {
     configuredExternalProperties.length !== Object.keys(externalConfiguration).length
   ) {
     fail("all external request properties must be provided together");
+  }
+  const configuredProcessProperties = Object.values(externalProcessConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  const configuredClientProperties = Object.values(externalClientConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    (configuredProcessProperties.length > 0 &&
+      configuredProcessProperties.length !== Object.keys(externalProcessConfiguration).length) ||
+    (configuredClientProperties.length > 0 &&
+      configuredClientProperties.length !== Object.keys(externalClientConfiguration).length)
+  ) {
+    fail("external execution request properties must be provided in pairs");
+  }
+  if (configuredExternalProperties.length > 0) {
+    if (configuredProcessProperties.length > 0 === configuredClientProperties.length > 0) {
+      fail("one external execution boundary must be configured");
+    }
+    if (configuredClientProperties.length > 0 && !externalPort) {
+      fail("external client execution requires externalPort and externalPortMethod");
+    }
+  } else if (
+    configuredProcessProperties.length > 0 ||
+    configuredClientProperties.length > 0 ||
+    externalPort
+  ) {
+    fail("external execution requires an external request block");
   }
 
   const scheduledConfiguration = {
@@ -363,6 +402,10 @@ const loadRequest = async (projectRoot, requestPath) => {
     ...projectionSyncConfiguration,
     ...localOutboxConfiguration,
     ...externalConfiguration,
+    externalPort,
+    externalPortMethod,
+    ...externalProcessConfiguration,
+    ...externalClientConfiguration,
     ...scheduledConfiguration,
     events,
   };
@@ -554,10 +597,30 @@ const run = async () => {
             request.externalAdapterMethod,
             "--external-handler",
             request.externalHandler,
-            "--external-process-builder",
-            request.externalProcessBuilder,
-            "--external-process-start-method",
-            request.externalProcessStartMethod,
+            ...(request.externalPort
+              ? [
+                  "--external-port",
+                  request.externalPort,
+                  "--external-port-method",
+                  request.externalPortMethod,
+                ]
+              : []),
+            ...(request.externalProcessBuilder
+              ? [
+                  "--external-process-builder",
+                  request.externalProcessBuilder,
+                  "--external-process-start-method",
+                  request.externalProcessStartMethod,
+                ]
+              : []),
+            ...(request.externalClient
+              ? [
+                  "--external-client",
+                  request.externalClient,
+                  "--external-client-method",
+                  request.externalClientMethod,
+                ]
+              : []),
           ]
         : []),
       ...(request.scheduledHandler

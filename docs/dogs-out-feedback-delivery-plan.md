@@ -82,6 +82,15 @@ producer and SES sender remain unconnected and absent from this projection. The
 Event id names the constant local route; it does not claim a versioned payload
 contract or runtime delivery.
 
+Third micro-cycle: an external client boundary is emitted only when the
+configured service calls a resolved port, the configured factory constructs
+an adapter implementing that port, and the adapter either invokes the client
+directly or invokes a functional field bound to a resolved client method in a
+constructor. The small direct-call and bound-reference fixtures pass, as does
+the real Dogs Out `DeliverMagicLinkService → SendMagicLinkPort →
+AwsSesMagicLinkSender → SesV2Client#sendEmail` path. The outbox producer and
+consumer are still separate graph slices; no asynchronous join is inferred.
+
 ## 4. Typed Redux thunk dependencies
 
 **Status: PROPOSED.** Goal: resolve method calls on typed `extra` dependencies

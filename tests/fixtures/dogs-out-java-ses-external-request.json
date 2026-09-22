@@ -1,0 +1,20 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": [
+    "com/nm/dogsout/identity/application/delivermagiclink/DeliverMagicLinkService.java",
+    "com/nm/dogsout/identity/infrastructure/configuration/SesMagicLinkConfiguration.java",
+    "com/nm/dogsout/identity/infrastructure/email/AwsSesMagicLinkSender.java"
+  ],
+  "resolutionSources": [
+    "com/nm/dogsout/identity/application/delivermagiclink/SendMagicLinkPort.java"
+  ],
+  "externalConfiguration": "com.nm.dogsout.identity.infrastructure.configuration.SesMagicLinkConfiguration",
+  "externalFactoryMethod": "sendMagicLinkPort",
+  "externalAdapter": "com.nm.dogsout.identity.infrastructure.email.AwsSesMagicLinkSender",
+  "externalAdapterMethod": "send",
+  "externalHandler": "com.nm.dogsout.identity.application.delivermagiclink.DeliverMagicLinkService",
+  "externalPort": "com.nm.dogsout.identity.application.delivermagiclink.SendMagicLinkPort",
+  "externalPortMethod": "send",
+  "externalClient": "software.amazon.awssdk.services.sesv2.SesV2Client",
+  "externalClientMethod": "sendEmail"
+}
