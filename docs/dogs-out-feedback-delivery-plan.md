@@ -36,7 +36,8 @@ topology, with no invented sync Event or cross-outbox causality. The request
 schema currently binds projection and sync fields together, and the State id
 comes from the sync contract. **Decision required:** choose a stable State
 identity and source evidence for a projection without that contract. Only then
-split the request groups and semantic proof.
+split the request groups and semantic proof. The alternatives and recommendation
+are in the [local Java projection review](architecture/local-java-projection-review.md).
 
 ## 3. Direct Java hexagonal and outbox paths
 
