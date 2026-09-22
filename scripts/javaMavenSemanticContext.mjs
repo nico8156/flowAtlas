@@ -303,16 +303,39 @@ const loadRequest = async (projectRoot, requestPath) => {
     fail("all scheduled request properties must be provided together");
   }
 
+  const legacyEventConfiguration = {
+    domainEvent: optionalString(request, "domainEvent"),
+    eventHandler: optionalString(request, "eventHandler"),
+    handler: optionalString(request, "handler"),
+    provider: optionalString(request, "provider"),
+    providerMethod: optionalString(request, "providerMethod"),
+  };
+  const events = optionalStringArray(request, "events");
+  const configuredLegacyProperties = Object.values(legacyEventConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    configuredLegacyProperties.length > 0 &&
+    configuredLegacyProperties.length !== Object.keys(legacyEventConfiguration).length
+  ) {
+    fail("all typed event-handler request properties must be provided together");
+  }
+  if (configuredLegacyProperties.length > 0 && events.length === 0) {
+    fail("events must be non-empty with a typed event-handler request");
+  }
+  if (events.length > 0 && !legacyEventConfiguration.domainEvent) {
+    fail("events require a typed event-handler request");
+  }
+  if (domainEventPublisher && !legacyEventConfiguration.domainEvent) {
+    fail("domainEventPublisher requires a typed event-handler request");
+  }
+
   return {
     sourceRootName,
     sourceRoot,
     scanSources,
     resolutionSources,
-    domainEvent: requireString(request, "domainEvent"),
-    eventHandler: requireString(request, "eventHandler"),
-    handler: requireString(request, "handler"),
-    provider: requireString(request, "provider"),
-    providerMethod: requireString(request, "providerMethod"),
+    ...legacyEventConfiguration,
     domainEventPublisher,
     domainEventPublishMethod,
     ...commandConfiguration,
@@ -322,7 +345,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     ...projectionSyncConfiguration,
     ...externalConfiguration,
     ...scheduledConfiguration,
-    events: requireStringArray(request, "events"),
+    events,
   };
 };
 
@@ -357,16 +380,20 @@ const run = async () => {
       request.sourceRoot,
       "--classpath",
       classpathEntries.join(delimiter),
-      "--domain-event",
-      request.domainEvent,
-      "--event-handler",
-      request.eventHandler,
-      "--handler",
-      request.handler,
-      "--provider",
-      request.provider,
-      "--provider-method",
-      request.providerMethod,
+      ...(request.domainEvent
+        ? [
+            "--domain-event",
+            request.domainEvent,
+            "--event-handler",
+            request.eventHandler,
+            "--handler",
+            request.handler,
+            "--provider",
+            request.provider,
+            "--provider-method",
+            request.providerMethod,
+          ]
+        : []),
       ...(request.domainEventPublisher
         ? [
             "--domain-event-publisher",

@@ -52,7 +52,7 @@ derived argument without a marker; milestone 2 does not claim that path yet.
 
 ## 3. Direct Java hexagonal and outbox paths
 
-**Status: PROPOSED.** Goal: support a typed service, outbox handler and proven
+**Status: ACTIVE.** Goal: support a typed service, outbox handler and proven
 external execution without requiring a command bus, `DomainEvent` marker or
 generic publisher. Acceptance: a direct magic-link style fixture yields a
 partial, truthful graph; unresolved asynchronous joins stay absent. An
@@ -61,6 +61,18 @@ required:** identify which existing graph relations can express the observed
 path and which evidence belongs outside the primary graph. Port names alone do
 not establish an External boundary. The alternatives and recommendation are in
 the [direct Java outbox review](architecture/direct-java-outbox-review.md).
+
+First micro-cycle: the legacy typed-handler request block is optional, and a
+projection may receive an unmarked event. A mutation argument built directly
+from that exact event parameter is proven by resolved symbol identity. The
+small fixture and the real Dogs Out `WalkStartedProjectionHandler` both emit
+`WalkStarted --UPDATES--> CurrentWalkView` without a sync signal. This does not
+yet map the magic-link producer, outbox consumer or SES boundary.
+The full repository run could not finish under the current machine load:
+unrelated CLI and Java corpus tests hit their execution limits. Focused
+Fragments, Dogs Out and fixture replays passed, as did typecheck, lint and
+build; the complete suite must be retried before milestone 3 is marked
+delivered.
 
 ## 4. Typed Redux thunk dependencies
 

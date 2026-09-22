@@ -3,6 +3,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IfTree;
+import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.InstanceOfTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
@@ -91,45 +92,52 @@ public final class JavaSemanticSpike {
             Elements elements = task.getElements();
             Types types = task.getTypes();
 
-            TypeElement domainEvent = requiredType(elements, config.domainEvent(), diagnostics);
-            List<TypeEvidence> typeEvidence = config.events().stream()
-                    .map(eventName -> {
-                        TypeElement event = requiredType(elements, eventName, diagnostics);
-                        boolean assignable = types.isAssignable(
-                                types.erasure(event.asType()),
-                                types.erasure(domainEvent.asType()));
-                        return new TypeEvidence(eventName, assignable, locationOf(trees, event, config));
-                    })
-                    .toList();
+            List<TypeEvidence> typeEvidence = List.of();
+            HandlerEvidence handlerEvidence = null;
+            List<InvocationEvidence> invocations = List.of();
+            List<PublicationEvidence> publications = List.of();
+            if (config.domainEvent() != null) {
+                TypeElement domainEvent = requiredType(elements, config.domainEvent(), diagnostics);
+                typeEvidence = config.events().stream()
+                        .map(eventName -> {
+                            TypeElement event = requiredType(elements, eventName, diagnostics);
+                            boolean assignable = types.isAssignable(
+                                    types.erasure(event.asType()),
+                                    types.erasure(domainEvent.asType()));
+                            return new TypeEvidence(eventName, assignable, locationOf(trees, event, config));
+                        })
+                        .toList();
 
-            TypeElement handler = requiredType(elements, config.handler(), diagnostics);
-            TypeMirror eventType = findGenericArgument(
-                    handler.asType(),
-                    config.eventHandler(),
-                    types,
-                    new HashSet<>());
-            if (eventType == null) {
-                throw new IllegalStateException(
-                        config.handler() + " does not implement " + config.eventHandler() + " with a resolvable type argument");
+                TypeElement handler = requiredType(elements, config.handler(), diagnostics);
+                TypeMirror eventType = findGenericArgument(
+                        handler.asType(),
+                        config.eventHandler(),
+                        types,
+                        new HashSet<>());
+                if (eventType == null) {
+                    throw new IllegalStateException(
+                            config.handler() + " does not implement " + config.eventHandler()
+                                    + " with a resolvable type argument");
+                }
+                handlerEvidence = new HandlerEvidence(
+                        config.handler(),
+                        eventType.toString(),
+                        locationOf(trees, handler, config));
+
+                invocations = findProviderInvocations(
+                        units,
+                        trees,
+                        config.provider(),
+                        config.providerMethod(),
+                        config);
+
+                publications = findDomainEventPublications(
+                        units,
+                        trees,
+                        config.domainEventPublisher(),
+                        config.domainEventPublishMethod(),
+                        config);
             }
-            HandlerEvidence handlerEvidence = new HandlerEvidence(
-                    config.handler(),
-                    eventType.toString(),
-                    locationOf(trees, handler, config));
-
-            List<InvocationEvidence> invocations = findProviderInvocations(
-                    units,
-                    trees,
-                    config.provider(),
-                    config.providerMethod(),
-                    config);
-
-            List<PublicationEvidence> publications = findDomainEventPublications(
-                    units,
-                    trees,
-                    config.domainEventPublisher(),
-                    config.domainEventPublishMethod(),
-                    config);
 
             CommandSliceEvidence commandSlice = analyzeCommandSlice(
                     units,
@@ -912,11 +920,7 @@ public final class JavaSemanticSpike {
         if (method.getParameters().size() != 1) {
             throw new IllegalStateException("Configured projection handler must accept exactly one event");
         }
-        TypeElement domainEvent = requiredType(elements, config.domainEvent(), diagnostics);
         TypeMirror eventType = method.getParameters().getFirst().asType();
-        if (!types.isAssignable(types.erasure(eventType), types.erasure(domainEvent.asType()))) {
-            throw new IllegalStateException("Configured projection handler parameter must be a DomainEvent");
-        }
 
         TypeElement repository = requiredType(elements, config.projectionRepository(), diagnostics);
         TypeElement publisher = config.projectionSyncPublisher() == null
@@ -937,9 +941,10 @@ public final class JavaSemanticSpike {
                         && ownerName(invoked).equals(repository.getQualifiedName().toString())
                         && invoked.getSimpleName().contentEquals(config.projectionMutationMethod())
                         && invocation.getArguments().size() == 1
-                        && trees.getElement(new TreePath(
-                                invocationPath,
-                                invocation.getArguments().getFirst())) == eventParameter) {
+                        && referencesEventParameter(
+                                trees,
+                                new TreePath(invocationPath, invocation.getArguments().getFirst()),
+                                eventParameter)) {
                     mutations.add(locationOf(trees, invocationPath, config));
                 }
 
@@ -1000,6 +1005,21 @@ public final class JavaSemanticSpike {
                 locationOf(trees, method, config),
                 mutations.getFirst(),
                 sync == null ? null : sync.source())));
+    }
+
+    private static boolean referencesEventParameter(
+            Trees trees,
+            TreePath argumentPath,
+            VariableElement eventParameter) {
+        final boolean[] found = { false };
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitIdentifier(IdentifierTree identifier, Void unused) {
+                if (trees.getElement(getCurrentPath()) == eventParameter) found[0] = true;
+                return super.visitIdentifier(identifier, unused);
+            }
+        }.scan(argumentPath, null);
+        return found[0];
     }
 
     private static ScheduledSliceEvidence analyzeScheduledSlice(
@@ -1440,11 +1460,11 @@ public final class JavaSemanticSpike {
                     single(options, "--release"),
                     Path.of(single(options, "--source-root")),
                     optional(options, "--classpath"),
-                    single(options, "--domain-event"),
-                    single(options, "--event-handler"),
-                    single(options, "--handler"),
-                    single(options, "--provider"),
-                    single(options, "--provider-method"),
+                    optional(options, "--domain-event"),
+                    optional(options, "--event-handler"),
+                    optional(options, "--handler"),
+                    optional(options, "--provider"),
+                    optional(options, "--provider-method"),
                     optional(options, "--domain-event-publisher"),
                     optional(options, "--domain-event-publish-method"),
                     optional(options, "--command"),
@@ -1504,7 +1524,7 @@ public final class JavaSemanticSpike {
                     optional(options, "--scheduled-annotation"),
                     sources,
                     scanSources,
-                    many(options, "--event"));
+                    optionalMany(options, "--event"));
         }
 
         private static String single(Map<String, List<String>> options, String name) {
@@ -1804,7 +1824,7 @@ public final class JavaSemanticSpike {
         private String toJson() {
             return "{\"engine\":\"jdk-compiler-api\",\"types\":"
                     + jsonArray(types.stream().map(TypeEvidence::toJson).toList())
-                    + ",\"handler\":" + handler.toJson()
+                    + ",\"handler\":" + (handler == null ? "null" : handler.toJson())
                     + ",\"providerInvocations\":"
                     + jsonArray(providerInvocations.stream().map(InvocationEvidence::toJson).toList())
                     + ",\"domainEventPublications\":"

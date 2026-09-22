@@ -1,8 +1,7 @@
 # Review: direct Java use cases and local outbox
 
-Status: **AWAITING HUMAN DECISION**. This review gates milestone 3 in the
-[Dogs Out feedback plan](../dogs-out-feedback-delivery-plan.md). No milestone 3
-scanner implementation has started.
+Status: **OPTION A APPROVED; MILESTONE ACTIVE**. This review guides milestone 3
+in the [Dogs Out feedback plan](../dogs-out-feedback-delivery-plan.md).
 
 ## Problem
 

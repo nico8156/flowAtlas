@@ -1,0 +1,16 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": [
+    "com/nm/dogsout/presence/application/projectwalkstarted/WalkStartedProjectionHandler.java"
+  ],
+  "resolutionSources": [
+    "com/nm/dogsout/presence/application/projectwalkstarted/SaveCurrentWalkViewPort.java",
+    "com/nm/dogsout/presence/application/model/CurrentWalkView.java",
+    "com/nm/dogsout/walk/domain/WalkStarted.java"
+  ],
+  "projectionHandler": "com.nm.dogsout.presence.application.projectwalkstarted.WalkStartedProjectionHandler",
+  "projectionHandlerMethod": "handle",
+  "projectionRepository": "com.nm.dogsout.presence.application.projectwalkstarted.SaveCurrentWalkViewPort",
+  "projectionMutationMethod": "upsert",
+  "projectionState": "CurrentWalkView"
+}

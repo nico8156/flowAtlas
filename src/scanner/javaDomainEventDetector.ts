@@ -20,7 +20,7 @@ export type JavaDomainEventEvidence = {
     qualifiedName: string;
     eventType: string;
     source: JavaSourceLocation;
-  };
+  } | null;
   domainEventPublications: readonly {
     owner: string;
     method: string;
@@ -40,13 +40,15 @@ export const detectJavaDomainEventGraph = (
   evidence: JavaDomainEventEvidence,
 ): ArchitectureGraph => {
   const graph = createArchitectureGraph();
+  const handler = evidence.handler;
+  if (!handler) return graph;
   const listenedEvent = evidence.types.find(
-    (type) => type.qualifiedName === evidence.handler.eventType && type.assignableToDomainEvent,
+    (type) => type.qualifiedName === handler.eventType && type.assignableToDomainEvent,
   );
 
-  if (!evidence.handler.source.inScanScope || !listenedEvent) return graph;
+  if (!handler.source.inScanScope || !listenedEvent) return graph;
 
-  const handlerId = evidence.handler.qualifiedName;
+  const handlerId = handler.qualifiedName;
   const listenedEventId = eventId(listenedEvent.qualifiedName);
   graph.addNode({
     id: listenedEventId,
@@ -56,19 +58,19 @@ export const detectJavaDomainEventGraph = (
   graph.addNode({
     id: handlerId,
     kind: "Handler",
-    sourceLocation: graphLocation(evidence.handler.source),
+    sourceLocation: graphLocation(handler.source),
   });
   graph.addEdge({
     source: handlerId,
     target: listenedEventId,
     kind: "LISTENS_TO",
-    sourceLocation: graphLocation(evidence.handler.source),
+    sourceLocation: graphLocation(handler.source),
   });
 
   for (const publication of evidence.domainEventPublications) {
     if (
       !publication.source.inScanScope ||
-      declaringType(publication.caller) !== evidence.handler.qualifiedName
+      declaringType(publication.caller) !== handler.qualifiedName
     ) {
       continue;
     }
