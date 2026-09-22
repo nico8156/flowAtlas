@@ -11,13 +11,21 @@ expected relations and important absent relations. Static gaps remain gaps.
 
 ## 1. Actionable Java semantic failures
 
-**Status: ACTIVE.** Goal: expose the decisive validation or compiler failure
+**Status: DELIVERED.** Goal: expose the decisive validation or compiler failure
 before command and classpath detail. Acceptance: an invalid Java request reports
 its request path and specific cause concisely; configuration, missing-type and
 compiler failures are distinguishable. The current outer formatter can hide the
 cause when a nested process supplies only a long error message. Preserve a
 useful remediation without calling every failure stale. Completion requires a
 focused RED, a real Java failure replay and the configured verification gates.
+
+The formatter now selects a Java source diagnostic ahead of the child-process
+command and classpath and labels the result as a failure rather than assuming
+that every request is stale. The focused test covers a compiler diagnostic;
+the existing tests retain semantic proof detail. A modified Maven fixture
+request reproduced a real missing-handler failure. The full suite passed with
+one Vitest worker (195 passed, 3 skipped); default parallel execution caused
+resource-related timeouts in unrelated corpus tests.
 
 ## 2. Local Java projection without sync notification
 

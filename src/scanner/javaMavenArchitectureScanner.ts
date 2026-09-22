@@ -10,17 +10,35 @@ import { createJavaArchitectureScanner } from "./javaArchitectureScanner.js";
 const execFileAsync = promisify(execFile);
 
 export const formatJavaSemanticFailure = (requestPath: string, error: unknown): Error => {
-  const detail =
+  const stderr =
     error && typeof error === "object" && "stderr" in error && typeof error.stderr === "string"
-      ? (error.stderr
-          .trim()
-          .split("\n")
-          .find((line) => line.includes("Exception")) ?? error.stderr.trim())
-      : error instanceof Error
-        ? error.message
-        : String(error);
+      ? error.stderr
+      : undefined;
+  const lines = stderr?.trim().split("\n") ?? [];
+  const requestValidation = lines.find((line) =>
+    line.includes("Error: Java Maven semantic context:"),
+  );
+  if (requestValidation) {
+    return new Error(`Java semantic request failed: ${requestPath}. ${requestValidation.trim()}.`);
+  }
+  const compilerDiagnosticIndex = lines.findIndex((line) =>
+    /:\d+(?::\d+)?: (?:error|warning):/.test(line),
+  );
+  if (compilerDiagnosticIndex !== -1) {
+    const detail = lines
+      .slice(compilerDiagnosticIndex, compilerDiagnosticIndex + 3)
+      .map((line) => line.trim())
+      .join(" ");
+    return new Error(
+      `Java semantic request failed: ${requestPath}. ${detail}. Check the Java source and resolutionSources.`,
+    );
+  }
+  const detail =
+    lines.find((line) => line.includes("Exception")) ??
+    stderr?.trim() ??
+    (error instanceof Error ? error.message : String(error));
   return new Error(
-    `Java semantic request is stale or incomplete: ${requestPath}. ${detail}. ` +
+    `Java semantic request failed: ${requestPath}. ${detail}. ` +
       "Update scanSources or resolutionSources, or select a request matching the current vertical.",
   );
 };
