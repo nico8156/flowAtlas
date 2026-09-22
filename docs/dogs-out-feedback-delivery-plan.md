@@ -59,7 +59,8 @@ partial, truthful graph; unresolved asynchronous joins stay absent. An
 explicit `requestPath` remains required by the current Java adapter. **Decision
 required:** identify which existing graph relations can express the observed
 path and which evidence belongs outside the primary graph. Port names alone do
-not establish an External boundary.
+not establish an External boundary. The alternatives and recommendation are in
+the [direct Java outbox review](architecture/direct-java-outbox-review.md).
 
 ## 4. Typed Redux thunk dependencies
 
