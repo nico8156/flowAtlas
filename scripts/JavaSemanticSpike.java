@@ -9,6 +9,7 @@ import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.ReturnTree;
@@ -162,6 +163,13 @@ public final class JavaSemanticSpike {
                     diagnostics,
                     config);
 
+            LocalOutboxSliceEvidence localOutboxSlice = analyzeLocalOutboxSlice(
+                    trees,
+                    elements,
+                    types,
+                    diagnostics,
+                    config);
+
             ExternalSliceEvidence externalSlice = analyzeExternalSlice(
                     trees,
                     elements,
@@ -180,6 +188,7 @@ public final class JavaSemanticSpike {
                     commandSlice,
                     integrationSlice,
                     projectionSlice,
+                    localOutboxSlice,
                     externalSlice,
                     scheduledSlice,
                     diagnosticEvidence(diagnostics, config));
@@ -1022,6 +1031,91 @@ public final class JavaSemanticSpike {
         return found[0];
     }
 
+    private static LocalOutboxSliceEvidence analyzeLocalOutboxSlice(
+            Trees trees,
+            Elements elements,
+            Types types,
+            DiagnosticCollector<JavaFileObject> diagnostics,
+            Config config) {
+        if (config.localOutboxHandler() == null) return null;
+
+        TypeElement contract = requiredType(elements, config.localOutboxHandlerInterface(), diagnostics);
+        TypeElement handler = requiredType(elements, config.localOutboxHandler(), diagnostics);
+        if (!types.isAssignable(types.erasure(handler.asType()), types.erasure(contract.asType()))) {
+            throw new IllegalStateException("Configured local outbox handler must implement its handler interface");
+        }
+        requiredMethod(contract, config.localOutboxEventTypeMethod());
+        requiredMethod(contract, config.localOutboxHandleMethod());
+        ExecutableElement route = requiredMethod(handler, config.localOutboxEventTypeMethod());
+        ExecutableElement handle = requiredMethod(handler, config.localOutboxHandleMethod());
+        TypeElement dispatcher = requiredType(elements, config.localOutboxDispatcher(), diagnostics);
+        ExecutableElement dispatch = requiredMethod(dispatcher, config.localOutboxDispatchMethod());
+        if (handle.getParameters().size() != 1) {
+            throw new IllegalStateException("Configured local outbox handler must accept one message");
+        }
+
+        List<SourceLocation> routeReferences = new ArrayList<>();
+        List<SourceLocation> dispatchCalls = new ArrayList<>();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMemberReference(MemberReferenceTree reference, Void unused) {
+                ExecutableElement method = executableAt(trees, getCurrentPath());
+                if (method != null
+                        && ownerName(method).equals(contract.getQualifiedName().toString())
+                        && method.getSimpleName().contentEquals(config.localOutboxEventTypeMethod())) {
+                    routeReferences.add(locationOf(trees, getCurrentPath(), config));
+                }
+                return super.visitMemberReference(reference, unused);
+            }
+
+            @Override
+            public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                ExecutableElement method = executableAt(trees, getCurrentPath());
+                if (method != null && ownerName(method).equals(contract.getQualifiedName().toString())) {
+                    if (method.getSimpleName().contentEquals(config.localOutboxEventTypeMethod())) {
+                        routeReferences.add(locationOf(trees, getCurrentPath(), config));
+                    }
+                }
+                return super.visitMethodInvocation(invocation, unused);
+            }
+        }.scan(trees.getPath(dispatcher), null);
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
+                ExecutableElement method = executableAt(trees, getCurrentPath());
+                if (method != null
+                        && ownerName(method).equals(contract.getQualifiedName().toString())
+                        && method.getSimpleName().contentEquals(config.localOutboxHandleMethod())) {
+                    dispatchCalls.add(locationOf(trees, getCurrentPath(), config));
+                }
+                return super.visitMethodInvocation(invocation, unused);
+            }
+        }.scan(trees.getPath(dispatch), null);
+        if (routeReferences.isEmpty() || dispatchCalls.isEmpty()) {
+            throw new IllegalStateException("Could not prove local outbox dispatcher routing and delivery");
+        }
+
+        List<String> routes = new ArrayList<>();
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitReturn(ReturnTree statement, Void unused) {
+                String value = statement.getExpression() == null
+                        ? null : constantString(trees, new TreePath(getCurrentPath(), statement.getExpression()));
+                if (value != null) routes.add(value);
+                return super.visitReturn(statement, unused);
+            }
+        }.scan(trees.getPath(route), null);
+        if (routes.size() != 1) {
+            throw new IllegalStateException("Could not prove one constant local outbox event route");
+        }
+        return new LocalOutboxSliceEvidence(List.of(new LocalOutboxConsumerEvidence(
+                callerSignature(handle),
+                routes.getFirst(),
+                locationOf(trees, handle, config),
+                locationOf(trees, route, config),
+                dispatchCalls.getFirst())));
+    }
+
     private static ScheduledSliceEvidence analyzeScheduledSlice(
             Trees trees,
             Elements elements,
@@ -1427,6 +1521,12 @@ public final class JavaSemanticSpike {
             String projectionSyncFactoryMethod,
             int projectionSyncProjectionArgumentIndex,
             int projectionSyncScopeArgumentIndex,
+            String localOutboxHandler,
+            String localOutboxHandlerInterface,
+            String localOutboxEventTypeMethod,
+            String localOutboxHandleMethod,
+            String localOutboxDispatcher,
+            String localOutboxDispatchMethod,
             String externalConfiguration,
             String externalFactoryMethod,
             String externalAdapter,
@@ -1512,6 +1612,12 @@ public final class JavaSemanticSpike {
                     optional(options, "--projection-sync-factory-method"),
                     optionalInt(options, "--projection-sync-projection-argument-index"),
                     optionalInt(options, "--projection-sync-scope-argument-index"),
+                    optional(options, "--local-outbox-handler"),
+                    optional(options, "--local-outbox-handler-interface"),
+                    optional(options, "--local-outbox-event-type-method"),
+                    optional(options, "--local-outbox-handle-method"),
+                    optional(options, "--local-outbox-dispatcher"),
+                    optional(options, "--local-outbox-dispatch-method"),
                     optional(options, "--external-configuration"),
                     optional(options, "--external-factory-method"),
                     optional(options, "--external-adapter"),
@@ -1774,6 +1880,25 @@ public final class JavaSemanticSpike {
     private record ProjectionSliceEvidence(List<ProjectionUpdateEvidence> updates) {
     }
 
+    private record LocalOutboxConsumerEvidence(
+            String handler,
+            String eventType,
+            SourceLocation handlerSource,
+            SourceLocation routeSource,
+            SourceLocation dispatcherSource) {
+        private String toJson() {
+            return "{\"handler\":" + quote(handler)
+                    + ",\"eventType\":" + quote(eventType)
+                    + ",\"handlerSource\":" + handlerSource.toJson()
+                    + ",\"routeSource\":" + routeSource.toJson()
+                    + ",\"dispatcherSource\":" + dispatcherSource.toJson()
+                    + "}";
+        }
+    }
+
+    private record LocalOutboxSliceEvidence(List<LocalOutboxConsumerEvidence> consumers) {
+    }
+
     private record ExternalCallEvidence(
             String handler,
             String port,
@@ -1818,6 +1943,7 @@ public final class JavaSemanticSpike {
             CommandSliceEvidence commandSlice,
             IntegrationSliceEvidence integrationSlice,
             ProjectionSliceEvidence projectionSlice,
+            LocalOutboxSliceEvidence localOutboxSlice,
             ExternalSliceEvidence externalSlice,
             ScheduledSliceEvidence scheduledSlice,
             List<DiagnosticEvidence> diagnostics) {
@@ -1847,6 +1973,10 @@ public final class JavaSemanticSpike {
                             ? "[]"
                             : jsonArray(projectionSlice.updates().stream()
                                     .map(ProjectionUpdateEvidence::toJson).toList()))
+                    + ",\"localOutboxConsumers\":" + (localOutboxSlice == null
+                            ? "[]"
+                            : jsonArray(localOutboxSlice.consumers().stream()
+                                    .map(LocalOutboxConsumerEvidence::toJson).toList()))
                     + ",\"externalCalls\":" + (externalSlice == null
                             ? "[]"
                             : jsonArray(externalSlice.calls().stream()

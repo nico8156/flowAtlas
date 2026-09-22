@@ -1,0 +1,17 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": [
+    "com/nm/dogsout/identity/infrastructure/eventing/MagicLinkDeliveryRequestedOutboxHandler.java",
+    "com/nm/dogsout/platform/infrastructure/eventing/LocalOutboxDispatcher.java"
+  ],
+  "resolutionSources": [
+    "com/nm/dogsout/platform/infrastructure/eventing/LocalOutboxEventHandler.java",
+    "com/nm/dogsout/platform/infrastructure/eventing/LocalOutboxMessage.java"
+  ],
+  "localOutboxHandler": "com.nm.dogsout.identity.infrastructure.eventing.MagicLinkDeliveryRequestedOutboxHandler",
+  "localOutboxHandlerInterface": "com.nm.dogsout.platform.infrastructure.eventing.LocalOutboxEventHandler",
+  "localOutboxEventTypeMethod": "eventType",
+  "localOutboxHandleMethod": "handle",
+  "localOutboxDispatcher": "com.nm.dogsout.platform.infrastructure.eventing.LocalOutboxDispatcher",
+  "localOutboxDispatchMethod": "dispatchPending"
+}

@@ -74,6 +74,14 @@ Fragments, Dogs Out and fixture replays passed, as did typecheck, lint and
 build; the complete suite must be retried before milestone 3 is marked
 delivered.
 
+Second micro-cycle: a configured local outbox handler emits `LISTENS_TO` only
+when its resolved interface exposes `eventType` and `handle`, the handler
+returns one constant route, and a configured dispatcher uses both contract
+methods. The fixture and real Dogs Out magic-link consumer pass. The outbox
+producer and SES sender remain unconnected and absent from this projection. The
+Event id names the constant local route; it does not claim a versioned payload
+contract or runtime delivery.
+
 ## 4. Typed Redux thunk dependencies
 
 **Status: PROPOSED.** Goal: resolve method calls on typed `extra` dependencies

@@ -269,6 +269,24 @@ const loadRequest = async (projectRoot, requestPath) => {
     fail("projectionState is required when projection sync is absent");
   }
 
+  const localOutboxConfiguration = {
+    localOutboxHandler: optionalString(request, "localOutboxHandler"),
+    localOutboxHandlerInterface: optionalString(request, "localOutboxHandlerInterface"),
+    localOutboxEventTypeMethod: optionalString(request, "localOutboxEventTypeMethod"),
+    localOutboxHandleMethod: optionalString(request, "localOutboxHandleMethod"),
+    localOutboxDispatcher: optionalString(request, "localOutboxDispatcher"),
+    localOutboxDispatchMethod: optionalString(request, "localOutboxDispatchMethod"),
+  };
+  const configuredLocalOutboxProperties = Object.values(localOutboxConfiguration).filter(
+    (value) => value !== undefined,
+  );
+  if (
+    configuredLocalOutboxProperties.length > 0 &&
+    configuredLocalOutboxProperties.length !== Object.keys(localOutboxConfiguration).length
+  ) {
+    fail("all local outbox handler request properties must be provided together");
+  }
+
   const externalConfiguration = {
     externalConfiguration: optionalString(request, "externalConfiguration"),
     externalFactoryMethod: optionalString(request, "externalFactoryMethod"),
@@ -343,6 +361,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     ...projectionConfiguration,
     projectionState,
     ...projectionSyncConfiguration,
+    ...localOutboxConfiguration,
     ...externalConfiguration,
     ...scheduledConfiguration,
     events,
@@ -505,6 +524,22 @@ const run = async () => {
                   String(request.projectionSyncScopeArgumentIndex),
                 ]
               : []),
+          ]
+        : []),
+      ...(request.localOutboxHandler
+        ? [
+            "--local-outbox-handler",
+            request.localOutboxHandler,
+            "--local-outbox-handler-interface",
+            request.localOutboxHandlerInterface,
+            "--local-outbox-event-type-method",
+            request.localOutboxEventTypeMethod,
+            "--local-outbox-handle-method",
+            request.localOutboxHandleMethod,
+            "--local-outbox-dispatcher",
+            request.localOutboxDispatcher,
+            "--local-outbox-dispatch-method",
+            request.localOutboxDispatchMethod,
           ]
         : []),
       ...(request.externalConfiguration
