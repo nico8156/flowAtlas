@@ -52,7 +52,7 @@ derived argument without a marker; milestone 2 does not claim that path yet.
 
 ## 3. Direct Java hexagonal and outbox paths
 
-**Status: ACTIVE.** Goal: support a typed service, outbox handler and proven
+**Status: DELIVERED (approved partial graph).** Goal: support a typed service, outbox handler and proven
 external execution without requiring a command bus, `DomainEvent` marker or
 generic publisher. Acceptance: a direct magic-link style fixture yields a
 partial, truthful graph; unresolved asynchronous joins stay absent. An
@@ -90,6 +90,17 @@ constructor. The small direct-call and bound-reference fixtures pass, as does
 the real Dogs Out `DeliverMagicLinkService → SendMagicLinkPort →
 AwsSesMagicLinkSender → SesV2Client#sendEmail` path. The outbox producer and
 consumer are still separate graph slices; no asynchronous join is inferred.
+
+The producer `RequestMagicLinkService` constructs an event and passes it through
+`SaveRequestedMagicLinkPort` to a SQL outbox write. This accepted partial graph
+does not claim a `DISPATCHES` edge from that path or a runtime link to the local
+consumer. A future producer relation would need a separate static contract
+proof for the persisted route and payload. The completed scope covers the
+local consumer, the direct delivery service and its resolved SES execution,
+with separate fixture and Dogs Out acceptance tests. Typecheck, lint and the
+focused Java regression passed. A full single-worker suite run was attempted
+but stopped after an unrelated `cliFindJson` test reached its 120-second limit
+under machine load; it is not recorded as passing.
 
 ## 4. Typed Redux thunk dependencies
 
