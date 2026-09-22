@@ -1,0 +1,80 @@
+# Dogs Out feedback delivery plan
+
+Status: **ACTIVE**. Recorded 22 September 2026. The Dogs Out observations are
+acceptance drivers, not project-specific scanner rules. Each capability needs a
+small independent fixture and replay against real source when available. A
+request is versioned only after it executes successfully.
+
+The six milestones below are ordered by dependency. Finish and verify each
+milestone before starting the next. Graph assertions cover expected nodes,
+expected relations and important absent relations. Static gaps remain gaps.
+
+## 1. Actionable Java semantic failures
+
+**Status: ACTIVE.** Goal: expose the decisive validation or compiler failure
+before command and classpath detail. Acceptance: an invalid Java request reports
+its request path and specific cause concisely; configuration, missing-type and
+compiler failures are distinguishable. The current outer formatter can hide the
+cause when a nested process supplies only a long error message. Preserve a
+useful remediation without calling every failure stale. Completion requires a
+focused RED, a real Java failure replay and the configured verification gates.
+
+## 2. Local Java projection without sync notification
+
+**Status: PROPOSED.** Goal: prove a projection mutation independently of a
+freshness notification. Acceptance: a local outbox dispatcher and projection
+handler behind a port yield only statically justified Event, Handler and State
+topology, with no invented sync Event or cross-outbox causality. The request
+schema currently binds projection and sync fields together, and the State id
+comes from the sync contract. **Decision required:** choose a stable State
+identity and source evidence for a projection without that contract. Only then
+split the request groups and semantic proof.
+
+## 3. Direct Java hexagonal and outbox paths
+
+**Status: PROPOSED.** Goal: support a typed service, outbox handler and proven
+external execution without requiring a command bus, `DomainEvent` marker or
+generic publisher. Acceptance: a direct magic-link style fixture yields a
+partial, truthful graph; unresolved asynchronous joins stay absent. An
+explicit `requestPath` remains required by the current Java adapter. **Decision
+required:** identify which existing graph relations can express the observed
+path and which evidence belongs outside the primary graph. Port names alone do
+not establish an External boundary.
+
+## 4. Typed Redux thunk dependencies
+
+**Status: PROPOSED.** Goal: resolve method calls on typed `extra` dependencies
+in `createAsyncThunk` payload creators. Acceptance: the StartWalk and onboarding
+thunks expose proven external boundaries, while unrelated or unresolved calls
+stay absent. Existing handwritten thunk gateway resolution is a starting point;
+do not classify every injected interface as External.
+
+## 5. Dispatches outside Redux thunks
+
+**Status: PROPOSED.** Goal: recognize a resolved event/observer factory whose
+callbacks dispatch slice actions through an application coordinator.
+Acceptance: an authentication coordinator links to proven dispatched Events and
+their State mutations without recording secrets or inventing calls through
+dynamic callbacks. An independent fixture must establish the reusable rule.
+
+## 6. State composition and context trust
+
+**Status: PROPOSED.** Goal: explain the `dogSlice` store composition and state
+consumption, and clarify what `complete` means for a bounded context. The
+current context completeness describes graph traversal within its limits; it
+does not prove application coverage. Acceptance: the response makes that scope
+clear, and any added state topology has explicit static evidence. **Decision
+required:** reducer composition, preloaded state and selector reads do not map
+directly to the four canonical relation kinds; decide whether they belong in
+the primary graph or explanatory evidence before changing the model.
+
+## Shared constraints and open questions
+
+- Keep the four NodeKinds and four RelationKinds unless repeated evidence and
+  human review justify a vocabulary change.
+- Keep resolution context broader than scan scope without emitting out-of-scope
+  architecture.
+- Validate each new scanner capability on a small fixture and a real corpus.
+- Do not connect outbox writing to later dispatch by name, timing or expected
+  runtime behavior.
+- Record newly discovered micro-cycles from acceptance failures, not in advance.

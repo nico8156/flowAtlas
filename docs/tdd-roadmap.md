@@ -6,6 +6,9 @@ REDs build the path.
 Future items are proposals, not implementation permission. Work remains
 acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 
+The Dogs Out second-corpus feedback and its six proposed milestones are tracked
+in [Dogs Out feedback delivery plan](dogs-out-feedback-delivery-plan.md).
+
 ## Status At A Glance
 
 | Milestone                                  | Status                                    |
