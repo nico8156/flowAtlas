@@ -37,6 +37,10 @@ export type ArchitectureContext = {
     readonly maxBytes?: number;
   };
   readonly complete: boolean;
+  readonly coverage: {
+    readonly graph: "bounded-projection";
+    readonly application: "not-assessed";
+  };
   readonly frontierComplete: boolean;
   readonly omittedFrontierCount: number;
   readonly limitsReached: readonly ArchitectureContextLimit[];
@@ -212,6 +216,10 @@ const contextEnvelope = (
     focus,
     request,
     complete: bounded.complete,
+    coverage: {
+      graph: "bounded-projection",
+      application: "not-assessed",
+    },
     frontierComplete: omittedFrontierCount === 0,
     omittedFrontierCount,
     limitsReached: [...new Set([...bounded.limitsReached, ...extraLimits])],

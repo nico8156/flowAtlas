@@ -133,7 +133,7 @@ arguments remain absent from the graph.
 
 ## 6. State composition and context trust
 
-**Status: BLOCKED ON HUMAN DECISION.** Goal: explain the `dogSlice` store composition and state
+**Status: DELIVERED (strict graph, explicit scope).** Goal: explain the `dogSlice` store composition and state
 consumption, and clarify what `complete` means for a bounded context. The
 current context completeness describes graph traversal within its limits; it
 does not prove application coverage. Acceptance: the response makes that scope
@@ -141,7 +141,11 @@ clear, and any added state topology has explicit static evidence. **Decision
 required:** reducer composition, preloaded state and selector reads do not map
 directly to the four canonical relation kinds; decide whether they belong in
 the primary graph or explanatory evidence before changing the model. The
-options and recommendation are in the [Redux state composition review](architecture/redux-state-composition-review.md).
+approved Option A is implemented: every architecture context now declares
+`coverage.graph = bounded-projection` and `coverage.application = not-assessed`.
+This makes the meaning of `complete` explicit without adding reducer,
+preloaded-state or selector relations. A Dogs Out acceptance covers the real
+`dogSlice` context; the full MCP and CLI context regressions continue to pass.
 
 ## Shared constraints and open questions
 

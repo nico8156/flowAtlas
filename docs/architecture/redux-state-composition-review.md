@@ -1,6 +1,6 @@
 # Review: Redux state composition and bounded context trust
 
-Status: **DECISION REQUIRED; MILESTONE 6 BLOCKED ON MODEL REVIEW**.
+Status: **OPTION A DELIVERED**.
 
 ## Problem
 
@@ -50,10 +50,14 @@ selector consumption. This would make the store boundary visible in one graph,
 but requires new domain invariants, rendering and traversal semantics. It also
 risks promoting ordinary reads and wiring details into architecture nodes.
 
-## Recommendation
+## Decision and implementation
 
 Choose **Option A**. The new Dogs Out evidence establishes a product-facing
 trust problem in the meaning of `complete`, but it does not justify new graph
 relations. Implement a bounded-context explanation and a reducer composition
 diagnostic only after human approval of its public shape. Do not infer a
 `dogSlice` runtime dependency from `preloadedState` or selector names alone.
+Architecture context responses now expose `coverage.graph =
+bounded-projection` and `coverage.application = not-assessed`. The primary
+graph remains unchanged, and the Dogs Out bounded-context acceptance verifies
+the new contract.
