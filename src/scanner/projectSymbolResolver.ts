@@ -244,6 +244,31 @@ const getProjectEventIds = (files: readonly ProjectSourceFile[]): Map<string, st
         declarations.push({ file: normalizePath(file), name: variableCall.id });
         occurrences.set(variableCall.id, (occurrences.get(variableCall.id) ?? 0) + 1);
       }
+      if (
+        variableCall &&
+        ts.isIdentifier(variableCall.call.expression) &&
+        variableCall.call.expression.text === "createSlice" &&
+        variableCall.call.arguments[0] &&
+        ts.isObjectLiteralExpression(variableCall.call.arguments[0])
+      ) {
+        const reducers = variableCall.call.arguments[0].properties.find(
+          (property): property is ts.PropertyAssignment =>
+            ts.isPropertyAssignment(property) &&
+            ts.isIdentifier(property.name) &&
+            property.name.text === "reducers" &&
+            ts.isObjectLiteralExpression(property.initializer),
+        );
+        const reducerProperties =
+          reducers && ts.isObjectLiteralExpression(reducers.initializer)
+            ? reducers.initializer.properties
+            : [];
+        for (const reducer of reducerProperties) {
+          if (ts.isPropertyAssignment(reducer) && ts.isIdentifier(reducer.name)) {
+            declarations.push({ file: normalizePath(file), name: reducer.name.text });
+            occurrences.set(reducer.name.text, (occurrences.get(reducer.name.text) ?? 0) + 1);
+          }
+        }
+      }
       ts.forEachChild(node, visit);
     };
     visit(sourceFile);

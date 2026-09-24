@@ -104,30 +104,44 @@ under machine load; it is not recorded as passing.
 
 ## 4. Typed Redux thunk dependencies
 
-**Status: PROPOSED.** Goal: resolve method calls on typed `extra` dependencies
+**Status: DELIVERED.** Goal: resolve method calls on typed `extra` dependencies
 in `createAsyncThunk` payload creators. Acceptance: the StartWalk and onboarding
 thunks expose proven external boundaries, while unrelated or unresolved calls
 stay absent. Existing handwritten thunk gateway resolution is a starting point;
 do not classify every injected interface as External.
 
+The scanner now inspects the typed `withTypes` extra contract of a thunk,
+including `Readonly` dependency aliases, and resolves calls on destructured
+`extra` properties. The Dogs Out `loadOnboarding` acceptance maps both
+`OnboardingGateway` and `SessionVault`; the existing Fragments thunk regression
+continues to pass. The lifecycle graph does not invent a direct `fulfilled →
+dog` update when the thunk dispatches a separate action.
+
 ## 5. Dispatches outside Redux thunks
 
-**Status: PROPOSED.** Goal: recognize a resolved event/observer factory whose
+**Status: DELIVERED.** Goal: recognize a resolved event/observer factory whose
 callbacks dispatch slice actions through an application coordinator.
 Acceptance: an authentication coordinator links to proven dispatched Events and
 their State mutations without recording secrets or inventing calls through
 dynamic callbacks. An independent fixture must establish the reusable rule.
 
+The scanner recognizes an `*Events` factory returning callback methods and
+records only dispatches whose action creators resolve to Events. `createSlice`
+reducers now establish those action Events and their `UPDATES` relations. The
+small fixture and Dogs Out `createAuthenticationEvents` acceptance pass; token
+arguments remain absent from the graph.
+
 ## 6. State composition and context trust
 
-**Status: PROPOSED.** Goal: explain the `dogSlice` store composition and state
+**Status: BLOCKED ON HUMAN DECISION.** Goal: explain the `dogSlice` store composition and state
 consumption, and clarify what `complete` means for a bounded context. The
 current context completeness describes graph traversal within its limits; it
 does not prove application coverage. Acceptance: the response makes that scope
 clear, and any added state topology has explicit static evidence. **Decision
 required:** reducer composition, preloaded state and selector reads do not map
 directly to the four canonical relation kinds; decide whether they belong in
-the primary graph or explanatory evidence before changing the model.
+the primary graph or explanatory evidence before changing the model. The
+options and recommendation are in the [Redux state composition review](architecture/redux-state-composition-review.md).
 
 ## Shared constraints and open questions
 

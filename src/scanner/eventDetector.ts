@@ -28,6 +28,37 @@ export const detectEvents = (
       });
     }
 
+    if (
+      variableCall &&
+      ts.isIdentifier(variableCall.call.expression) &&
+      variableCall.call.expression.text === "createSlice" &&
+      variableCall.call.arguments[0] &&
+      ts.isObjectLiteralExpression(variableCall.call.arguments[0])
+    ) {
+      const reducers = variableCall.call.arguments[0].properties.find(
+        (property): property is ts.PropertyAssignment =>
+          ts.isPropertyAssignment(property) &&
+          ts.isIdentifier(property.name) &&
+          property.name.text === "reducers" &&
+          ts.isObjectLiteralExpression(property.initializer),
+      );
+      const reducerProperties =
+        reducers && ts.isObjectLiteralExpression(reducers.initializer)
+          ? reducers.initializer.properties
+          : [];
+      for (const reducer of reducerProperties) {
+        if (!ts.isPropertyAssignment(reducer) || !ts.isIdentifier(reducer.name)) continue;
+        const line =
+          sourceFile.getLineAndCharacterOfPosition(reducer.getStart(sourceFile)).line + 1;
+        graph.addNode({
+          id:
+            eventIds.get(`${file.replaceAll("\\", "/")}#${reducer.name.text}`) ?? reducer.name.text,
+          kind: "Event",
+          sourceLocation: { file, line },
+        });
+      }
+    }
+
     const externalProtocolEventId = getExternalProtocolEventId(node);
     if (externalProtocolEventId === "projection.updated") {
       const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;

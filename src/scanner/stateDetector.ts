@@ -137,6 +137,25 @@ export const detectStates = (
         : undefined;
     }
 
+    if (configuration && ts.isObjectLiteralExpression(configuration) && collectRelationships) {
+      const reducers = configuration.properties.find(
+        (property): property is ts.PropertyAssignment =>
+          ts.isPropertyAssignment(property) &&
+          ts.isIdentifier(property.name) &&
+          property.name.text === "reducers" &&
+          ts.isObjectLiteralExpression(property.initializer),
+      );
+      const reducerProperties =
+        reducers && ts.isObjectLiteralExpression(reducers.initializer)
+          ? reducers.initializer.properties
+          : [];
+      for (const reducer of reducerProperties) {
+        if (!ts.isPropertyAssignment(reducer) || !ts.isIdentifier(reducer.name)) continue;
+        const source = getResolvedEventId(reducer.name.text);
+        if (source) graph.addEdge({ source, target: stateId, kind: "UPDATES" });
+      }
+    }
+
     if (reducerBuilder && collectRelationships) {
       const visitReducerBuilder = (reducerNode: ts.Node): void => {
         if (

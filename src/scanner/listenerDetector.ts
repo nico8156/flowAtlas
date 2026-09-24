@@ -27,6 +27,92 @@ type ListenerContext = {
   externalResolutionCache?: Map<string, readonly string[]>;
 };
 
+const getTypedThunkExternalParameters = (
+  factoryName: string,
+  sourceFiles: readonly ts.SourceFile[],
+  graph: ArchitectureGraph,
+): Map<string, string[]> => {
+  const result = new Map<string, string[]>();
+  let factory: ts.VariableDeclaration | undefined;
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === factoryName &&
+      node.initializer
+    ) {
+      factory = node;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  for (const sourceFile of sourceFiles) {
+    visit(sourceFile);
+    if (factory) break;
+  }
+  const factoryInitializer = factory?.initializer;
+  if (!factoryInitializer || !ts.isCallExpression(factoryInitializer)) return result;
+  const withTypes = factoryInitializer.expression;
+  if (
+    !ts.isPropertyAccessExpression(withTypes) ||
+    withTypes.name.text !== "withTypes" ||
+    !factoryInitializer.typeArguments?.[0] ||
+    !ts.isTypeLiteralNode(factoryInitializer.typeArguments[0])
+  ) {
+    return result;
+  }
+  const extraProperty = factoryInitializer.typeArguments[0].members.find(
+    (member): member is ts.PropertySignature =>
+      ts.isPropertySignature(member) &&
+      ts.isIdentifier(member.name) &&
+      member.name.text === "extra" &&
+      !!member.type,
+  );
+  if (
+    !extraProperty?.type ||
+    !ts.isTypeReferenceNode(extraProperty.type) ||
+    !ts.isIdentifier(extraProperty.type.typeName)
+  ) {
+    return result;
+  }
+  const dependencyName = extraProperty.type.typeName.text;
+  const dependencyDeclaration = sourceFiles
+    .flatMap((sourceFile) => [...sourceFile.statements])
+    .find(
+      (statement): statement is ts.InterfaceDeclaration | ts.TypeAliasDeclaration =>
+        (ts.isInterfaceDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) &&
+        statement.name.text === dependencyName,
+    );
+  const dependencyType =
+    dependencyDeclaration && ts.isTypeAliasDeclaration(dependencyDeclaration)
+      ? dependencyDeclaration.type
+      : undefined;
+  const unwrappedDependencyType =
+    dependencyType &&
+    ts.isTypeReferenceNode(dependencyType) &&
+    ts.isIdentifier(dependencyType.typeName) &&
+    dependencyType.typeName.text === "Readonly"
+      ? dependencyType.typeArguments?.[0]
+      : dependencyType;
+  const members =
+    dependencyDeclaration && ts.isInterfaceDeclaration(dependencyDeclaration)
+      ? dependencyDeclaration.members
+      : unwrappedDependencyType && ts.isTypeLiteralNode(unwrappedDependencyType)
+        ? unwrappedDependencyType.members
+        : [];
+  for (const member of members) {
+    if (!ts.isPropertySignature(member) || !ts.isIdentifier(member.name) || !member.type) continue;
+    if (ts.isTypeReferenceNode(member.type) && ts.isIdentifier(member.type.typeName)) {
+      const externalId = member.type.typeName.text;
+      if (!graph.nodes.some((node) => node.kind === "External" && node.id === externalId)) {
+        graph.addNode({ id: externalId, kind: "External" });
+      }
+      result.set(`extra.${member.name.text}`, [member.type.typeName.text]);
+    }
+  }
+  return result;
+};
+
 const isTypedAsyncThunkFactory = (expression: ts.Identifier, checker?: ts.TypeChecker): boolean => {
   if (!checker) return false;
 
@@ -460,6 +546,44 @@ export const detectListeners = ({
       !isNestedFunctionLike(node) &&
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
+      node.name.text.endsWith("Events") &&
+      node.initializer &&
+      ts.isArrowFunction(node.initializer) &&
+      (ts.isObjectLiteralExpression(node.initializer.body) ||
+        (ts.isParenthesizedExpression(node.initializer.body) &&
+          ts.isObjectLiteralExpression(node.initializer.body.expression)))
+    ) {
+      const handlerId = node.name.text;
+      graph.addNode({ id: handlerId, kind: "Handler" });
+      const arrowBody = node.initializer.body;
+      const objectBody = ts.isObjectLiteralExpression(arrowBody)
+        ? arrowBody
+        : ts.isParenthesizedExpression(arrowBody) &&
+            ts.isObjectLiteralExpression(arrowBody.expression)
+          ? arrowBody.expression
+          : undefined;
+      if (!objectBody) return;
+      for (const property of objectBody.properties) {
+        const callback = ts.isPropertyAssignment(property)
+          ? property.initializer
+          : ts.isMethodDeclaration(property)
+            ? property.body
+            : undefined;
+        if (!callback) continue;
+        addDispatchRelationshipsFromBody(
+          graph,
+          handlerId,
+          callback,
+          bindings,
+          collectRelationships,
+        );
+      }
+    }
+
+    if (
+      !isNestedFunctionLike(node) &&
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
       node.initializer &&
       ts.isCallExpression(node.initializer) &&
       ts.isIdentifier(node.initializer.expression) &&
@@ -476,6 +600,40 @@ export const detectListeners = ({
         graph.addNode({ id: eventId, kind: "Event", sourceLocation });
         if (collectRelationships) {
           graph.addEdge({ source: handlerId, target: eventId, kind: "DISPATCHES" });
+        }
+      }
+
+      if (collectRelationships) {
+        const thunkCall = node.initializer;
+        const payloadCreator = thunkCall.arguments[1];
+        if (
+          payloadCreator &&
+          (ts.isArrowFunction(payloadCreator) || ts.isFunctionExpression(payloadCreator))
+        ) {
+          const payloadFunction = {
+            parameters: payloadCreator.parameters,
+            body: payloadCreator.body,
+            returnType: payloadCreator.type,
+            sourceFile,
+          };
+          const inheritedExternalParameters = getTypedThunkExternalParameters(
+            thunkCall.expression.getText(sourceFile),
+            sourceFiles,
+            graph,
+          );
+          for (const externalId of getExternalIdsCalledByFunctionLike(
+            sourceFile,
+            graph,
+            handlerId,
+            payloadFunction,
+            new Set(),
+            inheritedExternalParameters,
+            sourceFiles,
+            semanticIndex,
+            checker,
+          )) {
+            graph.addEdge({ source: handlerId, target: externalId, kind: "CALLS_EXTERNAL" });
+          }
         }
       }
     }
@@ -555,6 +713,7 @@ export const detectListeners = ({
             new Map(),
             sourceFiles,
             semanticIndex,
+            checker,
           )) {
             graph.addEdge({ source: node.name.text, target: externalId, kind: "CALLS_EXTERNAL" });
           }

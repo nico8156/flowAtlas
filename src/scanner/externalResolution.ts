@@ -411,6 +411,7 @@ const getExternalIdsCalledByResolvedFunction = (
   inheritedExternalParameters = new Map<string, string[]>(),
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
   semanticIndex?: SemanticIndex,
+  checker?: ts.TypeChecker,
 ): string[] => {
   if (visitedFunctions.has(functionName)) return [];
   visitedFunctions.add(functionName);
@@ -443,6 +444,40 @@ const getExternalIdsCalledByResolvedFunction = (
         semanticIndex,
       )) {
         externalParameters.set(`${parameter.name.text}.${propertyName}`, externalIds);
+      }
+    }
+    if (checker && ts.isObjectBindingPattern(parameter.name)) {
+      const parameterTypeAtLocation = checker.getTypeAtLocation(parameter.name);
+      for (const element of parameter.name.elements) {
+        if (!ts.isIdentifier(element.name)) continue;
+        const propertyName =
+          element.propertyName && ts.isIdentifier(element.propertyName)
+            ? element.propertyName.text
+            : element.name.text;
+        const property = checker.getPropertyOfType(parameterTypeAtLocation, propertyName);
+        if (!property) continue;
+        const propertyType = checker.getTypeOfSymbolAtLocation(property, parameter.name);
+        const externalId = graph.nodes.find(
+          (candidate) =>
+            candidate.kind === "External" &&
+            (propertyType.symbol?.name === candidate.id ||
+              propertyType.aliasSymbol?.name === candidate.id),
+        )?.id;
+        if (externalId) {
+          externalParameters.set(`${element.name.text}`, [externalId]);
+        }
+        for (const member of propertyType.getProperties()) {
+          const memberType = checker.getTypeOfSymbolAtLocation(member, parameter.name);
+          const memberExternalId = graph.nodes.find(
+            (candidate) =>
+              candidate.kind === "External" &&
+              (memberType.symbol?.name === candidate.id ||
+                memberType.aliasSymbol?.name === candidate.id),
+          )?.id;
+          if (memberExternalId) {
+            externalParameters.set(`${element.name.text}.${member.name}`, [memberExternalId]);
+          }
+        }
       }
     }
   }
@@ -527,6 +562,7 @@ const getExternalIdsCalledByResolvedFunction = (
         passedExternalParameters,
         sourceFiles,
         semanticIndex,
+        checker,
       )) {
         externalIds.add(externalId);
       }
@@ -545,6 +581,7 @@ export const getExternalIdsCalledByFunction = (
   inheritedExternalParameters = new Map<string, string[]>(),
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
   semanticIndex?: SemanticIndex,
+  checker?: ts.TypeChecker,
 ): string[] => {
   const functionLike = findFunctionLike(sourceFile, functionName, sourceFiles, semanticIndex);
   if (!functionLike) return [];
@@ -558,6 +595,7 @@ export const getExternalIdsCalledByFunction = (
     inheritedExternalParameters,
     sourceFiles,
     semanticIndex,
+    checker,
   );
 };
 
@@ -570,6 +608,7 @@ export const getExternalIdsCalledByFunctionLike = (
   inheritedExternalParameters = new Map<string, string[]>(),
   sourceFiles: readonly ts.SourceFile[] = [sourceFile],
   semanticIndex?: SemanticIndex,
+  checker?: ts.TypeChecker,
 ): string[] =>
   getExternalIdsCalledByResolvedFunction(
     sourceFile,
@@ -580,4 +619,5 @@ export const getExternalIdsCalledByFunctionLike = (
     inheritedExternalParameters,
     sourceFiles,
     semanticIndex,
+    checker,
   );
