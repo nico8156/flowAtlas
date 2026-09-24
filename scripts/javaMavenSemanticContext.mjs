@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, realpath, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,6 +48,33 @@ const optionalString = (object, property) => {
     fail(`request property ${property} must be a non-empty string when present`);
   }
   return value;
+};
+
+const projectionMutations = (request) => {
+  const configured = request.projectionMutations;
+  if (configured !== undefined) {
+    if (!Array.isArray(configured) || configured.length === 0) {
+      fail("request property projectionMutations must be a non-empty array when present");
+    }
+    return configured.map((mutation, index) => {
+      if (!mutation || typeof mutation !== "object" || Array.isArray(mutation)) {
+        fail("projectionMutations[" + index + "] must be an object");
+      }
+      return {
+        repository: requireString(mutation, "repository"),
+        method: requireString(mutation, "method"),
+        state: requireString(mutation, "state"),
+      };
+    });
+  }
+  const repository = optionalString(request, "projectionRepository");
+  const method = optionalString(request, "projectionMutationMethod");
+  if ((repository === undefined) !== (method === undefined)) {
+    fail("projectionRepository and projectionMutationMethod must be provided together");
+  }
+  return repository
+    ? [{ repository, method, state: optionalString(request, "projectionState") }]
+    : [];
 };
 
 const optionalNumber = (object, property) => {
@@ -132,6 +159,30 @@ const buildMavenClasspath = async (projectRoot, temporaryDirectory) => {
     .filter(Boolean)
     .flatMap((entry) => entry.split(delimiter))
     .filter(Boolean);
+};
+
+const javaFailureDetail = (error) => {
+  const output = [
+    error && typeof error === "object" ? error.stderr : undefined,
+    error && typeof error === "object" ? error.stdout : undefined,
+  ]
+    .filter((value) => typeof value === "string")
+    .join("\n");
+  const lines = output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const relevant = lines.filter((line) =>
+    /Exception in thread|\.java:\d+:\s+error:|Could not prove|does not implement|Configured projection|Projection requires/u.test(
+      line,
+    ),
+  );
+  if (relevant.length > 0) return relevant.slice(0, 4).join(" ");
+  const fallback = lines.find(
+    (line) => !line.includes("Command failed:") && !line.includes("--classpath"),
+  );
+  if (fallback) return fallback.slice(0, 600);
+  return error instanceof Error ? error.message.split("\n")[0].slice(0, 600) : String(error);
 };
 
 const loadRequest = async (projectRoot, requestPath) => {
@@ -221,9 +272,8 @@ const loadRequest = async (projectRoot, requestPath) => {
   const projectionConfiguration = {
     projectionHandler: optionalString(request, "projectionHandler"),
     projectionHandlerMethod: optionalString(request, "projectionHandlerMethod"),
-    projectionRepository: optionalString(request, "projectionRepository"),
-    projectionMutationMethod: optionalString(request, "projectionMutationMethod"),
   };
+  const mutations = projectionMutations(request);
   const projectionState = optionalString(request, "projectionState");
   const configuredProjectionProperties = Object.values(projectionConfiguration).filter(
     (value) => value !== undefined,
@@ -234,8 +284,11 @@ const loadRequest = async (projectRoot, requestPath) => {
   ) {
     fail("all projection request properties must be provided together");
   }
-  if (projectionState && !projectionConfiguration.projectionHandler) {
+  if ((mutations.length > 0 || projectionState) && !projectionConfiguration.projectionHandler) {
     fail("projectionState requires a projection request block");
+  }
+  if (request.projectionMutations !== undefined && projectionState !== undefined) {
+    fail("projectionState cannot be combined with projectionMutations; set state on each mutation");
   }
 
   const projectionSyncConfiguration = {
@@ -258,12 +311,15 @@ const loadRequest = async (projectRoot, requestPath) => {
   ) {
     fail("all projection sync request properties must be provided together");
   }
+  if (projectionConfiguration.projectionHandler && mutations.length === 0) {
+    fail("a projection handler requires at least one configured projection mutation");
+  }
   if (configuredProjectionSyncProperties.length > 0 && !projectionConfiguration.projectionHandler) {
     fail("projection sync requires a projection request block");
   }
   if (
     projectionConfiguration.projectionHandler &&
-    !projectionState &&
+    mutations.some((mutation) => !mutation.state) &&
     !projectionSyncConfiguration.projectionSyncPublisher
   ) {
     fail("projectionState is required when projection sync is absent");
@@ -398,6 +454,7 @@ const loadRequest = async (projectRoot, requestPath) => {
     ...commandConfiguration,
     ...integrationConfiguration,
     ...projectionConfiguration,
+    projectionMutations: mutations,
     projectionState,
     ...projectionSyncConfiguration,
     ...localOutboxConfiguration,
@@ -417,7 +474,8 @@ const run = async () => {
     fail("usage: node scripts/javaMavenSemanticContext.mjs <maven-project> <request.json>");
   }
 
-  const projectRoot = await realpath(resolve(projectArgument));
+  const requestedRoot = await realpath(resolve(projectArgument));
+  const projectRoot = await resolveMavenProjectRoot(requestedRoot);
   const requestPath = await realpath(resolve(requestArgument));
   const pomPath = resolve(projectRoot, "pom.xml");
   if (!existsSync(pomPath)) fail(`missing ${pomPath}`);
@@ -546,11 +604,14 @@ const run = async () => {
             request.projectionHandler,
             "--projection-handler-method",
             request.projectionHandlerMethod,
-            "--projection-repository",
-            request.projectionRepository,
-            "--projection-mutation-method",
-            request.projectionMutationMethod,
-            ...(request.projectionState ? ["--projection-state", request.projectionState] : []),
+            ...request.projectionMutations.flatMap((mutation) => [
+              "--projection-mutation-repository",
+              mutation.repository,
+              "--projection-mutation-method",
+              mutation.method,
+              "--projection-mutation-state",
+              mutation.state ?? "",
+            ]),
             ...(request.projectionSyncPublisher
               ? [
                   "--projection-sync-publisher",
@@ -640,10 +701,15 @@ const run = async () => {
       ...request.scanSources.flatMap((source) => ["--scan-source", source]),
       ...request.events.flatMap((event) => ["--event", event]),
     ];
-    const { stdout } = await execFileAsync(javaRuntime.executable, javaArguments, {
-      cwd: repositoryRoot,
-      maxBuffer: 1024 * 1024,
-    });
+    let stdout;
+    try {
+      ({ stdout } = await execFileAsync(javaRuntime.executable, javaArguments, {
+        cwd: repositoryRoot,
+        maxBuffer: 1024 * 1024,
+      }));
+    } catch (error) {
+      fail("Java semantic analysis failed: " + javaFailureDetail(error));
+    }
     const semanticEvidence = JSON.parse(stdout);
     const relativeScanSources = request.scanSources
       .map((source) => relative(request.sourceRoot, source))
@@ -669,6 +735,48 @@ const run = async () => {
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
+};
+
+const resolveMavenProjectRoot = async (requestedRoot) => {
+  if (existsSync(resolve(requestedRoot, "pom.xml"))) return requestedRoot;
+
+  let gitRoot;
+  try {
+    ({ stdout: gitRoot } = await execFileAsync("git", ["rev-parse", "--show-toplevel"], {
+      cwd: requestedRoot,
+      maxBuffer: 16 * 1024,
+    }));
+  } catch {
+    fail("missing " + resolve(requestedRoot, "pom.xml") + "; module discovery requires a Git root");
+  }
+  gitRoot = await realpath(gitRoot.trim());
+  if (gitRoot !== requestedRoot) {
+    fail(
+      "missing " +
+        resolve(requestedRoot, "pom.xml") +
+        "; pass the Git root to discover Maven modules",
+    );
+  }
+
+  const entries = await readdir(gitRoot, { withFileTypes: true });
+  const modules = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+      .map(async (entry) => {
+        const moduleRoot = resolve(gitRoot, entry.name);
+        return existsSync(resolve(moduleRoot, "pom.xml")) ? moduleRoot : undefined;
+      }),
+  );
+  const candidates = modules.filter((moduleRoot) => moduleRoot !== undefined).sort();
+  if (candidates.length === 1) return await realpath(candidates[0]);
+  if (candidates.length > 1) {
+    fail(
+      "multiple direct Maven modules found: " +
+        candidates.map((path) => relative(gitRoot, path)).join(", ") +
+        "; pass the intended module as projectPath",
+    );
+  }
+  fail("no pom.xml found at " + requestedRoot + " or in its direct Git-root modules");
 };
 
 await run();

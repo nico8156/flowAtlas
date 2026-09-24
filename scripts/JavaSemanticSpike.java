@@ -1,6 +1,7 @@
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IfTree;
@@ -926,6 +927,9 @@ public final class JavaSemanticSpike {
             DiagnosticCollector<JavaFileObject> diagnostics,
             Config config) {
         if (config.projectionHandler() == null) return null;
+        if (config.projectionMutations().isEmpty()) {
+            throw new IllegalStateException("Configured projection handler requires at least one mutation");
+        }
 
         TypeElement handler = requiredType(elements, config.projectionHandler(), diagnostics);
         ExecutableElement method = requiredMethod(handler, config.projectionHandlerMethod());
@@ -934,14 +938,18 @@ public final class JavaSemanticSpike {
         }
         TypeMirror eventType = method.getParameters().getFirst().asType();
 
-        TypeElement repository = requiredType(elements, config.projectionRepository(), diagnostics);
+        List<TypeElement> repositories = config.projectionMutations().stream()
+                .map(mutation -> requiredType(elements, mutation.repository(), diagnostics))
+                .toList();
         TypeElement publisher = config.projectionSyncPublisher() == null
                 ? null : requiredType(elements, config.projectionSyncPublisher(), diagnostics);
         TypeElement syncEvent = config.projectionSyncEvent() == null
                 ? null : requiredType(elements, config.projectionSyncEvent(), diagnostics);
         TreePath methodPath = trees.getPath(method);
         VariableElement eventParameter = method.getParameters().getFirst();
-        List<SourceLocation> mutations = new ArrayList<>();
+        List<List<SourceLocation>> mutations = config.projectionMutations().stream()
+                .<List<SourceLocation>>map(ignored -> new ArrayList<>())
+                .toList();
         List<ProjectionSyncEvidence> syncs = new ArrayList<>();
 
         new TreePathScanner<Void, Void>() {
@@ -949,15 +957,19 @@ public final class JavaSemanticSpike {
             public Void visitMethodInvocation(MethodInvocationTree invocation, Void unused) {
                 TreePath invocationPath = getCurrentPath();
                 ExecutableElement invoked = executableAt(trees, invocationPath);
-                if (invoked != null
-                        && ownerName(invoked).equals(repository.getQualifiedName().toString())
-                        && invoked.getSimpleName().contentEquals(config.projectionMutationMethod())
-                        && invocation.getArguments().size() == 1
-                        && referencesEventParameter(
-                                trees,
-                                new TreePath(invocationPath, invocation.getArguments().getFirst()),
-                                eventParameter)) {
-                    mutations.add(locationOf(trees, invocationPath, config));
+                if (invoked != null && !invocation.getArguments().isEmpty()) {
+                    for (int index = 0; index < repositories.size(); index++) {
+                        if (ownerName(invoked).equals(repositories.get(index).getQualifiedName().toString())
+                                && invoked.getSimpleName().contentEquals(
+                                        config.projectionMutations().get(index).method())
+                                && invocation.getArguments().stream().anyMatch(argument ->
+                                        referencesEventParameter(
+                                                trees,
+                                                new TreePath(invocationPath, argument),
+                                                eventParameter))) {
+                            mutations.get(index).add(locationOf(trees, invocationPath, config));
+                        }
+                    }
                 }
 
                 if (publisher != null && invoked != null
@@ -997,26 +1009,50 @@ public final class JavaSemanticSpike {
             }
         }.scan(methodPath, null);
 
-        if (mutations.size() != 1 || (publisher != null && syncs.size() != 1)) {
+        for (int index = 0; index < mutations.size(); index++) {
+            if (mutations.get(index).size() != 1) {
+                ProjectionMutationConfig mutation = config.projectionMutations().get(index);
+                throw new IllegalStateException(
+                        "Could not prove one invocation of configured projection mutation "
+                                + mutation.repository() + "#" + mutation.method()
+                                + " with an event-derived argument");
+            }
+        }
+        if (publisher != null && syncs.size() != 1) {
             throw new IllegalStateException(
-                    "Could not prove one direct projection mutation and configured projection-sync publication");
+                    "Could not prove configured projection-sync publication");
         }
         ProjectionSyncEvidence sync = syncs.isEmpty() ? null : syncs.getFirst();
-        if (config.projectionState() == null && sync == null) {
-            throw new IllegalStateException("Projection requires an explicit state id or proven sync contract");
+        if (sync != null && config.projectionMutations().size() > 1
+                && config.projectionMutations().stream().noneMatch(
+                        mutation -> sync.projection().equals(mutation.state()))) {
+            throw new IllegalStateException(
+                    "Configured projection-sync contract does not identify one configured projection mutation");
         }
-        String projection = config.projectionState() == null ? sync.projection() : config.projectionState();
-        if (sync != null && !sync.projection().equals(projection)) {
-            throw new IllegalStateException("Configured projectionState does not match projection-sync contract");
+        List<ProjectionUpdateEvidence> updates = new ArrayList<>();
+        for (int index = 0; index < config.projectionMutations().size(); index++) {
+            ProjectionMutationConfig mutation = config.projectionMutations().get(index);
+            String projection = mutation.state() == null && sync != null ? sync.projection() : mutation.state();
+            if (projection == null) {
+                throw new IllegalStateException(
+                        "Projection requires an explicit state id or proven sync contract");
+            }
+            if (sync != null && config.projectionMutations().size() == 1
+                    && !sync.projection().equals(projection)) {
+                throw new IllegalStateException(
+                        "Configured projection state does not match projection-sync contract");
+            }
+            boolean syncMatchesProjection = sync != null && sync.projection().equals(projection);
+            updates.add(new ProjectionUpdateEvidence(
+                    callerSignature(method),
+                    eventType.toString(),
+                    projection,
+                    syncMatchesProjection ? sync.scope() : null,
+                    locationOf(trees, method, config),
+                    mutations.get(index).getFirst(),
+                    syncMatchesProjection ? sync.source() : null));
         }
-        return new ProjectionSliceEvidence(List.of(new ProjectionUpdateEvidence(
-                callerSignature(method),
-                eventType.toString(),
-                projection,
-                sync == null ? null : sync.scope(),
-                locationOf(trees, method, config),
-                mutations.getFirst(),
-                sync == null ? null : sync.source())));
+        return new ProjectionSliceEvidence(List.copyOf(updates));
     }
 
     private static boolean referencesEventParameter(
@@ -1024,14 +1060,78 @@ public final class JavaSemanticSpike {
             TreePath argumentPath,
             VariableElement eventParameter) {
         final boolean[] found = { false };
+        Set<VariableElement> visitedLocals = new HashSet<>();
         new TreePathScanner<Void, Void>() {
             @Override
             public Void visitIdentifier(IdentifierTree identifier, Void unused) {
-                if (trees.getElement(getCurrentPath()) == eventParameter) found[0] = true;
+                Element element = trees.getElement(getCurrentPath());
+                if (element == eventParameter) {
+                    found[0] = true;
+                } else if (element instanceof VariableElement local
+                        && local.getKind() == ElementKind.LOCAL_VARIABLE
+                        && hasSingleInitializer(trees, local)
+                        && visitedLocals.add(local)) {
+                    TreePath declarationPath = trees.getPath(local);
+                    if (declarationPath != null && declarationPath.getLeaf() instanceof VariableTree variable
+                            && variable.getInitializer() != null) {
+                        scan(new TreePath(declarationPath, variable.getInitializer()), null);
+                    }
+                }
                 return super.visitIdentifier(identifier, unused);
             }
         }.scan(argumentPath, null);
         return found[0];
+    }
+
+    private static boolean hasSingleInitializer(Trees trees, VariableElement local) {
+        TreePath declarationPath = trees.getPath(local);
+        if (declarationPath == null
+                || !(declarationPath.getLeaf() instanceof VariableTree variable)
+                || variable.getInitializer() == null) {
+            return false;
+        }
+        TreePath methodPath = declarationPath;
+        while (methodPath != null && !(methodPath.getLeaf() instanceof MethodTree)) {
+            methodPath = methodPath.getParentPath();
+        }
+        if (methodPath == null) return false;
+
+        final boolean[] reassigned = { false };
+        new TreePathScanner<Void, Void>() {
+            private boolean assignsLocal(TreePath expressionPath) {
+                return trees.getElement(expressionPath) == local;
+            }
+
+            @Override
+            public Void visitAssignment(AssignmentTree assignment, Void unused) {
+                if (assignsLocal(new TreePath(getCurrentPath(), assignment.getVariable()))) {
+                    reassigned[0] = true;
+                }
+                return super.visitAssignment(assignment, unused);
+            }
+
+            @Override
+            public Void visitCompoundAssignment(CompoundAssignmentTree assignment, Void unused) {
+                if (assignsLocal(new TreePath(getCurrentPath(), assignment.getVariable()))) {
+                    reassigned[0] = true;
+                }
+                return super.visitCompoundAssignment(assignment, unused);
+            }
+
+            @Override
+            public Void visitUnary(UnaryTree unary, Void unused) {
+                Tree.Kind kind = unary.getKind();
+                if ((kind == Tree.Kind.PREFIX_INCREMENT
+                                || kind == Tree.Kind.PREFIX_DECREMENT
+                                || kind == Tree.Kind.POSTFIX_INCREMENT
+                                || kind == Tree.Kind.POSTFIX_DECREMENT)
+                        && assignsLocal(new TreePath(getCurrentPath(), unary.getExpression()))) {
+                    reassigned[0] = true;
+                }
+                return super.visitUnary(unary, unused);
+            }
+        }.scan(methodPath, null);
+        return !reassigned[0];
     }
 
     private static LocalOutboxSliceEvidence analyzeLocalOutboxSlice(
@@ -1579,6 +1679,9 @@ public final class JavaSemanticSpike {
                 .toList();
     }
 
+    private record ProjectionMutationConfig(String repository, String method, String state) {
+    }
+
     private record Config(
             String release,
             Path sourceRoot,
@@ -1626,9 +1729,7 @@ public final class JavaSemanticSpike {
             String sqsHandleMethod,
             String projectionHandler,
             String projectionHandlerMethod,
-            String projectionRepository,
-            String projectionMutationMethod,
-            String projectionState,
+            List<ProjectionMutationConfig> projectionMutations,
             String projectionSyncPublisher,
             String projectionSyncPublishMethod,
             String projectionSyncEvent,
@@ -1721,9 +1822,7 @@ public final class JavaSemanticSpike {
                     optional(options, "--sqs-handle-method"),
                     optional(options, "--projection-handler"),
                     optional(options, "--projection-handler-method"),
-                    optional(options, "--projection-repository"),
-                    optional(options, "--projection-mutation-method"),
-                    optional(options, "--projection-state"),
+                    projectionMutations(options),
                     optional(options, "--projection-sync-publisher"),
                     optional(options, "--projection-sync-publish-method"),
                     optional(options, "--projection-sync-event"),
@@ -1753,6 +1852,25 @@ public final class JavaSemanticSpike {
                     sources,
                     scanSources,
                     optionalMany(options, "--event"));
+        }
+
+        private static List<ProjectionMutationConfig> projectionMutations(
+                Map<String, List<String>> options) {
+            List<String> repositories = optionalMany(options, "--projection-mutation-repository");
+            List<String> methods = optionalMany(options, "--projection-mutation-method");
+            List<String> states = optionalMany(options, "--projection-mutation-state");
+            if (repositories.size() != methods.size() || repositories.size() != states.size()) {
+                throw new IllegalArgumentException("Projection mutation options must be provided in matching groups");
+            }
+            List<ProjectionMutationConfig> mutations = new ArrayList<>();
+            for (int index = 0; index < repositories.size(); index++) {
+                String state = states.get(index);
+                mutations.add(new ProjectionMutationConfig(
+                        repositories.get(index),
+                        methods.get(index),
+                        state.isEmpty() ? null : state));
+            }
+            return List.copyOf(mutations);
         }
 
         private static String single(Map<String, List<String>> options, String name) {

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createArchitectureGraph } from "../../src/domain/architectureGraph.js";
 import { createFlowAtlasMcpServer } from "../../src/mcp/flowAtlasMcpServer.js";
+import { formatJavaSemanticFailure } from "../../src/scanner/javaMavenArchitectureScanner.js";
 
 describe("FlowAtlas MCP server", () => {
   const closeables: Array<{ close(): Promise<void> }> = [];
@@ -79,5 +80,42 @@ describe("FlowAtlas MCP server", () => {
       adapter: "java",
       requestPath: "/workspace/flowatlas-ticket-request.json",
     });
+  });
+
+  it("returns the concise Java scanner diagnostic through the MCP tool response", async () => {
+    const diagnostic = formatJavaSemanticFailure("/workspace/request.json", {
+      stderr:
+        'Error: Java Maven semantic context: Java semantic analysis failed: Exception in thread "main" java.lang.IllegalStateException: Could not prove exactly one configured projection mutation',
+    }).message;
+    const server = createFlowAtlasMcpServer({
+      scan: async () => {
+        throw new Error(diagnostic);
+      },
+    });
+    const client = new Client({ name: "flowatlas-java-error", version: "1.0.0" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    closeables.push(client, server);
+
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    const result = await client.callTool({
+      name: "flowatlas_find_nodes",
+      arguments: {
+        query: "DailyWalkGoalConfiguredProjectionHandler",
+        projectPath: "/workspace/dogsout",
+        adapter: "java",
+        requestPath: "/workspace/daily-walk-progress.json",
+        kind: "Handler",
+      },
+    });
+
+    expect(result.isError).toBe(true);
+    const responseContent = (result as { content: Array<{ type: string; text?: string }> }).content;
+    const responseText = responseContent
+      .filter((content) => content.type === "text")
+      .map((content) => content.text ?? "")
+      .join("\n");
+    expect(responseText).toContain(diagnostic);
+    expect(responseText).not.toContain("--classpath");
   });
 });

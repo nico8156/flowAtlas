@@ -157,3 +157,27 @@ preloaded-state or selector relations. A Dogs Out acceptance covers the real
 - Do not connect outbox writing to later dispatch by name, timing or expected
   runtime behavior.
 - Record newly discovered micro-cycles from acceptance failures, not in advance.
+
+## 7. Maven monorepo and multi-projection requests
+
+**Status: DELIVERED.** The 24 September Dogs Out replay found that Java MCP
+worked when pointed at `backend`, while the Git root failed because it had no
+root `pom.xml`. A request may now use a Git root when exactly one direct child
+contains `pom.xml`; multiple candidates produce an error naming each module
+and asking for an explicit module path. This keeps module selection
+deterministic.
+
+Java projection requests may now configure `projectionMutations` as a
+collection of `{ repository, method, state }` entries. The scanner proves one
+resolved invocation per configured port/method and follows event-derived
+values through initialized locals that are not reassigned. Each proven
+mutation produces its own `Event --UPDATES--> State` edge. An optional sync
+contract is attached only to the configured state it names.
+
+Java semantic subprocess failures now extract compiler diagnostics or the
+semantic exception before returning from the scanner, without returning the
+generated command or classpath. The MCP error response carries that concise
+scanner message. Fixtures cover a Git root with `backend/pom.xml`, ambiguous
+module selection and two mutations in one handler; a real Dogs Out acceptance
+maps `DailyWalkGoalConfigured` to both `DailyWalkGoal` and
+`DailyWalkProgress`.

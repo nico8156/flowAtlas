@@ -1,0 +1,25 @@
+{
+  "sourceRoot": "src/main/java",
+  "scanSources": ["fixture/local/MultiProjectionStartedHandler.java"],
+  "resolutionSources": [
+    "fixture/local/Started.java",
+    "fixture/local/CurrentView.java",
+    "fixture/local/SaveCurrentViewPort.java",
+    "fixture/local/CurrentProgress.java",
+    "fixture/local/ReplaceCurrentProgressPort.java"
+  ],
+  "projectionHandler": "fixture.local.MultiProjectionStartedHandler",
+  "projectionHandlerMethod": "handle",
+  "projectionMutations": [
+    {
+      "repository": "fixture.local.SaveCurrentViewPort",
+      "method": "upsert",
+      "state": "dailyWalkGoal"
+    },
+    {
+      "repository": "fixture.local.ReplaceCurrentProgressPort",
+      "method": "replace",
+      "state": "dailyWalkProgress"
+    }
+  ]
+}

@@ -51,4 +51,17 @@ describe("Java Maven architecture scanner", () => {
     expect(error.message).toContain("all projection request properties must be provided together");
     expect(error.message).not.toContain("--classpath");
   });
+
+  it("preserves a semantic exception extracted from Java stderr without the classpath", () => {
+    const error = formatJavaSemanticFailure("/workspace/request.json", {
+      stderr:
+        'Error: Java Maven semantic context: Java semantic analysis failed: Exception in thread "main" java.lang.IllegalStateException: Could not prove configured projection mutation fixture.Port#replace with an event-derived argument',
+    });
+
+    expect(error.message).toContain(
+      "Could not prove configured projection mutation fixture.Port#replace with an event-derived argument",
+    );
+    expect(error.message).not.toContain("--classpath");
+    expect(error.message).not.toContain("Command failed");
+  });
 });
