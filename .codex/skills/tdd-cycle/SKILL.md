@@ -1,12 +1,23 @@
+---
+name: tdd-cycle
+description: Develop one FlowAtlas behavior through emergent TDD, or pin and refactor existing behavior with targeted mutation evidence. Use acceptance-slice for multi-cycle corpus milestones.
+---
+
 # TDD Cycle Skill
 
-Use this workflow for one local behaviour. Tests must precede production
-implementation. One cycle normally produces one commit.
+Use this workflow for one local behaviour. Read
+[the iteration workflow](references/iteration-workflow.md) and classify the
+iteration before implementation. Tests must precede new production behaviour.
+One cycle normally produces one commit.
+
+Expose the observable outcome, acceptance boundary, first concrete example,
+likely next examples and uncertainties. Revise this trajectory from feedback;
+do not prescribe the final detector, resolver, graph representation or algorithm.
 
 ## Cycle
 
 ```text
-RED -> RED Inspector -> GREEN -> Refactor Inspector -> verification -> commit -> push -> STOP
+RED -> RED Inspector -> minimum GREEN -> GREEN Inspector -> Refactor Inspector -> targeted mutation/PIN -> verification -> commit -> push -> STOP
 ```
 
 ## RED Inspector
@@ -31,6 +42,27 @@ Never manufacture a RED for behaviour that already passes.
 
 Implement only what the accepted RED requires. Run the focused test and the
 relevant existing suite. Do not add future behaviour.
+
+## GREEN Inspector
+
+Confirm the example passes for the intended reason and that each new branch or
+abstraction is justified by an example or existing invariant. Anticipating a
+future capability does not authorize implementing it. Revise the next example
+when the design reveals a different question.
+
+## Targeted mutation and PIN
+
+Apply the reference checkpoint on a green local scope before completing a
+meaningful behavior cycle. Prefer fast fixtures and graph/application tests.
+Analyze survivors for missing protection, equivalence or contract ambiguity.
+For missing protection, add one PIN that passes on the original and fails on
+the mutant; continue autonomously when the expected behavior is already agreed.
+
+Record commands, mutations, outcomes and dispositions. Compiler/setup failures
+are not behavioral kills. Restore all mutations and verify the final suite.
+Do not invent edges or change graph semantics to improve a mutation score.
+REFACTORING starts green and uses PIN if protection is missing. CHORE needs
+proportionate checks, not a fabricated RED.
 
 ## Refactor Inspector
 

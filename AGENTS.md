@@ -90,6 +90,12 @@ fixture and validation against real code when available.
 Human reviews decisions, not ceremony. Local, mechanical behaviour may follow
 the autonomous TDD workflow in `.codex/skills/tdd-cycle/SKILL.md`.
 
+Classify iterations as `BEHAVIOUR`, `PIN`, `REFACTORING` or `CHORE`.
+Examples shape the design; predicted abstractions are not implementation
+requirements. The TDD skill and its iteration-workflow reference define
+targeted mutations and survivor-driven PIN cycles. A PIN passes on the original
+and fails on the mutant. Preserve all static-evidence and escalation rules.
+
 Human escalation is mandatory for:
 
 - a new NodeKind or RelationKind;
@@ -130,9 +136,12 @@ Before modifying the repository:
 3. Identify the smallest behaviour or decision involved.
 4. Preserve the invariants above and existing user changes.
 
-A completed cycle includes the RED test, minimum GREEN implementation,
-appropriate local refactoring, final verification and one Conventional Commit
-that is pushed to the configured remote. The working tree should be clean.
+A completed behaviour cycle includes the RED test, minimum GREEN implementation,
+appropriate local refactoring, targeted mutation evidence, final verification
+and one Conventional Commit pushed to the configured remote. PIN cycles record
+original/mutant differential evidence. REFACTORING starts green; CHORE uses
+proportionate checks without a manufactured RED. Temporary mutations must be
+removed before any commit. The working tree should be clean.
 
 Do not force-push, rewrite history, amend previous commits or include
 unrelated changes. Never start the next milestone automatically after one is
