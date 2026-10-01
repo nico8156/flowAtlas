@@ -3,10 +3,8 @@
 État : **préparé en local, non publié**. Aucune modification AWS, Caddy distant
 ou DNS n’est effectuée par les commandes npm de ce dossier.
 
-Le domaine reste à confirmer : `dogsout.anchor-event.fr` a été demandé, mais
-il est déjà affecté à Dogsout dans son dépôt. Ne pas utiliser ce nom pour
-FlowAtlas sans décision explicite de remplacement. `flowatlas.anchor-event.fr`
-est l’alternative proposée, pas encore confirmée.
+Le domaine confirmé est **`flowatlas.anchor-event.fr`**. Il est renseigné
+dans l’overlay Compose candidat. La publication reste en attente.
 
 ## Modèle repris
 
@@ -48,7 +46,7 @@ prennent le relais si Google Fonts est inaccessible.
 
 ## Intégration candidate — après autorisation de publication
 
-1. Confirmer le domaine dédié et relire l’état réel du serveur partagé,
+1. Relire l’état réel du serveur partagé,
    ses fichiers Compose, ses overlays actifs et son Caddyfile. Les fichiers
    des dépôts décrivent le modèle, pas une inspection actuelle du serveur.
 2. Préparer une release dans `/srv/flowatlas/public/releases/<release-id>`
@@ -60,8 +58,8 @@ prennent le relais si Google Fonts est inaccessible.
    les changements du lien. Les bascules ultérieures doivent remplacer ce
    lien atomiquement ; ne pas monter le lien lui-même comme volume Docker.
 4. Installer `Caddyfile.flowatlas` et `compose.caddy-overlay.yaml` dans
-   `/srv/flowatlas/`. Renseigner `FLOWATLAS_SITE_DOMAIN` avec le nom confirmé.
-   La variable est obligatoire et aucun domaine n’est fixé par défaut.
+   `/srv/flowatlas/`. L’overlay fournit déjà
+   `FLOWATLAS_SITE_DOMAIN=flowatlas.anchor-event.fr` au conteneur Caddy.
 5. Sauvegarder le Caddyfile principal et la liste complète des fichiers
    Compose actifs. Ajouter seulement cet import au candidat :
 
@@ -89,13 +87,13 @@ réelle du serveur, lorsque la publication sera autorisée.
 
 ## OVH — rien à faire maintenant
 
-Au moment de la publication, après confirmation du domaine et de l’IP :
+Au moment de la publication, après vérification de l’IP du serveur :
 
 | Champ        | Valeur à préparer                                    |
 | ------------ | ---------------------------------------------------- |
 | Zone         | `anchor-event.fr`                                    |
 | Type         | `A`                                                  |
-| Sous-domaine | Le sous-domaine FlowAtlas confirmé                   |
+| Sous-domaine | `flowatlas`                                          |
 | Cible        | L’Elastic IP actuelle du Caddy partagé, à revérifier |
 | TTL          | 300 secondes pour les premiers contrôles             |
 
@@ -104,12 +102,9 @@ Le guide Dogsout mentionne `13.39.97.191` comme Elastic IP vérifiée le
 sur AWS avant de donner le feu vert OVH. Ne pas recopier une IP supposée.
 
 Dans l’espace OVHcloud, ouvrir la zone DNS de `anchor-event.fr`, vérifier
-l’absence de conflit A/AAAA/CNAME pour le nom retenu, puis ajouter uniquement
+l’absence de conflit A/AAAA/CNAME pour `flowatlas`, puis ajouter uniquement
 l’entrée dédiée. Ne modifier ni `dogsout`, ni `api.dogsout`, ni Fragments,
 ni le domaine racine, `www`, les MX ou les enregistrements SES/DKIM.
-Si le remplacement de Dogsout était finalement demandé, cette procédure ne
-s’appliquerait pas : les liens mobiles et pages existantes nécessiteraient
-une décision distincte.
 
 Après propagation, vérifier la réponse DNS auprès des serveurs faisant
 actuellement autorité et l’accès HTTPS. Aucun CNAME ACM n’est requis par ce

@@ -2,7 +2,7 @@
 services:
   caddy:
     environment:
-      FLOWATLAS_SITE_DOMAIN: ${FLOWATLAS_SITE_DOMAIN:?Confirm the dedicated FlowAtlas domain before activation}
+      FLOWATLAS_SITE_DOMAIN: flowatlas.anchor-event.fr
     volumes:
       - /srv/flowatlas/Caddyfile.flowatlas:/etc/caddy/Caddyfile.flowatlas:ro
       - /srv/flowatlas/public:/data/flowatlas-public:ro

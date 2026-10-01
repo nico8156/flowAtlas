@@ -545,7 +545,7 @@ with local fallback fonts when offline.
 `npm run site:package` prepares a local release archive. The candidate shared
 Caddy setup and the deferred OVH procedure are documented in
 [`deployment/site/README.md`](deployment/site/README.md). Nothing is deployed
-by these commands; the target domain still requires confirmation.
+by these commands; the confirmed target domain is `flowatlas.anchor-event.fr`.
 
 Install dependencies:
 
