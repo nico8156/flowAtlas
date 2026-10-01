@@ -13,9 +13,7 @@ test(
   { timeout: 60_000 },
   async (t) => {
     const html = readFileSync("dist-site/index.html", "utf8");
-    const assets = [...html.matchAll(/(?:href|src)="(\/assets\/[^\"]+)"/g)].map(
-      (match) => match[1],
-    );
+    const assets = [...html.matchAll(/(?:href|src)="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
     assert.ok(assets.some((asset) => asset.endsWith(".css")));
     assert.ok(assets.some((asset) => asset.endsWith(".svg")));
     const container = docker(
@@ -35,7 +33,9 @@ test(
     const address = docker("port", container, "8080/tcp");
     assert.match(address, /^127\.0\.0\.1:\d+$/);
     const request = (path) =>
-      fetch(`http://${address}${path}`, { signal: AbortSignal.timeout(2000) });
+      globalThis.fetch(`http://${address}${path}`, {
+        signal: globalThis.AbortSignal.timeout(2000),
+      });
     let ready = false;
     for (let attempt = 0; attempt < 30; attempt++) {
       try {
