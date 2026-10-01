@@ -542,6 +542,13 @@ projection is sourced from
 acceptance tests and roadmap. Google Fonts supplies Inter and IBM Plex Mono,
 with local fallback fonts when offline.
 
+The overview keeps the Like illustration visible and opens supporting content
+in native HTML popovers (concepts, static trust, terminal, MCP, project status
+and installation). No client JavaScript is required. Escape, outside clicks
+and the close button dismiss the panels. A separate static-trust illustration
+uses the optimistic and projection acceptance tests to show two events updating
+the same state without implying a causal link between them.
+
 `npm run site:package` prepares a local release archive. The candidate shared
 Caddy setup and the deferred OVH procedure are documented in
 [`deployment/site/README.md`](deployment/site/README.md). Nothing is deployed
