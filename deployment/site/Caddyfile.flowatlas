@@ -1,0 +1,19 @@
+# Candidate only: import into the existing platform Caddy after release approval.
+{$FLOWATLAS_SITE_DOMAIN} {
+	encode gzip zstd
+	header {
+		Content-Security-Policy "default-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+	}
+
+	@publicFiles path / /index.html /assets/*
+	handle @publicFiles {
+		root * /data/flowatlas-public/current
+		file_server
+	}
+
+	handle {
+		respond 404
+	}
+}

@@ -22,6 +22,10 @@
     "zod": "^4.5.4"
   },
   "scripts": {
+    "site": "vite website --port 5174",
+    "site:build": "vite build website --outDir ../dist-site --emptyOutDir",
+    "site:package": "npm run site:build && tar -czf dist-site.tar.gz -C dist-site .",
+    "site:test:hosting": "npm run site:build && node --test deployment/site/caddy.test.mjs",
     "build": "tsup",
     "visualizer": "vite",
     "visualizer:build": "vite build",

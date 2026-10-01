@@ -1,0 +1,8 @@
+# Merge into the existing platform-staging Compose project; never run alone.
+services:
+  caddy:
+    environment:
+      FLOWATLAS_SITE_DOMAIN: ${FLOWATLAS_SITE_DOMAIN:?Confirm the dedicated FlowAtlas domain before activation}
+    volumes:
+      - /srv/flowatlas/Caddyfile.flowatlas:/etc/caddy/Caddyfile.flowatlas:ro
+      - /srv/flowatlas/public:/data/flowatlas-public:ro

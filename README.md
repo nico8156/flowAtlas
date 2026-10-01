@@ -528,6 +528,25 @@ implementation details.
 
 ## Local commands
 
+The French presentation website is independent from the browser visualizer:
+
+```sh
+npm run site
+npm run site:build
+```
+
+The development server runs at `http://localhost:5174`. The static build is
+written to `dist-site`, independently of the CLI build. Its illustrated Like
+projection is sourced from
+`tests/acceptance/fragmentsLike.test.ts`; product claims follow the code,
+acceptance tests and roadmap. Google Fonts supplies Inter and IBM Plex Mono,
+with local fallback fonts when offline.
+
+`npm run site:package` prepares a local release archive. The candidate shared
+Caddy setup and the deferred OVH procedure are documented in
+[`deployment/site/README.md`](deployment/site/README.md). Nothing is deployed
+by these commands; the target domain still requires confirmation.
+
 Install dependencies:
 
 ```sh
