@@ -1,10 +1,12 @@
-# Présentation FlowAtlas — préparation de publication
+# Présentation FlowAtlas — publication et exploitation
 
-État : **préparé en local, non publié**. Aucune modification AWS, Caddy distant
-ou DNS n’est effectuée par les commandes npm de ce dossier.
+État : **publié le 1er octobre 2026**, sur
+[flowatlas.anchor-event.fr](https://flowatlas.anchor-event.fr/).
+Les commandes npm de ce dossier construisent et testent les artefacts locaux ;
+elles ne modifient ni AWS, ni Caddy distant, ni les DNS.
 
 Le domaine confirmé est **`flowatlas.anchor-event.fr`**. Il est renseigné
-dans l’overlay Compose candidat. La publication reste en attente.
+dans l’overlay Compose actif sur le serveur partagé.
 
 ## Modèle repris
 
@@ -44,7 +46,10 @@ La CSP autorise les feuilles Google Fonts et leurs polices. Aucun script,
 traceur, formulaire ou cookie applicatif n’est utilisé. Les polices locales
 prennent le relais si Google Fonts est inaccessible.
 
-## Intégration candidate — après autorisation de publication
+## Procédure d’intégration initiale
+
+Cette intégration a été effectuée après autorisation de publication. Les
+sauvegardes et vérifications de la première release figurent plus bas.
 
 1. Relire l’état réel du serveur partagé,
    ses fichiers Compose, ses overlays actifs et son Caddyfile. Les fichiers
@@ -81,25 +86,26 @@ prennent le relais si Google Fonts est inaccessible.
    activer la configuration validée. Vérifier HTTPS, `/`, les assets, les
    réponses 404 et les autres sites. Caddy gère le certificat du vhost.
 
-Aucune commande de déploiement automatique ni workflow de publication n’est
-ajouté. L’ordre exact d’activation serveur/DNS sera arrêté après inspection
-réelle du serveur, lorsque la publication sera autorisée.
+Aucun workflow de publication automatique n’est ajouté. La première activation
+a suivi la vérification de l’instance, la préparation de la release, la
+validation Caddy et la publication de l’entrée DNS par l’utilisateur.
 
-## OVH — rien à faire maintenant
+## OVH — configuration active
 
-Au moment de la publication, après vérification de l’IP du serveur :
+Entrée créée par l’utilisateur et vérifiée sur `dns109.ovh.net` et
+`ns109.ovh.net` le 1er octobre 2026 :
 
-| Champ        | Valeur à préparer                                    |
-| ------------ | ---------------------------------------------------- |
-| Zone         | `anchor-event.fr`                                    |
-| Type         | `A`                                                  |
-| Sous-domaine | `flowatlas`                                          |
-| Cible        | L’Elastic IP actuelle du Caddy partagé, à revérifier |
-| TTL          | 300 secondes pour les premiers contrôles             |
+| Champ        | Valeur à préparer     |
+| ------------ | --------------------- |
+| Zone         | `anchor-event.fr`     |
+| Type         | `A`                   |
+| Sous-domaine | `flowatlas`           |
+| Cible        | `13.39.97.191`        |
+| TTL          | Valeur par défaut OVH |
 
-Le guide Dogsout mentionne `13.39.97.191` comme Elastic IP vérifiée le
-22 septembre 2026. Cette adresse est une référence historique : la confirmer
-sur AWS avant de donner le feu vert OVH. Ne pas recopier une IP supposée.
+L’adresse a été confirmée par AWS `describe-instances` et `describe-addresses` :
+Elastic IP `eipalloc-0d710fc0623c8a76d`, instance `i-004d3e9cbca327d01`,
+région `eu-west-3`. Aucune autre entrée DNS n’a été modifiée dans cette opération.
 
 Dans l’espace OVHcloud, ouvrir la zone DNS de `anchor-event.fr`, vérifier
 l’absence de conflit A/AAAA/CNAME pour `flowatlas`, puis ajouter uniquement
@@ -119,3 +125,47 @@ le service Caddy partagé. Les fichiers et volumes des autres produits restent
 inchangés. Conserver les artefacts de release pour le diagnostic.
 
 Référence de syntaxe : [serveur de fichiers Caddy](https://caddyserver.com/docs/caddyfile/directives/file_server).
+
+## Première release et vérifications
+
+- Release : `20261001-a14b895`, contenu du commit `a14b895`.
+- Répertoire : `/srv/flowatlas/public/releases/20261001-a14b895`.
+- Lien actif : `/srv/flowatlas/public/current` vers `releases/20261001-a14b895`.
+- Sauvegarde avant activation : `/srv/flowatlas/backups/20261001-a14b895/`.
+- Commande SSM d’activation réussie : `a3bb7229-e68c-4be3-8731-4a4f28b4f090`.
+- SHA-256 de l’archive : `723336070e88888f766399b20ec0f2121d31089c1a7ee289086e57675a6fae1f`.
+- SHA-256 de la page HTTPS servie : `706b8eda708bd975c3a11d13a27ed84fbbe96db1470744bd57498d6bc568e146`.
+
+Le candidat Compose a été comparé au proxy actif : seul l’environnement
+FlowAtlas et ses deux montages s’ajoutent. Le Caddyfile complet a passé
+`caddy validate` dans un conteneur temporaire utilisant les volumes existants
+en lecture seule. Le point de montage vide `/srv/platform/data/flowatlas-public`
+a été créé pour permettre cette validation sous `/data` en lecture seule.
+
+Seul le conteneur Caddy a été recréé, avec la même image déjà installée.
+Les identifiants et dates de démarrage des autres conteneurs sont restés
+identiques. Les réponses des hôtes existants sont restées inchangées :
+Dogsout, Fragments et Fragments staging en 200 ; `anchor-event.fr` en 308 ;
+la racine de l’API Dogsout en 404. Ce dernier contrôle ne teste pas les routes
+métier de l’API. Les anciens noms Anchor staging présents dans l’environnement
+ne sont pas des vhosts actifs et n’ont pas été modifiés.
+
+La page FlowAtlas répond en HTTPS 200 avec un certificat vérifié et un contenu
+identique au build. Les assets sont identiques aux fichiers locaux, les chemins
+API et dépôt renvoient 404, et HTTP redirige vers HTTPS.
+
+Pour toute opération ultérieure sur le proxy partagé, conserver les **trois**
+fichiers Compose actifs :
+
+```sh
+docker compose -p platform-staging \
+  --env-file /srv/platform/.env \
+  -f /srv/platform/docker-compose.yml \
+  -f /srv/dogsout/compose.caddy-overlay.yaml \
+  -f /srv/flowatlas/compose.caddy-overlay.yaml \
+  config --quiet
+```
+
+Une recréation avec seulement les anciens overlays retirerait les montages de
+FlowAtlas. La sauvegarde contient la liste précédente des fichiers Compose,
+le Caddyfile précédent, l’image Caddy et les contrôles des autres conteneurs.

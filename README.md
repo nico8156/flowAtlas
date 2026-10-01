@@ -549,10 +549,11 @@ and the close button dismiss the panels. A separate static-trust illustration
 uses the optimistic and projection acceptance tests to show two events updating
 the same state without implying a causal link between them.
 
-`npm run site:package` prepares a local release archive. The candidate shared
-Caddy setup and the deferred OVH procedure are documented in
+The presentation is live at [flowatlas.anchor-event.fr](https://flowatlas.anchor-event.fr/).
+`npm run site:package` prepares a local release archive. The shared Caddy setup,
+deployment verification and OVH configuration are documented in
 [`deployment/site/README.md`](deployment/site/README.md). Nothing is deployed
-by these commands; the confirmed target domain is `flowatlas.anchor-event.fr`.
+by these npm commands; publication is a separate operation.
 
 Install dependencies:
 
