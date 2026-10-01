@@ -1162,3 +1162,115 @@ footer {
     display: block;
   }
 }
+
+.measurement {
+  max-width: 1120px;
+  margin-top: 112px;
+  padding: 52px 64px;
+  background: var(--oat);
+  border-radius: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+.measurement-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.measurement-value .eyebrow {
+  font-size: 10px;
+  margin-bottom: 28px;
+}
+.measurement-value strong {
+  font-size: 86px;
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: -4px;
+}
+.measurement-value strong span {
+  font-size: 48px;
+  margin-left: 8px;
+  letter-spacing: -2px;
+}
+.measurement-value > span:last-child {
+  color: var(--quiet);
+  font-size: 15px;
+  margin-top: 12px;
+}
+.measurement-copy h2 {
+  font-size: 28px;
+  letter-spacing: -0.8px;
+}
+.measurement-copy p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.measurement-copy .measurement-note {
+  font-size: 12px;
+  color: #75685e;
+  margin-bottom: 22px;
+}
+.measurement-table {
+  margin: 28px 0;
+}
+.measurement-table table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.measurement-table caption {
+  text-align: left;
+  color: var(--quiet);
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+.measurement-table th,
+.measurement-table td {
+  border-bottom: 1px solid #e5ded6;
+  padding: 16px 10px;
+  text-align: right;
+  font-weight: 400;
+}
+.measurement-table th:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+.measurement-table thead {
+  color: var(--quiet);
+  font-size: 11px;
+}
+.measurement-table td {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+#detail-mesure h3 {
+  font-weight: 500;
+  font-size: 18px;
+  margin-top: 32px;
+}
+@media (max-width: 760px) {
+  .measurement {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    margin-top: 72px;
+    padding: 32px 24px;
+  }
+  .measurement-value strong {
+    font-size: 72px;
+  }
+  .measurement-copy h2 {
+    font-size: 26px;
+  }
+  .measurement-table table {
+    font-size: 11px;
+  }
+  .measurement-table th,
+  .measurement-table td {
+    padding: 12px 6px;
+  }
+  .measurement-table thead {
+    font-size: 10px;
+  }
+}

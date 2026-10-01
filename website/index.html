@@ -228,6 +228,29 @@
           </article>
         </div>
       </section>
+      <section class="measurement wrap" aria-labelledby="measurement-title">
+        <div class="measurement-value">
+          <span class="eyebrow">Première observation / Fragments</span
+          ><strong>−49,6<span>%</span></strong
+          ><span>de tokens d’entrée</span>
+        </div>
+        <div class="measurement-copy">
+          <h2 id="measurement-title">Moins de contexte à parcourir.</h2>
+          <p>694 360 tokens sans FlowAtlas.<br />350 270 avec son contexte MCP.</p>
+          <p class="measurement-note">
+            Une comparaison exploratoire, cache inclus.<br />Un résultat observé, pas une moyenne
+            garantie.
+          </p>
+          <button
+            class="text-link"
+            type="button"
+            popovertarget="detail-mesure"
+            aria-haspopup="dialog"
+          >
+            Comprendre la mesure <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+      </section>
       <section class="quiet-start wrap" aria-labelledby="start-title">
         <p class="eyebrow">Explore your architecture.</p>
         <h2 id="start-title">Le code est là.<br />Changez de point de vue.</h2>
@@ -672,6 +695,98 @@ node dist/index.js tui &lt;nodeId&gt; /chemin/vers/votre-projet</code></pre>
           </details>
         </div>
         <a class="text-link" href="https://github.com/nico8156/flowAtlas">Explorer le dépôt ↗</a>
+      </div>
+    </section>
+    <section
+      class="detail-panel"
+      id="detail-mesure"
+      popover="auto"
+      role="dialog"
+      aria-labelledby="detail-mesure-title"
+    >
+      <div class="panel-toolbar">
+        <span class="mono">FLOWATLAS / PREMIÈRE MESURE</span
+        ><button
+          class="close-panel"
+          type="button"
+          popovertarget="detail-mesure"
+          popovertargetaction="hide"
+          aria-label="Fermer"
+          autofocus
+        >
+          Fermer <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="panel-content">
+        <h2 id="detail-mesure-title">49,6 % de tokens d’entrée en moins, sur cette exploration.</h2>
+        <p>
+          Deux sessions distinctes de Codex CLI ont exploré la même architecture Like et outbox de
+          Fragments, en lecture seule, à partir de <code>uiLikeToggleRequested</code>. La première
+          utilisait la recherche habituelle dans le dépôt ; la seconde devait commencer par le
+          contexte MCP de FlowAtlas, puis lire les sources.
+        </p>
+        <div class="measurement-table">
+          <table>
+            <caption>
+              Résultats de la comparaison documentée
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Mesure</th>
+                <th scope="col">Sans FlowAtlas</th>
+                <th scope="col">Avec MCP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Tokens d’entrée</th>
+                <td>694 360</td>
+                <td>350 270</td>
+              </tr>
+              <tr>
+                <th scope="row">Dont tokens en cache</th>
+                <td>634 496</td>
+                <td>315 264</td>
+              </tr>
+              <tr>
+                <th scope="row">Fichiers déclarés ouverts</th>
+                <td>26</td>
+                <td>18</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Avec FlowAtlas, l’agent a reçu deux projections du graphe, représentant 9 230 octets de
+          contexte. Les deux sessions ont retrouvé le chemin architectural central et identifié les
+          deux risques de retry décrits dans l’évaluation.
+        </p>
+        <h3>Ce que ce résultat permet de dire</h3>
+        <p>
+          Sur cette tâche, l’exploration assistée par FlowAtlas a consommé moins de tokens d’entrée.
+          Le graphe sert à orienter la lecture ; il ne remplace pas la consultation du code.
+        </p>
+        <h3>Les limites de la comparaison</h3>
+        <p>
+          Il s’agit d’une seule paire de sessions, pas d’un benchmark statistique. Les tokens
+          d’entrée incluent le cache et ne mesurent pas directement le coût facturé. La session sans
+          FlowAtlas a aussi lancé volontairement trois suites de tests, contrairement à l’autre.
+        </p>
+        <p>
+          Le modèle utilisé n’a pas été enregistré dans les traces. L’usage de MCP était imposé et
+          l’identifiant de départ était fourni : ni le choix autonome de l’outil ni la découverte
+          initiale n’ont été évalués. Des essais répétés sont nécessaires avant de généraliser ce
+          gain.
+        </p>
+        <p class="source-note">
+          Protocole : Codex CLI 0.152.1 · Fragments <code>0b2956d</code> · FlowAtlas
+          <code>43f3e33</code>.
+        </p>
+        <a
+          class="text-link"
+          href="https://github.com/nico8156/flowAtlas/blob/main/docs/evaluations/fragments-agent-value-validation.md"
+          >Lire l’évaluation complète ↗</a
+        >
       </div>
     </section>
   </body>
