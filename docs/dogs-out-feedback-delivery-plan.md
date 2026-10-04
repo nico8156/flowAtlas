@@ -82,6 +82,14 @@ producer and SES sender remain unconnected and absent from this projection. The
 Event id names the constant local route; it does not claim a versioned payload
 contract or runtime delivery.
 
+October 4 maintenance (`CHORE`): Dogs Out commit `0adb4cb` moved routing into
+`LocalOutboxHandlerRegistry`. The magic-link request now includes that registry
+in `scanSources` and targets its `handle` method for the existing direct routing
+proof. The dispatcher remains in scan scope, but this projection does not prove
+its delegation to the registry. The acceptance assertions and scanner are
+unchanged. The real magic-link acceptance and local outbox fixture checks are
+replayed; mutation testing is not applicable to this configuration-only change.
+
 Third micro-cycle: an external client boundary is emitted only when the
 configured service calls a resolved port, the configured factory constructs
 an adapter implementing that port, and the adapter either invokes the client
