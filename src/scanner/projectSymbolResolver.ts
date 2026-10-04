@@ -318,6 +318,31 @@ const getSymbolBindings = (
       }
     }
 
+    const namespace = statement.importClause.namedBindings;
+    if (namespace && ts.isNamespaceImport(namespace)) {
+      const importedSymbol = checker.getSymbolAtLocation(namespace.name);
+      const moduleSymbol =
+        importedSymbol && (importedSymbol.flags & ts.SymbolFlags.Alias) !== 0
+          ? checker.getAliasedSymbol(importedSymbol)
+          : importedSymbol;
+      for (const exportedSymbol of moduleSymbol ? checker.getExportsOfModule(moduleSymbol) : []) {
+        const originalSymbol =
+          (exportedSymbol.flags & ts.SymbolFlags.Alias) !== 0
+            ? checker.getAliasedSymbol(exportedSymbol)
+            : exportedSymbol;
+        for (const declaration of originalSymbol.declarations ?? []) {
+          if (!ts.isVariableDeclaration(declaration) || !ts.isIdentifier(declaration.name))
+            continue;
+          const path = normalizePath(
+            sourceFilePaths.get(declaration.getSourceFile()) ??
+              declaration.getSourceFile().fileName,
+          );
+          const eventId = eventIds.get(`${path}#${declaration.name.text}`);
+          if (eventId) bindings.set(`${namespace.name.text}.${exportedSymbol.name}`, eventId);
+        }
+      }
+    }
+
     if (
       !statement.importClause.namedBindings ||
       !ts.isNamedImports(statement.importClause.namedBindings)

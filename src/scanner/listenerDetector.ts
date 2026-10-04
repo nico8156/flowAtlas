@@ -153,6 +153,7 @@ const isNestedFunctionLike = (node: ts.Node): boolean => {
 
 const getActionCreatorReference = (
   configuration: ts.ObjectLiteralExpression,
+  bindings: ReadonlyMap<string, string>,
 ): string | undefined => {
   const actionCreatorProperty = configuration.properties.find(
     (property): property is ts.PropertyAssignment =>
@@ -161,9 +162,13 @@ const getActionCreatorReference = (
       property.name.text === "actionCreator",
   );
 
-  return actionCreatorProperty && ts.isIdentifier(actionCreatorProperty.initializer)
-    ? actionCreatorProperty.initializer.text
-    : undefined;
+  const expression = actionCreatorProperty?.initializer;
+  if (!expression) return undefined;
+  if (ts.isIdentifier(expression)) return expression.text;
+  if (ts.isPropertyAccessExpression(expression) && bindings.has(expression.getText())) {
+    return expression.getText();
+  }
+  return undefined;
 };
 
 const getRegistrationScopedHandlerId = (
@@ -172,7 +177,7 @@ const getRegistrationScopedHandlerId = (
   configuration: ts.ObjectLiteralExpression,
   bindings: ReadonlyMap<string, string>,
 ): string => {
-  const actionCreator = getActionCreatorReference(configuration);
+  const actionCreator = getActionCreatorReference(configuration, bindings);
   if (actionCreator) {
     return `${factoryId}[${bindings.get(actionCreator) ?? actionCreator}]`;
   }
@@ -192,12 +197,14 @@ const addListeningRelationship = (
   graph.addNode({ id: handlerId, kind: "Handler" });
   if (!collectRelationships) return;
 
-  const actionCreator = getActionCreatorReference(configuration);
+  const actionCreator = getActionCreatorReference(configuration, bindings);
   if (!actionCreator) return;
+  const target = getResolvedEventId(graph, actionCreator, bindings);
+  if (!target) return;
 
   graph.addEdge({
     source: handlerId,
-    target: bindings.get(actionCreator) ?? actionCreator,
+    target,
     kind: "LISTENS_TO",
   });
 };
@@ -222,9 +229,11 @@ const addDispatchRelationshipsFromBody = (
       if (
         dispatchedAction &&
         ts.isCallExpression(dispatchedAction) &&
-        ts.isIdentifier(dispatchedAction.expression)
+        (ts.isIdentifier(dispatchedAction.expression) ||
+          (ts.isPropertyAccessExpression(dispatchedAction.expression) &&
+            bindings.has(dispatchedAction.expression.getText())))
       ) {
-        const target = getResolvedEventId(graph, dispatchedAction.expression.text, bindings);
+        const target = getResolvedEventId(graph, dispatchedAction.expression.getText(), bindings);
         if (target) {
           graph.addEdge({ source: handlerId, target, kind: "DISPATCHES" });
         }
