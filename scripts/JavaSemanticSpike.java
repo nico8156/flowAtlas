@@ -384,6 +384,12 @@ public final class JavaSemanticSpike {
         }
         ExecutableElement controllerMethod = controllerMethods.getFirst();
         String basePath = annotationPath(controller, config.requestMappingAnnotation());
+        boolean hasClassMapping = controller.getAnnotationMirrors().stream()
+                .map(annotation -> annotation.getAnnotationType().asElement())
+                .filter(TypeElement.class::isInstance)
+                .map(TypeElement.class::cast)
+                .anyMatch(type -> type.getQualifiedName().contentEquals(config.requestMappingAnnotation()));
+        if (!hasClassMapping) basePath = "";
         String methodPath = annotationPath(controllerMethod, config.httpMethodMappingAnnotation());
         if (basePath == null || methodPath == null) {
             throw new IllegalStateException("Could not resolve configured HTTP mapping annotations");

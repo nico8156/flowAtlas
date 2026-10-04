@@ -216,6 +216,9 @@ in `ArchitectureGraph`.
 - Configured Spring annotation identities prove the HTTP mapping. The resolved
   `CommandBus.dispatch` argument proves the dispatched command, and
   `CommandHandler<C>` proves the command listener.
+- The Fragment Admin follow-up also supports full method paths without a
+  class-level mapping, while preserving class/method path composition and
+  rejecting unmapped methods. See [the bounded route cycle](java-method-only-http-routes.md).
 - The real Fragments slice yields:
 
   ```text

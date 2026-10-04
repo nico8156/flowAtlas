@@ -1287,6 +1287,10 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
   recorded as future proof problems, not inferred graph relations.
 - Configured Spring mappings, the resolved `CommandBus.dispatch` argument and
   `CommandHandler<C>` produce the first HTTP/Command Java graph.
+- Fragment Admin validation adds method-only HTTP paths without requiring a
+  class mapping. The moderation acceptance preserves four nodes and three
+  relations across the equivalent annotation forms; class/method composition
+  and rejection of unmapped methods remain protected.
 - The command handler does not dispatch a domain event in Lot 04 because the
   real source crosses aggregate registration and a method reference.
 - Outbox metadata, resolver branches, stable type/version and the sender loop
