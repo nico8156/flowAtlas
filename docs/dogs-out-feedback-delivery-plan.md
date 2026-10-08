@@ -235,3 +235,14 @@ Historical full-suite limitations above remain historical verification facts.
   bounded external boundary, with a small fixture and a real acceptance.
 
 No evolution milestone beyond the configured replay is started by this chore.
+
+## MCP-only continuation — explicit thunk dispatches
+
+**Status: DELIVERED.** The user's subsequent scope is exclusively MCP exploration. The selected
+behavior closes the `loadOnboarding` context gap reproduced in milestone 1:
+resolved actions dispatched by an async-thunk payload creator become reachable
+Events, together with their State updates. The
+[MCP behavior evidence](evaluations/dogs-out-mcp-thunk-dispatch-2026-10-08.md)
+records the fixture/corpus REDs, local detector change, executed mutations and
+built stdio replay. This continuation does not start the proposed Java
+request-maintenance or scheduler milestones.

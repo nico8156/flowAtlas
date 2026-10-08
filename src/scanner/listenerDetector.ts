@@ -619,6 +619,13 @@ export const detectListeners = ({
           payloadCreator &&
           (ts.isArrowFunction(payloadCreator) || ts.isFunctionExpression(payloadCreator))
         ) {
+          addDispatchRelationshipsFromBody(
+            graph,
+            handlerId,
+            payloadCreator.body,
+            bindings,
+            collectRelationships,
+          );
           const payloadFunction = {
             parameters: payloadCreator.parameters,
             body: payloadCreator.body,
