@@ -1,0 +1,1441 @@
+{
+  "recordType": "manual-mcp-replay",
+  "date": "2026-10-08",
+  "pathPlaceholders": {
+    "{FLOWATLAS_ROOT}": "FlowAtlas checkout",
+    "{DOGS_OUT_ROOT}": "Dogs Out checkout",
+    "{TEMP_ROOT}": "temporary replay directory"
+  },
+  "calls": [
+    {
+      "id": "start-walk",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "projectPath": "{DOGS_OUT_ROOT}/mobile",
+        "nodeId": "startWalk",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "startWalk",
+            "kind": "Handler",
+            "sourceLocation": {
+              "file": "src/features/walk/application/walkThunks.ts",
+              "line": 29
+            }
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 11,
+            "edges": 12
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "startWalk",
+                "kind": "Handler",
+                "sourceLocation": {
+                  "file": "src/features/walk/application/walkThunks.ts",
+                  "line": 29
+                }
+              },
+              {
+                "id": "CommandIdGenerator",
+                "kind": "External"
+              },
+              {
+                "id": "EndWalkGateway",
+                "kind": "External"
+              },
+              {
+                "id": "LocationGateway",
+                "kind": "External"
+              },
+              {
+                "id": "NotificationRegistrationUseCase",
+                "kind": "External"
+              },
+              {
+                "id": "startWalk.fulfilled",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/walk/application/walkThunks.ts",
+                  "line": 29
+                }
+              },
+              {
+                "id": "startWalk.pending",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/walk/application/walkThunks.ts",
+                  "line": 29
+                }
+              },
+              {
+                "id": "startWalk.rejected",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/walk/application/walkThunks.ts",
+                  "line": 29
+                }
+              },
+              {
+                "id": "WalkGateway",
+                "kind": "External"
+              },
+              {
+                "id": "WalkTrackingGateway",
+                "kind": "External"
+              },
+              {
+                "id": "walkSlice",
+                "kind": "State"
+              }
+            ],
+            "edges": [
+              {
+                "source": "startWalk",
+                "target": "startWalk.pending",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "startWalk",
+                "target": "startWalk.fulfilled",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "startWalk",
+                "target": "startWalk.rejected",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "startWalk",
+                "target": "LocationGateway",
+                "kind": "CALLS_EXTERNAL"
+              },
+              {
+                "source": "startWalk",
+                "target": "WalkTrackingGateway",
+                "kind": "CALLS_EXTERNAL"
+              },
+              {
+                "source": "startWalk",
+                "target": "WalkGateway",
+                "kind": "CALLS_EXTERNAL"
+              },
+              {
+                "source": "startWalk",
+                "target": "CommandIdGenerator",
+                "kind": "CALLS_EXTERNAL"
+              },
+              {
+                "source": "startWalk",
+                "target": "NotificationRegistrationUseCase",
+                "kind": "CALLS_EXTERNAL"
+              },
+              {
+                "source": "startWalk",
+                "target": "EndWalkGateway",
+                "kind": "CALLS_EXTERNAL"
+              },
+              {
+                "source": "startWalk.rejected",
+                "target": "walkSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "startWalk.fulfilled",
+                "target": "walkSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "startWalk.pending",
+                "target": "walkSlice",
+                "kind": "UPDATES"
+              }
+            ]
+          },
+          "serializedBytes": 3443
+        }
+      }
+    },
+    {
+      "id": "daily-walk-goal-versioned",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{DOGS_OUT_ROOT}/.flowatlas/requests/daily-walk-progress-m8-1.json",
+        "nodeId": "DailyWalkGoal",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "DailyWalkGoal",
+            "kind": "State",
+            "sourceLocation": {
+              "file": "com/nm/dogsout/walkgoal/application/projectgoal/DailyWalkGoalConfiguredProjectionHandler.java",
+              "line": 34
+            }
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 2,
+            "edges": 1
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "DailyWalkGoal",
+                "kind": "State",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/walkgoal/application/projectgoal/DailyWalkGoalConfiguredProjectionHandler.java",
+                  "line": 34
+                }
+              },
+              {
+                "id": "java-domain-event:com.nm.dogsout.walkgoal.domain.DailyWalkGoalConfigured",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/walkgoal/application/projectgoal/DailyWalkGoalConfiguredProjectionHandler.java",
+                  "line": 29
+                }
+              }
+            ],
+            "edges": [
+              {
+                "source": "java-domain-event:com.nm.dogsout.walkgoal.domain.DailyWalkGoalConfigured",
+                "target": "DailyWalkGoal",
+                "kind": "UPDATES",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/walkgoal/application/projectgoal/DailyWalkGoalConfiguredProjectionHandler.java",
+                  "line": 34
+                }
+              }
+            ]
+          },
+          "serializedBytes": 1625
+        }
+      }
+    },
+    {
+      "id": "dog",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "projectPath": "{DOGS_OUT_ROOT}/mobile",
+        "nodeId": "dogSlice",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "dogSlice",
+            "kind": "State"
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 5,
+            "edges": 4
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "dogSlice",
+                "kind": "State"
+              },
+              {
+                "id": "dogMembershipAdded",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/dog/state/dogSlice.ts",
+                  "line": 16
+                }
+              },
+              {
+                "id": "dogRoleChanged",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/dog/state/dogSlice.ts",
+                  "line": 24
+                }
+              },
+              {
+                "id": "dogSelected",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/dog/state/dogSlice.ts",
+                  "line": 21
+                }
+              },
+              {
+                "id": "dogsLoaded",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/dog/state/dogSlice.ts",
+                  "line": 10
+                }
+              }
+            ],
+            "edges": [
+              {
+                "source": "dogsLoaded",
+                "target": "dogSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "dogMembershipAdded",
+                "target": "dogSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "dogSelected",
+                "target": "dogSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "dogRoleChanged",
+                "target": "dogSlice",
+                "kind": "UPDATES"
+              }
+            ]
+          },
+          "serializedBytes": 1814
+        }
+      }
+    },
+    {
+      "id": "authentication",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "projectPath": "{DOGS_OUT_ROOT}/mobile",
+        "nodeId": "authenticationSlice",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "authenticationSlice",
+            "kind": "State"
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 11,
+            "edges": 17
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "authenticationSlice",
+                "kind": "State"
+              },
+              {
+                "id": "authenticationFailed",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 28
+                }
+              },
+              {
+                "id": "becameAnonymous",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 14
+                }
+              },
+              {
+                "id": "exchangeStarted",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 19
+                }
+              },
+              {
+                "id": "linkRequested",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 40
+                }
+              },
+              {
+                "id": "linkRequestFailed",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 44
+                }
+              },
+              {
+                "id": "linkRequestStarted",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 36
+                }
+              },
+              {
+                "id": "onboardingCompleted",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 33
+                }
+              },
+              {
+                "id": "restorationStarted",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 10
+                }
+              },
+              {
+                "id": "sessionAuthenticated",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/identity/state/authenticationSlice.ts",
+                  "line": 23
+                }
+              },
+              {
+                "id": "createAuthenticationEvents",
+                "kind": "Handler"
+              }
+            ],
+            "edges": [
+              {
+                "source": "createAuthenticationEvents",
+                "target": "restorationStarted",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "createAuthenticationEvents",
+                "target": "becameAnonymous",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "createAuthenticationEvents",
+                "target": "exchangeStarted",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "createAuthenticationEvents",
+                "target": "sessionAuthenticated",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "createAuthenticationEvents",
+                "target": "authenticationFailed",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "createAuthenticationEvents",
+                "target": "linkRequestStarted",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "createAuthenticationEvents",
+                "target": "linkRequested",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "createAuthenticationEvents",
+                "target": "linkRequestFailed",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "restorationStarted",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "becameAnonymous",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "exchangeStarted",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "sessionAuthenticated",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "authenticationFailed",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "onboardingCompleted",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "linkRequestStarted",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "linkRequested",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "linkRequestFailed",
+                "target": "authenticationSlice",
+                "kind": "UPDATES"
+              }
+            ]
+          },
+          "serializedBytes": 4786
+        }
+      }
+    },
+    {
+      "id": "onboarding",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "projectPath": "{DOGS_OUT_ROOT}/mobile",
+        "nodeId": "loadOnboarding",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "loadOnboarding",
+            "kind": "Handler",
+            "sourceLocation": {
+              "file": "src/features/onboarding/application/onboardingThunks.ts",
+              "line": 26
+            }
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 7,
+            "edges": 8
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "loadOnboarding",
+                "kind": "Handler",
+                "sourceLocation": {
+                  "file": "src/features/onboarding/application/onboardingThunks.ts",
+                  "line": 26
+                }
+              },
+              {
+                "id": "loadOnboarding.fulfilled",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/onboarding/application/onboardingThunks.ts",
+                  "line": 26
+                }
+              },
+              {
+                "id": "loadOnboarding.pending",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/onboarding/application/onboardingThunks.ts",
+                  "line": 26
+                }
+              },
+              {
+                "id": "loadOnboarding.rejected",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/onboarding/application/onboardingThunks.ts",
+                  "line": 26
+                }
+              },
+              {
+                "id": "OnboardingGateway",
+                "kind": "External"
+              },
+              {
+                "id": "SessionVault",
+                "kind": "External"
+              },
+              {
+                "id": "onboardingSlice",
+                "kind": "State"
+              }
+            ],
+            "edges": [
+              {
+                "source": "loadOnboarding",
+                "target": "loadOnboarding.pending",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "loadOnboarding",
+                "target": "loadOnboarding.fulfilled",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "loadOnboarding",
+                "target": "loadOnboarding.rejected",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "loadOnboarding",
+                "target": "OnboardingGateway",
+                "kind": "CALLS_EXTERNAL"
+              },
+              {
+                "source": "loadOnboarding",
+                "target": "SessionVault",
+                "kind": "CALLS_EXTERNAL"
+              },
+              {
+                "source": "loadOnboarding.rejected",
+                "target": "onboardingSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "loadOnboarding.fulfilled",
+                "target": "onboardingSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "loadOnboarding.pending",
+                "target": "onboardingSlice",
+                "kind": "UPDATES"
+              }
+            ]
+          },
+          "serializedBytes": 2787
+        }
+      }
+    },
+    {
+      "id": "nearby",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "projectPath": "{DOGS_OUT_ROOT}/mobile",
+        "nodeId": "nearbyDogsSlice",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "nearbyDogsSlice",
+            "kind": "State"
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 5,
+            "edges": 6
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "nearbyDogsSlice",
+                "kind": "State"
+              },
+              {
+                "id": "searchNearbyDogs.fulfilled",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/nearbyDogs/application/searchNearbyDogs.ts",
+                  "line": 15
+                }
+              },
+              {
+                "id": "searchNearbyDogs.pending",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/nearbyDogs/application/searchNearbyDogs.ts",
+                  "line": 15
+                }
+              },
+              {
+                "id": "searchNearbyDogs.rejected",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "src/features/nearbyDogs/application/searchNearbyDogs.ts",
+                  "line": 15
+                }
+              },
+              {
+                "id": "searchNearbyDogs",
+                "kind": "Handler",
+                "sourceLocation": {
+                  "file": "src/features/nearbyDogs/application/searchNearbyDogs.ts",
+                  "line": 15
+                }
+              }
+            ],
+            "edges": [
+              {
+                "source": "searchNearbyDogs",
+                "target": "searchNearbyDogs.pending",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "searchNearbyDogs",
+                "target": "searchNearbyDogs.fulfilled",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "searchNearbyDogs",
+                "target": "searchNearbyDogs.rejected",
+                "kind": "DISPATCHES"
+              },
+              {
+                "source": "searchNearbyDogs.rejected",
+                "target": "nearbyDogsSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "searchNearbyDogs.fulfilled",
+                "target": "nearbyDogsSlice",
+                "kind": "UPDATES"
+              },
+              {
+                "source": "searchNearbyDogs.pending",
+                "target": "nearbyDogsSlice",
+                "kind": "UPDATES"
+              }
+            ]
+          },
+          "serializedBytes": 2293
+        }
+      }
+    },
+    {
+      "id": "walkProjection",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{FLOWATLAS_ROOT}/tests/fixtures/dogs-out-java-walk-projection-request.json",
+        "nodeId": "CurrentWalkView",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "CurrentWalkView",
+            "kind": "State",
+            "sourceLocation": {
+              "file": "com/nm/dogsout/presence/application/projectwalkstarted/WalkStartedProjectionHandler.java",
+              "line": 22
+            }
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 2,
+            "edges": 1
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "CurrentWalkView",
+                "kind": "State",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/presence/application/projectwalkstarted/WalkStartedProjectionHandler.java",
+                  "line": 22
+                }
+              },
+              {
+                "id": "java-domain-event:com.nm.dogsout.walk.domain.WalkStarted",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/presence/application/projectwalkstarted/WalkStartedProjectionHandler.java",
+                  "line": 19
+                }
+              }
+            ],
+            "edges": [
+              {
+                "source": "java-domain-event:com.nm.dogsout.walk.domain.WalkStarted",
+                "target": "CurrentWalkView",
+                "kind": "UPDATES",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/presence/application/projectwalkstarted/WalkStartedProjectionHandler.java",
+                  "line": 22
+                }
+              }
+            ]
+          },
+          "serializedBytes": 1579
+        }
+      }
+    },
+    {
+      "id": "magicLinkOutbox",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{FLOWATLAS_ROOT}/tests/fixtures/dogs-out-java-magic-link-outbox-request.json",
+        "nodeId": "local-outbox:MagicLinkDeliveryRequested",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "local-outbox:MagicLinkDeliveryRequested",
+            "kind": "Event",
+            "sourceLocation": {
+              "file": "com/nm/dogsout/identity/infrastructure/eventing/MagicLinkDeliveryRequestedOutboxHandler.java",
+              "line": 35
+            }
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 2,
+            "edges": 1
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "local-outbox:MagicLinkDeliveryRequested",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/identity/infrastructure/eventing/MagicLinkDeliveryRequestedOutboxHandler.java",
+                  "line": 35
+                }
+              },
+              {
+                "id": "com.nm.dogsout.identity.infrastructure.eventing.MagicLinkDeliveryRequestedOutboxHandler#handle(com.nm.dogsout.platform.infrastructure.eventing.LocalOutboxMessage)",
+                "kind": "Handler",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/identity/infrastructure/eventing/MagicLinkDeliveryRequestedOutboxHandler.java",
+                  "line": 40
+                }
+              }
+            ],
+            "edges": [
+              {
+                "source": "com.nm.dogsout.identity.infrastructure.eventing.MagicLinkDeliveryRequestedOutboxHandler#handle(com.nm.dogsout.platform.infrastructure.eventing.LocalOutboxMessage)",
+                "target": "local-outbox:MagicLinkDeliveryRequested",
+                "kind": "LISTENS_TO",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/identity/infrastructure/eventing/MagicLinkDeliveryRequestedOutboxHandler.java",
+                  "line": 35
+                }
+              }
+            ]
+          },
+          "serializedBytes": 1884
+        }
+      }
+    },
+    {
+      "id": "ses",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{FLOWATLAS_ROOT}/tests/fixtures/dogs-out-java-ses-external-request.json",
+        "nodeId": "java-client:software.amazon.awssdk.services.sesv2.SesV2Client#sendEmail",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "java-client:software.amazon.awssdk.services.sesv2.SesV2Client#sendEmail",
+            "kind": "External",
+            "sourceLocation": {
+              "file": "com/nm/dogsout/identity/infrastructure/email/AwsSesMagicLinkSender.java",
+              "line": 36
+            }
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 2,
+            "edges": 1
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "java-client:software.amazon.awssdk.services.sesv2.SesV2Client#sendEmail",
+                "kind": "External",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/identity/infrastructure/email/AwsSesMagicLinkSender.java",
+                  "line": 36
+                }
+              },
+              {
+                "id": "com.nm.dogsout.identity.application.delivermagiclink.DeliverMagicLinkService#deliver(com.nm.dogsout.identity.domain.MagicLinkChallengeId)",
+                "kind": "Handler",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/identity/application/delivermagiclink/DeliverMagicLinkService.java",
+                  "line": 48
+                }
+              }
+            ],
+            "edges": [
+              {
+                "source": "com.nm.dogsout.identity.application.delivermagiclink.DeliverMagicLinkService#deliver(com.nm.dogsout.identity.domain.MagicLinkChallengeId)",
+                "target": "java-client:software.amazon.awssdk.services.sesv2.SesV2Client#sendEmail",
+                "kind": "CALLS_EXTERNAL",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/identity/application/delivermagiclink/DeliverMagicLinkService.java",
+                  "line": 48
+                }
+              }
+            ]
+          },
+          "serializedBytes": 1876
+        }
+      }
+    },
+    {
+      "id": "daily-walk-handler-discovery",
+      "tool": "flowatlas_find_nodes",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{DOGS_OUT_ROOT}/.flowatlas/requests/daily-walk-progress-m8-1.json",
+        "query": "DailyWalkGoalConfiguredProjectionHandler",
+        "kind": "Handler",
+        "limit": 5
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 1,
+          "query": "DailyWalkGoalConfiguredProjectionHandler",
+          "request": {
+            "kinds": ["Handler"],
+            "limit": 5
+          },
+          "matches": [
+            {
+              "id": "com.nm.dogsout.walkgoal.application.projectgoal.DailyWalkGoalConfiguredProjectionHandler#handle(com.nm.dogsout.walkgoal.domain.DailyWalkGoalConfigured)",
+              "kind": "Handler",
+              "sourceLocation": {
+                "file": "com/nm/dogsout/walkgoal/application/projectgoal/DailyWalkGoalConfiguredProjectionHandler.java",
+                "line": 29
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "missing-request-path",
+      "tool": "flowatlas_find_nodes",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "query": "MagicLinkDeliveryRequested",
+        "kind": "Event",
+        "limit": 5
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Java scans require an explicit requestPath"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "id": "missing-source",
+      "tool": "flowatlas_find_nodes",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{TEMP_ROOT}/flowatlas-jalon1-missing-source.json",
+        "query": "WalkStarted",
+        "kind": "Event",
+        "limit": 5
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Java semantic request failed: {TEMP_ROOT}/flowatlas-jalon1-missing-source.json. Error: Java Maven semantic context: missing source {DOGS_OUT_ROOT}/backend/src/main/java/com/nm/dogsout/MissingReplayPort.java."
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "id": "account-deletion-git-root",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}",
+        "requestPath": "{DOGS_OUT_ROOT}/.flowatlas/requests/account-deletion-presence.json",
+        "nodeId": "NearbyDogView",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "NearbyDogView",
+            "kind": "State",
+            "sourceLocation": {
+              "file": "com/nm/dogsout/presence/application/projectaccountdeleted/AccountDeletedProjectionHandler.java",
+              "line": 14
+            }
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 2,
+            "edges": 1
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "NearbyDogView",
+                "kind": "State",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/presence/application/projectaccountdeleted/AccountDeletedProjectionHandler.java",
+                  "line": 14
+                }
+              },
+              {
+                "id": "java-domain-event:com.nm.dogsout.identity.domain.AccountDeleted",
+                "kind": "Event",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/presence/application/projectaccountdeleted/AccountDeletedProjectionHandler.java",
+                  "line": 13
+                }
+              }
+            ],
+            "edges": [
+              {
+                "source": "java-domain-event:com.nm.dogsout.identity.domain.AccountDeleted",
+                "target": "NearbyDogView",
+                "kind": "UPDATES",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/presence/application/projectaccountdeleted/AccountDeletedProjectionHandler.java",
+                  "line": 14
+                }
+              }
+            ]
+          },
+          "serializedBytes": 1611
+        }
+      }
+    },
+    {
+      "id": "walk-expired-out-of-request",
+      "tool": "flowatlas_find_nodes",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{DOGS_OUT_ROOT}/.flowatlas/requests/daily-walk-progress-m8-1.json",
+        "query": "WalkExpired",
+        "kind": "Event",
+        "limit": 5
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 1,
+          "query": "WalkExpired",
+          "request": {
+            "kinds": ["Event"],
+            "limit": 5
+          },
+          "matches": []
+        }
+      }
+    },
+    {
+      "id": "daily-walk-handler-context",
+      "tool": "flowatlas_get_context",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{DOGS_OUT_ROOT}/.flowatlas/requests/daily-walk-progress-m8-1.json",
+        "nodeId": "com.nm.dogsout.walkgoal.application.projectgoal.DailyWalkGoalConfiguredProjectionHandler#handle(com.nm.dogsout.walkgoal.domain.DailyWalkGoalConfigured)",
+        "direction": "both",
+        "maxDepth": 3,
+        "maxNodes": 40,
+        "maxEdges": 80,
+        "maxBytes": 16384
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 2,
+          "focus": {
+            "id": "com.nm.dogsout.walkgoal.application.projectgoal.DailyWalkGoalConfiguredProjectionHandler#handle(com.nm.dogsout.walkgoal.domain.DailyWalkGoalConfigured)",
+            "kind": "Handler",
+            "sourceLocation": {
+              "file": "com/nm/dogsout/walkgoal/application/projectgoal/DailyWalkGoalConfiguredProjectionHandler.java",
+              "line": 29
+            }
+          },
+          "request": {
+            "direction": "both",
+            "maxDepth": 3,
+            "maxNodes": 40,
+            "maxEdges": 80,
+            "maxBytes": 16384
+          },
+          "complete": true,
+          "coverage": {
+            "graph": "bounded-projection",
+            "application": "not-assessed"
+          },
+          "frontierComplete": true,
+          "omittedFrontierCount": 0,
+          "limitsReached": [],
+          "returned": {
+            "nodes": 1,
+            "edges": 0
+          },
+          "frontier": [],
+          "projection": {
+            "nodes": [
+              {
+                "id": "com.nm.dogsout.walkgoal.application.projectgoal.DailyWalkGoalConfiguredProjectionHandler#handle(com.nm.dogsout.walkgoal.domain.DailyWalkGoalConfigured)",
+                "kind": "Handler",
+                "sourceLocation": {
+                  "file": "com/nm/dogsout/walkgoal/application/projectgoal/DailyWalkGoalConfiguredProjectionHandler.java",
+                  "line": 29
+                }
+              }
+            ],
+            "edges": []
+          },
+          "serializedBytes": 1248
+        }
+      }
+    },
+    {
+      "id": "unprovenMutation",
+      "tool": "flowatlas_find_nodes",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{TEMP_ROOT}/flowatlas-jalon1-unproven-mutation.json",
+        "query": "WalkStarted",
+        "kind": "Event",
+        "limit": 5
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Java semantic request failed: {TEMP_ROOT}/flowatlas-jalon1-unproven-mutation.json. Error: Java Maven semantic context: Java semantic analysis failed: Exception in thread \"main\" java.lang.IllegalStateException: Could not prove one invocation of configured projection mutation com.nm.dogsout.presence.application.projectwalkstarted.SaveCurrentWalkViewPort#missingReplayMutation with an event-derived argument."
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "id": "magicLinkProducer",
+      "tool": "flowatlas_find_nodes",
+      "arguments": {
+        "adapter": "java",
+        "projectPath": "{DOGS_OUT_ROOT}/backend",
+        "requestPath": "{FLOWATLAS_ROOT}/tests/fixtures/dogs-out-java-magic-link-outbox-request.json",
+        "query": "RequestMagicLinkService",
+        "kind": "Handler",
+        "limit": 5
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "FlowAtlas returned structured architectural data in structuredContent."
+          }
+        ],
+        "structuredContent": {
+          "schemaVersion": 1,
+          "query": "RequestMagicLinkService",
+          "request": {
+            "kinds": ["Handler"],
+            "limit": 5
+          },
+          "matches": []
+        }
+      }
+    }
+  ]
+}

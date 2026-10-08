@@ -23,22 +23,30 @@ reconstruct the Like, outbox and projection slices of the real Fragments
 application. The browser visualizer remains available as a secondary adapter;
 M7 is now focused on a keyboard-first terminal experience.
 
-| Area                            | Status                                                   |
-| ------------------------------- | -------------------------------------------------------- |
-| TypeScript / Node.js foundation | Available                                                |
-| Strict type checking            | Available                                                |
-| Test runner and build pipeline  | Available                                                |
-| Architecture graph model        | V1 core and graph projections available                  |
-| TypeScript analysis             | Focused TypeScript project scanner                       |
-| Redux Toolkit detectors         | Limited V1 patterns available                            |
-| CLI                             | MVP scan, graph exploration and Terminal Map in progress |
-| Interactive visualizer          | M7 active: CLI/TUI primary, browser secondary            |
-| Fragments acceptance tests      | Available when the corpus is present                     |
+| Area                            | Status                                                               |
+| ------------------------------- | -------------------------------------------------------------------- |
+| TypeScript / Node.js foundation | Available                                                            |
+| Strict type checking            | Available                                                            |
+| Test runner and build pipeline  | Available                                                            |
+| Architecture graph model        | V1 core and graph projections available                              |
+| TypeScript analysis             | Focused TypeScript project scanner                                   |
+| Redux Toolkit detectors         | Limited V1 patterns available                                        |
+| Java / Maven analysis           | Explicit bounded CLI/MCP requests; Fragments and Dogs Out validation |
+| CLI                             | MVP scan, graph exploration and Terminal Map in progress             |
+| Interactive visualizer          | M7 active: CLI/TUI primary, browser secondary                        |
+| Fragments acceptance tests      | Available when the corpus is present                                 |
 
 The domain graph and analysis capabilities emerge through acceptance-driven
 TDD. The repository includes acceptance tests for the Fragments Like, outbox
 and projection slices. The Fragments application itself remains an external
 corpus and is not copied into this repository.
+
+The Java adapter also supports explicitly configured local projections,
+outbox consumers and resolved external boundaries. A configured MCP replay
+against Dogs Out verifies those bounded capabilities and records the remaining
+gaps in [the Dogs Out replay](docs/evaluations/dogs-out-mcp-replay-2026-10-08.md).
+Java analysis requires an explicit `requestPath`; a successful context reports
+graph traversal completeness, while application coverage remains `not-assessed`.
 
 The CLI currently supports:
 

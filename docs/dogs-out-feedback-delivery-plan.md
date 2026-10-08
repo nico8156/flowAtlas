@@ -1,11 +1,12 @@
 # Dogs Out feedback delivery plan
 
-Status: **ACTIVE**. Recorded 22 September 2026. The Dogs Out observations are
+Status: **DELIVERED for the seven bounded slices below; configured MCP replay delivered 8 October 2026**.
+Recorded 22 September 2026; updated 8 October 2026. The Dogs Out observations are
 acceptance drivers, not project-specific scanner rules. Each capability needs a
 small independent fixture and replay against real source when available. A
 request is versioned only after it executes successfully.
 
-The six milestones below are ordered by dependency. Finish and verify each
+The first seven milestones below are ordered by dependency. Finish and verify each
 milestone before starting the next. Graph assertions cover expected nodes,
 expected relations and important absent relations. Static gaps remain gaps.
 
@@ -14,8 +15,8 @@ expected relations and important absent relations. Static gaps remain gaps.
 **Status: DELIVERED.** Goal: expose the decisive validation or compiler failure
 before command and classpath detail. Acceptance: an invalid Java request reports
 its request path and specific cause concisely; configuration, missing-type and
-compiler failures are distinguishable. The current outer formatter can hide the
-cause when a nested process supplies only a long error message. Preserve a
+compiler failures are distinguishable. At the initial feedback, the outer
+formatter could hide the cause behind a nested process's long error message. Preserve a
 useful remediation without calling every failure stale. Completion requires a
 focused RED, a real Java failure replay and the configured verification gates.
 
@@ -32,9 +33,9 @@ resource-related timeouts in unrelated corpus tests.
 **Status: DELIVERED.** Goal: prove a projection mutation independently of a
 freshness notification. Acceptance: a local outbox dispatcher and projection
 handler behind a port yield only statically justified Event, Handler and State
-topology, with no invented sync Event or cross-outbox causality. The request
-schema currently binds projection and sync fields together, and the State id
-comes from the sync contract. **Decision required:** choose a stable State
+topology, with no invented sync Event or cross-outbox causality. The initial
+request schema bound projection and sync fields together, and the State id
+came from the sync contract. **Decision reviewed:** choose a stable State
 identity and source evidence for a projection without that contract. Only then
 split the request groups and semantic proof. The alternatives and recommendation
 are in the [local Java projection review](architecture/local-java-projection-review.md).
@@ -189,3 +190,48 @@ scanner message. Fixtures cover a Git root with `backend/pom.xml`, ambiguous
 module selection and two mutations in one handler; a real Dogs Out acceptance
 maps `DailyWalkGoalConfigured` to both `DailyWalkGoal` and
 `DailyWalkProgress`.
+
+## 8. Configured Dogs Out MCP replay — evolution milestone 1
+
+**Status: DELIVERED.** The 8 October replay uses the configured MCP connection
+and records the FlowAtlas source revision, corpus revision, executable hashes,
+request hashes and Java bytecode qualification. The configured JavaScript
+matches a fresh build after normalization of generated chunk references and
+sourcemap comments. The running process does not expose its startup revision.
+
+Seventeen recorded calls cover the September Java and Redux feedback, both
+Dogs Out versioned Java requests, scope-limited empty searches and three
+deliberately invalid inputs. Fourteen return structured results; the three
+expected failures identify the missing request, missing source or unproven
+mutation without command/classpath noise.
+
+The [replay report](evaluations/dogs-out-mcp-replay-2026-10-08.md) and transcripts
+are the current operational status. Important limits remain:
+
+- The versioned M8.1 request declares one mutation; the two-State acceptance
+  uses a temporary multi-mutation variant.
+- The projection Handler is discoverable but its context is isolated; the
+  mutation is visible from the Event or State.
+- `loadOnboarding` exposes its injected ports and lifecycle, but direct
+  cross-slice dispatches observed in the source remain absent.
+- Authentication coverage reaches the Events factory, not the complete
+  coordinator-to-port path.
+- Store composition and selector reads, outbox producer-to-consumer joins,
+  fan-out acknowledgement and Dogs Out scheduler external coverage remain
+  outside the established proof.
+
+The first seven delivery statuses describe their accepted bounded scopes;
+they do not assert that all September candidate evolutions are implemented.
+Historical full-suite limitations above remain historical verification facts.
+
+### Proposed evolution milestones
+
+- **Milestone 2 — PROPOSED:** reduce Java request-maintenance friction using
+  failures from this replay. Missing-source and configured-mutation errors
+  are already precise; review remaining diagnostic and traceability gaps
+  before selecting a new behavior. Package-based selection requires a separate
+  request-contract decision.
+- **Milestone 3 — PROPOSED:** choose one real Dogs Out scheduler and prove its
+  bounded external boundary, with a small fixture and a real acceptance.
+
+No evolution milestone beyond the configured replay is started by this chore.

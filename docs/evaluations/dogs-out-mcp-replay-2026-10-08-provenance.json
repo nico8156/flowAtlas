@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-08",
+  "repositories": {
+    "flowatlas": {
+      "commit": "57315e1f3c29bdb2cd814ea52b7f22fb0429e2fa",
+      "status": ""
+    },
+    "dogsOut": {
+      "commit": "8858c30a19f34ac891819d119073f29ef770ab2b",
+      "status": ""
+    }
+  },
+  "nodeVersion": "v22.16.0",
+  "javaVersion": "openjdk version \"23-valhalla\" 2024-09-17\nOpenJDK Runtime Environment (build 23-valhalla+1-90)\nOpenJDK 64-Bit Server VM (build 23-valhalla+1-90, mixed mode, sharing)",
+  "configuredJavaScriptSha256": {
+    "dist/benchmark.js": "5a00de113588c5e9866ef14b3e4db8f87385eb403fb65db3b2c69031bf22db16",
+    "dist/chunk-A3PIPECS.js": "333760efcfa9c50d7e8d7e681c4357d5557f091f72092381d2bb2aff5964650b",
+    "dist/chunk-CEAKB6X4.js": "1d181181c8c8c501b6928046b191ff504578caf311b5080f55479c024132afe3",
+    "dist/chunk-RWPNO3UO.js": "c0dc530961c3f072c042cac28ff124add245f9e6ea1d53b906bf88c8e801b398",
+    "dist/chunk-SG44ZAW7.js": "55e03c3f4ab7d756040ffab73d85666fd15899816a327e429cf4e761d8173bc4",
+    "dist/chunk-ZSPMOC7K.js": "66cd83d3dfaedd0028b1a76e775cf68e8bb23fd2fe1ac6a69fc735907fde4df5",
+    "dist/cli/scanWorker.js": "88c3b1177a23e380a7565ec49be3b3060c872f46d307428ffb5810228bd4ee08",
+    "dist/index.js": "4712c0b026e84e7d09f9fa620e0fee7634445c328ad93fed27e5b913f6bf5e45",
+    "dist/mcp.js": "7eaefcda1e4947267362f16442cff3e14ca13cb54b3ac78ce015c9f7a1f49692"
+  },
+  "javaLoaderSha256": {
+    "scripts/javaMavenSemanticContext.mjs": "002555410f0fdf70b2b2b5b9687b81cfc3ec192a6cf4738ae3d0d9dc5b9c3d63",
+    "scripts/JavaSemanticSpike.java": "41642d1c22e6e5f7d2cc0af529d2fe51ad6a8d61237577d959e4e539c5f232bf"
+  },
+  "requestSha256": {
+    "tests/fixtures/dogs-out-java-magic-link-outbox-request.json": "26289b1d74a8ba289cf17e685c1767120c84f6f54922452742f78bcc8346d535",
+    "tests/fixtures/dogs-out-java-ses-external-request.json": "7f5acbdfec2eac12e4fc8bc28ec18177b9fca0d362ec92155ca6be0d701c2f86",
+    "tests/fixtures/dogs-out-java-walk-projection-request.json": "b75cff4bc9d7d5ae0503b3b72d16fdceeb024f838dc9b6731f02874abef1124f",
+    "{DOGS_OUT_ROOT}/.flowatlas/requests/account-deletion-presence.json": "be21883bf7b3f93cea9756d44f36f98842481e50763d8e0b7a89c42d5c129448",
+    "{DOGS_OUT_ROOT}/.flowatlas/requests/daily-walk-progress-m8-1.json": "dd755e59019fc4285f26f6115e648f17c374408096ddbd5efd34eb16712e192b"
+  },
+  "dogsOutJavaBytecode": {
+    "root": "{DOGS_OUT_ROOT}/backend/target/classes",
+    "classCount": 643,
+    "manifestSha256": "20c4bddd0e9f4075974bdde1f28ed49ca7f64507e7eca46eef86bc7f6470dde9"
+  },
+  "dependencyLockSha256": {
+    "package-lock.json": "b75f2ea1a2db2cbccbef0a15372583d320e8ae14b378fdf290db1b8cd630a79f",
+    "{DOGS_OUT_ROOT}/mobile/package-lock.json": "59893b5e18cc75d06cf65ba1b3a71d5fcb513285c36e1d31bfa1b86bdaf1b501",
+    "{DOGS_OUT_ROOT}/backend/pom.xml": "9e2a21b59ae9f5071bbfbf17aa3edb2124168549d3fb0a06fa985221180131a7"
+  },
+  "freshBuildComparison": {
+    "command": "npx tsup --out-dir /private/tmp/flowatlas-jalon1-build",
+    "result": "all 9 configured JavaScript files match fresh-build files after replacing chunk-[A-Z0-9]+ identifiers and removing sourceMappingURL comments",
+    "byteForByteMatchClaimed": false,
+    "runningProcessCommitReported": false
+  }
+}

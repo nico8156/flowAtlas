@@ -1,10 +1,17 @@
 # Java Scanner Delivery Map
 
-Last updated: 12 September 2026.
+Last updated: 8 October 2026.
 
 ## Current position
 
-**Lots 00 to 10 are delivered. Bounded job-worker mapping is next.**
+**Lots 00 to 10 are delivered. Bounded Fragments and Dogs Out Java requests
+are available through CLI/MCP.**
+
+The [configured Dogs Out MCP replay](../evaluations/dogs-out-mcp-replay-2026-10-08.md)
+verifies local projection, outbox consumer and SES slices, records build/corpus
+identity and explains remaining gaps. A scheduler detector is already tested
+on Fragments; Dogs Out scheduler external coverage remains proposed. Request
+maintenance is the recommended next evolution, subject to a selected example.
 
 ```text
 [00 semantics] -> [01 engine] -> [02 project context] -> [03 domain events]
@@ -16,7 +23,7 @@ Last updated: 12 September 2026.
 -> [04 HTTP/commands] -> [05 outbox/SQS] -> [06 projections]
           DONE                 DONE               DONE
 
--> [07 externals] -> [08 CLI/MCP] -> [09 more corpora]
+-> [07 externals] -> [08 CLI/MCP] -> [09 request diagnostics]
         DONE              DONE             DONE
 ```
 
@@ -199,8 +206,9 @@ in `ArchitectureGraph`.
 - The discriminated `switch` is not converted into graph branches. In this
   slice, javac proves only that the value ultimately passed to `publish` has
   the completed-event type.
-- The Java adapter composes this detector behind the shared scanner port, but
-  the public CLI and MCP still select only the TypeScript adapter.
+- At the end of Lot 03, the public CLI and MCP still selected only the
+  TypeScript adapter. Explicit Java selection was subsequently delivered in
+  Lot 08.
 
 ### Lot 04 — shared port and HTTP/Command
 
@@ -210,7 +218,8 @@ in `ArchitectureGraph`.
 - TypeScript and Java adapters implement that port independently. Maven,
   javac, `tsconfig`, compiler reuse and Redux remain adapter details.
 - The MCP now depends on `ArchitectureScanner`; its tools and wire protocol are
-  unchanged. The deployed composition still selects the TypeScript adapter.
+  unchanged. The initial deployed composition selected the TypeScript adapter;
+  Lot 08 subsequently added explicit Java selection.
 - Java scan scope remains configuration of the Java evidence loader. It was
   not added to the shared port without a second cross-language consumer.
 - Configured Spring annotation identities prove the HTTP mapping. The resolved
@@ -416,5 +425,9 @@ framework. Additional shared inputs require evidence from another real caller.
 
 ## Next acceptance boundary
 
-Lot 09 needs a second real Java corpus before generalizing multi-module roots,
-generated sources, additional framework routes or bean-selection behavior.
+Dogs Out is now the validated second Java corpus for bounded local projection,
+outbox listening and resolved SES execution. A Git root may select its sole
+direct Maven child. The current replay does not justify generalizing Maven
+reactors, generated sources or bean-selection behavior. The next example
+should come from request-maintenance evidence in the replay; the full
+producer-to-consumer outbox chain remains unproven.

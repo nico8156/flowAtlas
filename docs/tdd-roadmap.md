@@ -6,8 +6,10 @@ REDs build the path.
 Future items are proposals, not implementation permission. Work remains
 acceptance-driven and follows `.codex/skills/tdd-cycle/SKILL.md`.
 
-The Dogs Out second-corpus feedback and its six proposed milestones are tracked
+The delivered Dogs Out second-corpus slices and remaining limits are tracked
 in [Dogs Out feedback delivery plan](dogs-out-feedback-delivery-plan.md).
+The [8 October configured MCP replay](evaluations/dogs-out-mcp-replay-2026-10-08.md)
+records executable requests, build/corpus identity and current graph gaps.
 
 ## Status At A Glance
 
@@ -1165,7 +1167,7 @@ branches not taken. Runtime evidence must never hide static limitations.
 
 ## Milestone 15 - Java Semantic Feasibility
 
-**Status: ACTIVE — lots 00 to 08 delivered, second corpus next**
+**Status: ACTIVE — lots 00 to 10 delivered; bounded Dogs Out second-corpus validation available**
 
 ### Goal
 
@@ -1246,11 +1248,13 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 
 ### Probable next behaviors
 
-1. Select a second real Java corpus before expanding detector coverage.
-2. Compare its source roots, framework routes and dependency configuration
-   against the bounded Fragments evidence.
-3. Escalate any proposal for multi-module, generated-source or dynamic-bean
-   generalization.
+1. Use the configured Dogs Out MCP replay to select the next request-maintenance
+   or diagnostic example; existing missing-source and unproven-mutation failures
+   already identify their immediate cause.
+2. Keep the local outbox consumer, direct SES delivery and local projection
+   proofs bounded; the complete producer-to-consumer chain remains unproven.
+3. Review any proposal for package-based source selection, multi-module,
+   generated-source or dynamic-bean generalization before implementation.
 
 ### Known gaps
 
@@ -1259,6 +1263,14 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 - The current Java exposure is bounded to explicit requests and JSON graph
   export plus MCP discovery/context; interactive Java TUI and implicit project
   discovery remain unimplemented.
+- Dogs Out fixtures and real acceptances now cover a local projection without
+  sync or event marker, local outbox listening, resolved SES execution and two
+  mutations in one projection. The versioned M8.1 request still declares only
+  one of those mutations. Its Handler context is isolated even though the
+  Event-to-State mutation is available.
+- The configured MCP replay and normalized fresh-build comparison are recorded;
+  the server does not report its startup Git revision, and the replay uses
+  existing Java bytecode for resolution.
 
 ### Discovered micro-cycles
 
@@ -1318,8 +1330,9 @@ tracker are maintained in `docs/architecture/java-scanner-delivery-map.md`.
 
 ### Open design questions
 
-- Which second real Maven shape would justify multiple source roots,
-  multi-module reactors or generated-source support?
+- Beyond the validated Dogs Out single-module child of a Git root, which real
+  Maven shape would justify multiple source roots, multi-module reactors or
+  generated-source support?
 
 ### Completion criteria
 
